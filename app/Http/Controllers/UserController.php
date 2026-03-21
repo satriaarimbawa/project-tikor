@@ -4,15 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Models\FirebaseUser;
 use Illuminate\Http\Request;
+use Kreait\Firebase\Contract\Database;
 
 class UserController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+
+    protected $database;
+
+    public function __construct(Database $database)
+    {
+        $this->database = $database;
+    }
+
     public function index()
     {
-        //
+        $reference = 'users';
+        $users = $this->database->getReference($reference)->getValue();
+
+        return view('admin.index', ['users' => $users]);
     }
 
     /**
@@ -20,7 +32,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        //
+        return view('admin.register.register');
     }
 
     /**
@@ -28,24 +40,28 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        // Menyimpan user baru ke Firebase
-$nama  = $request->query('nama', 'Satria Default');
-    $nim   = $request->query('nim', '230030180');
-    $kelas = $request->query('kelas', 'CB233'); 
-    $password = $request->query('password', '123456');
 
-    $userId = FirebaseUser::create([
-        'username'  => $nama,
-        'email'   => $nim,
-        'role_user' => $kelas,
-        'password'=> $password
+    $validatedData = $request->validate([
+        'username' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'role_user' => 'required|string',
+        'password' => 'required|string|min:6',
     ]);
 
-    return response()->json([
-        'message' => 'User berhasil disimpan ke Firebase',
-        'id'      => $userId,
-        'data'    => ['nama' => $nama, 'nim' => $nim]
+    $nama = $request->input('username');
+    $email = $request->input('email');
+    $role_user = $request->input('role_user');
+    $password = $request->input('password');
+
+        $userId = FirebaseUser::create([
+        'username' => $nama,
+        'email' => $email,
+        'role_user' => $role_user,
+        'password' => $password,
+
     ]);
+
+    return redirect('/admin-index')->with('success', 'User berhasil dibuat!');
     }
 
     /**
