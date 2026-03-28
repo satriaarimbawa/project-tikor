@@ -1,0 +1,153 @@
+:root {
+  --blur-intensity: 15px; 
+  --glass-opacity: rgba(253, 253, 253, 0.356); 
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+  background: linear-gradient(50deg, #03152B 0%, #6A8196 60%, #ffffff 100%);
+}
+
+
+.container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/*Kotak putih miring */
+.glass-shape {
+  position: absolute;
+  width: 60%;
+  height: 120%; 
+  background: var(--glass-opacity);
+  
+
+  backdrop-filter: blur(var(--blur-intensity));
+  -webkit-backdrop-filter: blur(var(--blur-intensity));
+  
+  border: 1px solid rgba(255, 255, 255, 0.2); /*garis luar*/
+  z-index: 1;
+}
+
+/* Ngatur Miring */
+.left {
+  left: -24%;
+  transform: rotate(40deg); 
+}
+
+.right {
+  right: -30%;
+  transform: rotate(-40deg); 
+}
+
+
+.login-card {
+  position: relative;
+  z-index: 10;
+  background: #ffffff;
+  padding: 50px 40px;
+  border-radius: 30px;
+  width: 380px;
+  text-align: left;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-left: 80px;
+}
+
+.logo {
+  width: 90px;  /* untuk mengubah ukuran logo */
+  height: auto;  /* agar proporsinya tidak rusak */
+  margin-bottom: 40px; 
+  object-fit: contain; /*biar ga pnyok*/
+}
+
+.login-card form {
+  width: 100%;
+} /*biar input aman*/
+
+.input {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fcfcfc;
+  box-sizing: border-box;
+  font-size: 14px;
+  /* box-shadow: 0 20px 40px rgba(0, 0, 0, 0.253); */
+}
+
+
+.form-helpers {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  font-size: 12px;
+}
+
+.remember-me { color: #666; }
+
+.lupa-PASS {
+  color: #ff5e5e; 
+  text-decoration: none;
+  text-align: right;
+}
+
+
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #243447; 
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  transition: background 0.3s;
+}
+
+.login-button:hover {
+  background-color: #1a2533;
+}
+
+
+
+/* responsive */
+@media (max-width: 768px) {
+
+  .login-card {
+    width: 90%;
+    max-width: 320px;
+    margin: 0 auto;
+    padding: 25px 20px;
+  }
+
+  .glass-shape {
+    width: 120%;
+    height: 100%;
+    opacity: 1.0;
+  }
+
+  .left {
+    left: -90%;
+    transform: rotate(50deg);
+  }
+
+  .right {
+    right: -90%;
+    transform: rotate(-50deg);
+  }
+}
