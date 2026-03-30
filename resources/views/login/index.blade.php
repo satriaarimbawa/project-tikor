@@ -51,7 +51,7 @@
 
                 <div class="form-helpers">
                     <label class="remember-me">
-                        <input type="checkbox"> Remember me
+                        <input type="checkbox">Remember me
                     </label>
                     <a href="#" class="lupa-PASS">Lupa Kata Sandi</a>
                 </div>
