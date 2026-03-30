@@ -1,0 +1,92 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    height: 100%;
+    font-family: 'Playfair Display', sans-serif;
+    overflow-x: hidden;
+}
+
+.hero-section {
+    height: 100vh;
+    width: 100%;
+    background-image: linear-gradient(to right, rgba(0, 7, 20, 0.6) 20%, rgba(0, 7, 20, 0.292) 100%), 
+                      url('../assets/Background_landing.png');
+    background-size: cover;
+    background-position: center left; 
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 80px;
+}
+
+.logo-group {
+    display: flex;
+    gap: 20px;
+}
+
+.logo-group img {
+    height: 55px;
+    width: auto;
+}
+
+nav a {
+    text-decoration: none;
+    color: rgba(255,255,255,0.8); 
+    margin-left: 30px;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+nav a:hover {
+    color: white;
+}
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.hero-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 64px;
+    color: white;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: 1px;
+    margin-bottom: 40px;
+}
+
+.btn-dashboard {
+    display: inline-block;
+    padding: 16px 32px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.btn-dashboard:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+footer {
+    padding: 30px 80px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+}
