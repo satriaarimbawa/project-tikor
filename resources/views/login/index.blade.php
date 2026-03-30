@@ -36,7 +36,7 @@
         <div class="login-card">
             <img src="{{ asset('uploads/logo/logodishub.png') }}" alt="Logo" class="logo">
 
-            <form action="/cek_login" alt="logo" class="logo">
+            <form action="/cek_login" alt="logo" class="logo" method="post">
                 @csrf
 
                 <input type="hidden" name="latitude" id="latitude">
