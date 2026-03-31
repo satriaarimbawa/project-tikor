@@ -29,7 +29,7 @@
         <main class="main-content">
             <div class="hero-text">
                 <h1>DIGITALISASI UJI<br>PETIK DISHUB</h1>
-                <a href="{{ url('/login') }}" class="btn-dashboard">Masuk Ke Dashboard</a>
+                <a href="/login-admin" class="btn-dashboard">Masuk Ke Dashboard</a>
             </div>
         </main>
 

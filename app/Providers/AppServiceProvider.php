@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (config('app.env') !== 'local') {
+if (str_contains(request()->getHost(), 'devtunnels.ms')) {
         URL::forceScheme('https');
     }
     }

@@ -16,7 +16,7 @@ use App\Http\Controllers\PenugasanController;
 Route::get('/dashboard-admin', [UserController::class, 'index']);
 Route::get('/register', [UserController::class, 'create']);
 Route::post('/test-store', [UserController::class, 'store']);
-// Route::get('/dashboard-admin', [AdminController::class, 'index']);
+Route::get('/login-admin', [AdminController::class, 'loginadmin']);
 
 Route::get('/dashboard-login', [LoginController::class, 'index']);
 Route::get('/logout', [LoginController::class, 'logout']);

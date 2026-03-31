@@ -34,7 +34,7 @@
                     <p class="welcome-p">Silakan masuk ke akun petugas anda</p>
                 </div>
 
-                <form action="{{ url('/login') }}" method="POST">
+                <form action="/cek_login" method="POST">
                     @csrf
                     
                     <div class="input-group">

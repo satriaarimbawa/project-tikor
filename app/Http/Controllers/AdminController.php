@@ -10,6 +10,12 @@ class AdminController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function loginadmin()
+    {
+        return view('login.logadmin');
+    }
+
     public function index()
     {
         return view('admin.index');
