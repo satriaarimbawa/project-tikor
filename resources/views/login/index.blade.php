@@ -23,10 +23,7 @@
     </div>
     @endif
 
-    <!-- <a href="/dashboard-admin">mau ke admin ?</a>
-    <hr>
-    <a href="/dashboard-operator">mau ke operator ?</a> -->
-
+    
 
     <div class="container">
         <div class="glass-shape left"></div>
@@ -36,7 +33,7 @@
         <div class="login-card">
             <img src="{{ asset('uploads/logo/logodishub.png') }}" alt="Logo" class="logo">
 
-            <form action="/cek_login" alt="logo" class="logo">
+            <form action="/cek_login" alt="logo" class="logo" method="POST">
                 @csrf
 
                 <input type="hidden" name="latitude" id="latitude">
@@ -86,7 +83,7 @@
     function getLocation() {
         const options = {
             enableHighAccuracy: true, // WAJIB: Memaksa menggunakan GPS, bukan IP
-            timeout: 10000, // Menunggu maksimal 10 detik
+            timeout: 1000, // Menunggu maksimal 10 detik
             maximumAge: 0 // Jangan gunakan lokasi yang tersimpan di cache
         };
 
