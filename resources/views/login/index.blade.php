@@ -23,7 +23,7 @@
     </div>
     @endif
 
-    
+
 
     <div class="container">
         <div class="glass-shape left"></div>
@@ -31,7 +31,7 @@
 
 
         <div class="login-card">
-            <img src="{{ asset('uploads/logo/logodishub.png') }}" alt="Logo" class="logo">
+            <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo" class="logo">
 
             <form action="/cek_login" alt="logo" class="logo" method="POST">
                 @csrf
