@@ -25,7 +25,7 @@ Route::post('/cek_login', [LoginController::class, 'cek_login']);
 
 
 Route::get('/dashboard-operator', [OperatorController::class, 'index']);
-
+Route::get('/dashboard-operator-penugasan', [OperatorController::class, 'penugasan']);
 
 
 route::get('/dashboard', [TikorController::class, 'index']);

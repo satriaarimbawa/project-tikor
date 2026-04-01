@@ -10,8 +10,13 @@ class OperatorController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
+    {     
         return view('operator.index');
+    }
+
+    public function penugasan()
+    {     
+        return view('operator.penugasan');
     }
 
     /**
