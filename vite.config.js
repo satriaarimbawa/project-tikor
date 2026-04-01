@@ -13,6 +13,10 @@ export default defineConfig({
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],
+            host: '0.0.0.0', // Mengizinkan akses dari IP mana pun
+        hmr: {
+            host: 'localhost',
+        }
         },
     },
 });
