@@ -19,6 +19,11 @@ class OperatorController extends Controller
         return view('operator.penugasan');
     }
 
+    public function survei()
+    {     
+        return view('operator.survei');
+    }
+
     /**
      * Show the form for creating a new resource.
      */
