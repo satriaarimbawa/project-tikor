@@ -1,23 +1,11 @@
 @php
-//Simulasi database
-$riwayat = [
-(object)['jam' => '10.00', 'kendaraan' => 'Motor', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.20', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.21', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.22', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.24', 'kendaraan' => 'MiniBus', 'lokasi' => 'Terminal Galiran'],
-];
-
-
 $totalMotor = collect($riwayat)->where('kendaraan', 'Motor')->count();
 $totalMobil = collect($riwayat)->where('kendaraan', 'Mobil')->count();
 $totalTruk = collect($riwayat)->where('kendaraan', 'Truk')->count();
 $totalMiniBus = collect($riwayat)->where('kendaraan', 'MiniBus')->count();
 $totalSemua = collect($riwayat)->count();
 
-
+// @dd(session()->all());
 
 $penugasan = [
 (object)[
@@ -72,8 +60,8 @@ $penugasan = [
                 <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo">
             </div>
             <div>
-                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - Terminal Galiran</h1>
-                <p class="text-xs lg:text-sm text-slate-500">Shift Pagi | 18 Maret 2026</p>
+                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - {{ $namaLokasi }}</h1>
+                <p class="text-xs lg:text-sm text-slate-500">{{ \Carbon\Carbon::now()->translatedFormat('j F Y') }}</p>
             </div>
         </div>
 
@@ -155,21 +143,23 @@ $penugasan = [
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($penugasan as $item)
+                        {{-- @dd($riwayat) --}}
+                        @foreach($riwayat as $data => $item)
                         <tr
+                        {{-- @dd($item) --}}
                             class="bg-white shadow-[0_8px_20px_rgb(0,0,0,0.08)] rounded-2xl overflow-hidden transform transition hover:scale-[1.01]">
                             <td class="p-4 rounded-l-2xl border-y border-l border-slate-100">
-                                <span class="block font-medium text-slate-700">{{ $item->tgl_mulai }}</span>
+                                <span class="block font-medium text-slate-700">{{ $item['waktu_mulai'] }}</span>
                                 <span class="block text-[10px] text-slate-400">Sampai</span>
-                                <span class="block font-medium text-slate-700">{{ $item->tgl_selesai }}</span>
+                                <span class="block font-medium text-slate-700">{{ $item['waktu_selesai'] }}</span>
                             </td>
 
                             <td class="p-4 border-y border-slate-100 align-middle">
-                                <span class="font-bold text-slate-800">{{ $item->lokasi }}</span>
+                                <span class="font-bold text-slate-800 truncate max-w-[200px]">{{ data_get($item, 'nama_lokasi_display', 'Tanpa Lokasi') }}</span>
                             </td>
 
                             <td class="p-4 rounded-r-2xl border-y border-r border-slate-100 text-center align-middle">
-                                @if($item->status == 'Aktif')
+                                @if($item['waktu_selesai'] > now())
                                 <span
                                     class="bg-emerald-500 text-white px-4 py-1 rounded-lg text-[10px] font-bold shadow-sm shadow-emerald-200">
                                     Aktif
@@ -199,7 +189,7 @@ $penugasan = [
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-poll text-lg mb-1"></i>Survei
+                    <a href="/dashboard-operator-survei" class="fas fa-poll text-lg mb-1"></a>Survei
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">

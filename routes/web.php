@@ -13,20 +13,23 @@ use App\Http\Controllers\PenugasanController;
 //     return view('welcome');
 // });
 
+//admin punya
 Route::get('/dashboard-admin', [UserController::class, 'index']);
 Route::get('/register', [UserController::class, 'create']);
 Route::post('/test-store', [UserController::class, 'store']);
 Route::get('/login-admin', [AdminController::class, 'loginadmin']);
 
+//route login
 Route::get('/dashboard-login', [LoginController::class, 'index']);
 Route::get('/logout', [LoginController::class, 'logout']);
 Route::post('/cek_login', [LoginController::class, 'cek_login']);
 
 
-
+//operator punya
 Route::get('/dashboard-operator', [OperatorController::class, 'index']);
 Route::get('/dashboard-operator-penugasan', [OperatorController::class, 'penugasan']);
 Route::get('/dashboard-operator-survei', [OperatorController::class, 'survei']);
+Route::post('/simpan-hitung-kendaraan', [OperatorController::class, 'simpanHitung'])->name('simpan.hitung.kendaraan');;
 
 
 route::get('/dashboard', [TikorController::class, 'index']);

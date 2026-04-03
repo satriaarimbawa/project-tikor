@@ -1,25 +1,6 @@
 @php
-//Simulasi database
-$riwayat = [
-(object)['jam' => '10.00', 'kendaraan' => 'Motor', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.20', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.21', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.22', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.24', 'kendaraan' => 'MiniBus', 'lokasi' => 'Terminal Galiran'],
-];
-
-
-$totalMotor = collect($riwayat)->where('kendaraan', 'Motor')->count();
-$totalMobil = collect($riwayat)->where('kendaraan', 'Mobil')->count();
-$totalTruk = collect($riwayat)->where('kendaraan', 'Truk')->count();
-$totalMiniBus = collect($riwayat)->where('kendaraan', 'MiniBus')->count();
 $totalSemua = collect($riwayat)->count();
 @endphp
-
-
-
 
 
 <!DOCTYPE html>
@@ -43,8 +24,8 @@ $totalSemua = collect($riwayat)->count();
                 <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo">
             </div>
             <div>
-                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - Terminal Galiran</h1>
-                <p class="text-xs lg:text-sm text-slate-500">Shift Pagi | 18 Maret 2026</p>
+                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - {{ $namaLokasi }} </h1>
+                <p class="text-xs lg:text-sm text-slate-500">{{ \Carbon\Carbon::now()->translatedFormat('j F Y') }}</p>
             </div>
         </div>
 
@@ -53,8 +34,8 @@ $totalSemua = collect($riwayat)->count();
                     class="text-emerald-500">● AKTIF</span> )</h2>
 
             <div class="bg-slate-100 rounded-2xl p-4 text-center border border-slate-100">
-                <p class="text-slate-500 text-sm">Total Survei : <span
-                        class="text-slate-900 font-bold text-lg">{{ $totalSemua }}</span></p>
+                <p class="text-slate-500 text-sm">Total Survei Kendaraan : <span
+                        class="text-slate-900 font-bold text-lg" id="total-survei">{{ $dataSurvei['total_survei'] ?? 0 }}</span></p>
                 <hr class="my-3 border-slate-200">
 
                 <div class="grid grid-cols-2 gap-4">
@@ -62,28 +43,28 @@ $totalSemua = collect($riwayat)->count();
                         <i class="fas fa-motorcycle text-2xl text-slate-700"></i>
                         <div class="text-left">
                             <p class="text-xs text-slate-500">Motor</p>
-                            <p class="font-bold">{{ $totalMotor }}</p>
+                            <p id="count-motor" class="font-bold">{{ $dataSurvei['motor'] ?? 0 }}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <i class="fas fa-car text-2xl text-slate-700"></i>
                         <div class="text-left">
                             <p class="text-xs text-slate-500">Mini Bus</p>
-                            <p class="font-bold">{{ $totalMiniBus }}</p>
+                            <p id="count-minibus" class="font-bold">{{ $dataSurvei['minibus'] ?? 0 }}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3 border-r border-slate-200 pr-2">
                         <i class="fas fa-bus text-2xl text-slate-700"></i>
                         <div class="text-left">
                             <p class="text-xs text-slate-500">Bus</p>
-                            <p class="font-bold">{{ $totalMobil }}</p>
+                            <p id="count-bus" class="font-bold">{{ $dataSurvei['bus'] ?? 0 }}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <i class="fas fa-truck text-2xl text-slate-700"></i>
                         <div class="text-left">
                             <p class="text-xs text-slate-500">Truk</p>
-                            <p class="font-bold">{{ $totalTruk }}</p>
+                            <p id="count-truk" class="font-bold">{{ $dataSurvei['truk'] ?? 0 }}</p>
                         </div>
                     </div>
                 </div>
@@ -118,7 +99,7 @@ $totalSemua = collect($riwayat)->count();
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
 
-                <button style="background: linear-gradient(to right, #fdba74, #ffedd5);"
+                <button onclick="hitungKendaraan('motor')" style="background: linear-gradient(to right, #fdba74, #ffedd5);"
                     class="flex items-center p-4 rounded-2xl shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95 w-full">
 
                     <div class="bg-orange-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-md">
@@ -129,7 +110,7 @@ $totalSemua = collect($riwayat)->count();
                 </button>
 
 
-                <button style="background: linear-gradient(to right, #fde047, #fef9c3);"
+                <button onclick="hitungKendaraan('minibus')" style="background: linear-gradient(to right, #fde047, #fef9c3);"
                     class="flex items-center p-4 rounded-2xl shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95 w-full">
 
                     <div class="bg-yellow-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-md">
@@ -139,7 +120,7 @@ $totalSemua = collect($riwayat)->count();
                     <span class="ml-4 font-bold text-slate-800 text-lg">Mini Bus</span>
                 </button>
 
-                <button style="background: linear-gradient(to right, #93c5fd, #dbeafe);"
+                <button onclick="hitungKendaraan('bus')" style="background: linear-gradient(to right, #93c5fd, #dbeafe);"
                     class="flex items-center p-4 rounded-2xl shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95 w-full">
 
                     <div class="bg-blue-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-md">
@@ -150,7 +131,7 @@ $totalSemua = collect($riwayat)->count();
                 </button>
 
 
-                <button style="background: linear-gradient(to right, #c4b5fd, #ede9fe);"
+                <button onclick="hitungKendaraan('truk')" style="background: linear-gradient(to right, #c4b5fd, #ede9fe);"
                     class="flex items-center p-4 rounded-2xl shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95 w-full">
 
                     <div class="bg-purple-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-md">
@@ -168,9 +149,9 @@ $totalSemua = collect($riwayat)->count();
                 <button class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition">
                     <a href="dashboard-operator"><i class="fas fa-home text-lg mb-1"></i>Beranda</a>
                 </button>
-                <button class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition">
+                <a href="/dashboard-operator-penugasan" class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition">
                     <i class="fas fa-clipboard-list text-lg mb-1"></i>Penugasan
-                </button>
+                </a>
                 <button class="flex flex-col items-center text-xs text-white transition">
                     <i class="fas fa-poll text-lg mb-1"></i>Survei
                 </button>
@@ -179,6 +160,40 @@ $totalSemua = collect($riwayat)->count();
                 </button>
             </div>
         </div>
+
+
+
+
+<script>
+function hitungKendaraan(jenis) {
+    // 1. Ambil elemen angka di UI
+    let elKendaran = document.getElementById('count-' + jenis);
+    let elTotal = document.getElementById('total-survei');
+
+    // 2. Tambah angka secara lokal (UI)
+    let currentCount = parseInt(elKendaran.innerText) + 1;
+    elKendaran.innerText = currentCount;
+    elTotal.innerText = parseInt(elTotal.innerText) + 1;
+
+    // 3. Kirim ke Laravel via AJAX
+    fetch("{{ route('simpan.hitung.kendaraan') }}", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+    },
+    body: JSON.stringify({
+        jenis_kendaraan: jenis,
+        // id_lokasi tidak wajib dikirim jika sudah ada di session Laravel
+    })
+})
+    .then(response => response.json())
+    .then(data => {
+        console.log("Berhasil simpan ke Firebase:", data);
+    })
+    .catch(error => console.error("Gagal kirim:", error));
+}
+</script>
 </body>
 
 </html>
