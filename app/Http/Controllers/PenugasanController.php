@@ -30,15 +30,14 @@ class PenugasanController extends Controller
      */
     public function create()
     {
-        // 1. Controller "menelpon" Firebase untuk meminta data lokasi dan user
+        $users = $this->database->getReference('users')->getValue() ?? [];
         $lokasitikor = $this->database->getReference('pengaturan_lokasi')->getValue() ?? [];
         $users = $this->database->getReference('users')->getValue() ?? [];
 
-        // @dd($lokasitikor);
-        // 2. Controller memanggil file form HTML (Blade) DAN MENYELIPKAN datanya
+        // @dd($listOperatorUid);
         return view('admin.penugasan.form_penugasan', [
-            'lokasitikor' => $lokasitikor, // <-- Ini variabel yang dikirim!
-            'users' => $users                // <-- Ini variabel yang dikirim!
+            'lokasitikor' => $lokasitikor, 
+            'users' => $users,              
         ]);
     }
 
