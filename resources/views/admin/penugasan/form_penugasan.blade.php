@@ -10,6 +10,7 @@
 <body>
     <!-- resources/views/admin/penugasan_create.blade.php -->
 
+{{-- @dd($listOperatorUid) --}}
 <h2>Form Tambah Penugasan Operator</h2>
 
 <!-- Tampilkan Pesan Error Validasi Jika Ada -->
@@ -54,7 +55,8 @@
                 @foreach($users as $id_user => $user)
                     <!-- Logika Filter: Hanya tampilkan user yang role-nya 'operator' -->
                     @if(isset($user['role_user']) && $user['role_user'] == 'operator')
-                        <option value="{{ $user['username'] }}">{{ $user['username'] }} ({{ $user['email'] ?? '-' }})</option>
+                        <option value="{{ $id_user }}">{{ $user['username'] }} ({{ $user['email'] ?? '-' }})</option>
+
                     @endif
                 @endforeach
             @endif

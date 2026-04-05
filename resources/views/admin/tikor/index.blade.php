@@ -12,12 +12,13 @@
 <!-- 2. Siapkan wadah (container) untuk Peta -->
 <div id="map" style="height: 400px; width: 100%; margin-bottom: 20px;"></div>
 
+
 <!-- 3. Form untuk menyimpan data ke Firebase -->
 <form action="/update-lokasi-kantor" method="POST">
     @csrf
     
     <!-- Anda bisa menyembunyikan input ini (type="hidden") nanti, 
-         tapi pakai type="text" dulu agar terlihat perubahannya -->
+    tapi pakai type="text" dulu agar terlihat perubahannya -->
     <label>Latitude:</label>
     <input type="text" name="latitude" id="latInput" required readonly>
     <br><br>
