@@ -22,6 +22,10 @@ class OperatorController extends Controller
     {     
         return view('operator.index');
     }
+    public function profile()
+    {     
+        return view('operator.profile');
+    }
 
     public function penugasan()
     {     

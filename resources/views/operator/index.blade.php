@@ -147,15 +147,15 @@ $totalSemua = collect($riwayat)->count();
         <div class="fixed bottom-0 left-0 right-0 bg-[#5A6C8F] shadow-2xl rounded-t-2xl z-50">
             <div class="flex justify-around p-3 text-slate-300 max-w-md mx-auto lg:max-w-lg">
                 <button class="flex flex-col items-center text-xs opacity-100 text-white hover:scale-110 transition">
-                    <i class="fas fa-home text-lg mb-1"></i>Beranda
+                    <a href="/dashboard-operator" class="fas fa-home text-lg mb-1"></a>Beranda
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-clipboard-list text-lg mb-1"></i>Penugasan
+                    <a href="/dashboard-operator-penugasan" class="fas fa-clipboard-list text-lg mb-1"></a>Penugasan
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-poll text-lg mb-1"></i>Survei
+                    <a href="/dashboard-operator-survei" class="fas fa-poll text-lg mb-1"></a>Survei
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
@@ -168,6 +168,24 @@ $totalSemua = collect($riwayat)->count();
 
 
     </div>
+    <script src="{{ asset('js/deteksiTikorUser.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const geofence = new GeofenceManager({
+                targetLat: {{ session('lat_target') }}
+                targetLng: {{ session('lng_target') }}
+                maxRadius: {{ session('radius_target') ?? 100 }}
+                logoutUrl: "{{ url('/auto-logout') }}"
+                csrfToken: "{{ csrf_token() }}"
+                redirectUrl: "{{ url('/login?error=out_of_range') }}"
+            });
+            console.log('Inisialisasi Geofence dengan:', {
+                targetLat: {{ session('lat_target') }}
+                targetLng: {{ session('lng_target') }}
+                maxRadius: {{ session('radius_target') ?? 100 }}
+            });
+            geofence.init();
+        });
+    </script>
 </body>
-
 </html>
