@@ -1,0 +1,130 @@
+/* public/css/dashboardadmin.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+:root {
+    /* Warna Navy Utama (#253D6B) */
+    --navy-base: 37, 61, 107; 
+    --bg-main: #F5F7FA;
+    --card-radius: 30px; /* Diperlebar sesuai desain Figma yang membulat */
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-main);
+    color: #1F2937;
+    margin: 0;
+}
+
+/* --- SIDEBAR STYLE --- */
+.sidebar-navy {
+    /* Menggunakan RGBA agar background transparan 75% tanpa memengaruhi konten */
+    background-color: rgba(var(--navy-base), 0.75); 
+    backdrop-filter: blur(12px); /* Efek blur kaca yang lebih kuat */
+    transition: all 0.3s ease;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-navy img {
+    /* Bayangan halus khusus mengikuti bentuk logo */
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.2));
+}
+
+/* Pengaturan Iconify agar presisi */
+iconify-icon {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.nav-link:hover {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Warna Navy untuk menu yang sedang aktif atau diklik */
+.nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1); /* Navy terang transparan */
+    color: #FFFFFF;
+    font-weight: 700;
+}
+
+/* Style dasar untuk sub-menu laporan */
+.sub-menu {
+    display: none; /* Sembunyi secara default */
+    padding-left: 3.5rem; /* Menjorok ke dalam agar rapi di bawah ikon laporan */
+}
+
+.sub-menu.show {
+    display: block; /* Muncul saat kelas 'show' ditambahkan via JS */
+}
+
+.nav-link img {
+    transition: transform 0.2s ease;
+}
+
+.nav-link:hover img {
+    transform: scale(1.1); /* Efek membesar sedikit saat di-hover */
+}
+
+/* --- MAIN CONTENT STYLE --- */
+.main-content {
+    /* Gradasi linear #E7EFF6 (70%) ke #FFFFFF (100%) */
+    background: linear-gradient(180deg, #E7EFF6 70%, #FFFFFF 100%); 
+    min-height: 100vh; /* Memastikan background memenuhi tinggi layar */
+    flex: 1; /* Agar mengambil sisa ruang di sebelah sidebar */
+    padding: 2rem; /* Jarak padding standar agar konten tidak menempel ke pinggir */
+    transition: all 0.3s ease;
+}
+
+/* --- CARD STYLE --- */
+.card-revenue {
+    /* Gradasi hijau halus dari Figma */
+    background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%);
+    border-radius: var(--card-radius);
+    border: 1px solid rgba(224, 224, 224, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+}
+
+.text-money {
+    letter-spacing: -0.05em;
+    font-style: italic;
+    -webkit-font-smoothing: antialiased;
+}
+
+.card-shadow {
+    box-shadow: 0px 15px 35px rgba(0, 0, 0, 0.04);
+}
+
+/* --- TABLE STYLE --- */
+.table-container {
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    background: #FFFFFF;
+    border: 1px solid #F3F4F6;
+}
+
+tbody tr {
+    transition: background-color 0.2s;
+}
+
+tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* --- RESPONSIVE ADJUSTMENT --- */
+@media (max-width: 768px) {
+    .sidebar-navy {
+        width: 80px;
+    }
+    .sidebar-navy span, .sidebar-navy p {
+        display: none;
+    }
+    .main-content {
+        padding: 1rem;
+    }
+}
