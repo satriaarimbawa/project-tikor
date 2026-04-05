@@ -28,6 +28,7 @@ Route::post('/cek_login', [LoginController::class, 'cek_login']);
 //operator punya
 Route::get('/dashboard-operator', [OperatorController::class, 'index']);
 Route::get('/dashboard-operator-penugasan', [OperatorController::class, 'penugasan']);
+Route::get('/dashboard-operator-profile', [OperatorController::class, 'profile']);
 Route::get('/dashboard-operator-survei', [OperatorController::class, 'survei']);
 Route::post('/simpan-hitung-kendaraan', [OperatorController::class, 'simpanHitung'])->name('simpan.hitung.kendaraan');;
 
