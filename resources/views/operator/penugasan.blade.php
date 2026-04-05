@@ -182,10 +182,10 @@ $penugasan = [
             <div class="flex justify-around p-3 text-slate-300 max-w-md mx-auto lg:max-w-lg">
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-home text-lg mb-1"></i>Beranda
+                    <a href="/dashboard-operator" class="fas fa-home text-lg mb-1"></a>Beranda
                 </button>
                 <button class="flex flex-col items-center text-xs opacity-100 text-white hover:scale-110 transition">
-                    <i class="fas fa-clipboard-list text-lg mb-1"></i>Penugasan
+                    <a href="/dashboard-operator-penugasan" class="fas fa-clipboard-list text-lg mb-1"></a>Penugasan
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
@@ -193,7 +193,7 @@ $penugasan = [
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-user-circle text-lg mb-1"></i>Profil
+                    <a href="/dashboard-operator-profil" class="fas fa-user-circle text-lg mb-1"></a>Profil
                 </button>
             </div>
         </div>
