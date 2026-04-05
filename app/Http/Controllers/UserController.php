@@ -43,7 +43,7 @@ class UserController extends Controller
 
     $validatedData = $request->validate([
         'username' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email',
+        'email' => 'required|email|max:255',
         'role_user' => 'required|string',
         'password' => 'required|string|min:6',
     ]);
@@ -61,7 +61,7 @@ class UserController extends Controller
 
     ]);
 
-    return redirect('/admin-index')->with('success', 'User berhasil dibuat!');
+    return redirect('/register')->with('success', 'User berhasil dibuat!');
     }
 
     /**

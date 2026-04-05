@@ -12,13 +12,13 @@
     <!-- Wajib ada @csrf untuk keamanan Laravel -->
     @csrf 
 
-    <label for="nama">Nama:</label>
+    <label for="username">Username:</label>
     <input type="text" id="username" name="username" required>
 
-    <label for="nim">NIM:</label>
+    <label for="email">email:</label>
     <input type="text" id="email" name="email" required>
 
-    <label for="kelas">Kelas:</label>
+    <label for="role user">Role user:</label>
     <input type="text" id="role_user" name="role_user" required>
 
     <label for="password">Password:</label>
