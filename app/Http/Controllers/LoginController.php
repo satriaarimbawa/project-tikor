@@ -111,8 +111,12 @@ class LoginController extends Controller
             'role'         => $user_data['role_user'],
             'user_id'      => $uid,
             'isLoggedIn'   => true,
-            'id_lokasi_aktif' => $idLokasiTugas ?? null // INI YANG KAMU BUTUHKAN
+            'id_lokasi_aktif' => $idLokasiTugas ?? null,
+            ''
         ]);
+
+
+        session()->save();
 
         if ($user_data['role_user'] == 'admin') {
             return redirect()->to('dashboard-admin')->with('success', 'Selamat datang Admin!');
@@ -124,6 +128,6 @@ class LoginController extends Controller
     public function logout()
     {
         Session::flush();
-        return redirect('/')->with('success', 'Anda telah berhasil logout.');
+        return redirect('/');
     }
 }

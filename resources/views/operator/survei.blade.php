@@ -147,7 +147,7 @@ $totalSemua = collect($riwayat)->count();
         <div class="fixed bottom-0 left-0 right-0 bg-[#5A6C8F] shadow-2xl rounded-t-2xl z-50">
             <div class="flex justify-around p-3 text-slate-300 max-w-md mx-auto">
                 <button class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition">
-                    <a href="dashboard-operator"><i class="fas fa-home text-lg mb-1"></i>Beranda</a>
+                    <a href="/dashboard-operator"><i class="fas fa-home text-lg mb-1"></i>Beranda</a>
                 </button>
                 <a href="/dashboard-operator-penugasan" class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition">
                     <i class="fas fa-clipboard-list text-lg mb-1"></i>Penugasan
