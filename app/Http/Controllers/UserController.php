@@ -24,7 +24,7 @@ class UserController extends Controller
         $reference = 'users';
         $users = $this->database->getReference($reference)->getValue();
 
-        return view('admin.index', ['users' => $users]);
+        return view('admin.dashboardadmin', ['users' => $users]);
     }
 
     /**

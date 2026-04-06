@@ -20,7 +20,8 @@ class PenugasanController extends Controller
 
     public function index()
     {
-        retry(100, function() {
+        // menambahkan fungsi retrun di depan retry
+        return retry(100, function() {
             return view('admin.penugasan.index');
         }, 100);
     }

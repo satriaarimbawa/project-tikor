@@ -29,6 +29,7 @@ $totalSemua = collect($riwayat)->count();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>DASHBOARD || OPERATOR</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -84,19 +85,19 @@ $totalSemua = collect($riwayat)->count();
         <div class="fixed bottom-0 left-0 right-0 bg-[#5A6C8F] shadow-2xl rounded-t-2xl z-50">
             <div class="flex justify-around p-3 text-slate-300 max-w-md mx-auto lg:max-w-lg">
                 <button
-                    class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-home text-lg mb-1"></i>Beranda
+                    class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110n">
+                    <a href="/dashboard-operator" class="fas fa-home text-lg mb-1"></a>Beranda
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-clipboard-list text-lg mb-1"></i>Penugasan
+                    <a href="/dashboard-operator-penugasan" class="fas fa-clipboard-list text-lg mb-1"></a>Penugasan
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-poll text-lg mb-1"></i>Survei
+                    <a href="/dashboard-operator-survei" class="fas fa-poll text-lg mb-1"></a>Survei
                 </button>
-                <button class="flex flex-col items-center text-xs opacity-100 text-white hover:scale-110 transition">
-                    <i class="fas fa-user-circle text-lg mb-1"></i>Profil
+                <button class="flex flex-col items-center text-xs opacity-100 text-white hover:scale-110 transition"><a
+                        href="/dashboard-operator-profile" class="fas fa-user-circle text-lg mb-1"></a>Profil
                 </button>
             </div>
         </div>

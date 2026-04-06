@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>DASHBOARD || LOGIN</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     @vite(['resources/css/app.css', 'resources/css/login.css'])
 </head>
 
