@@ -53,66 +53,57 @@ class LoginController extends Controller
         if ($user_data['password'] !== $password) {
             return redirect()->back()->with('error', 'Password salah!');
         }
+// --- 1. Pengecekan Khusus Operator (Geofencing & Jadwal) ---
+if ($user_data['role_user'] === 'operator') {
+    $latitudeUser = $request->input('latitude');
+    $longitudeUser = $request->input('longitude');
 
-        // --- 1. Pengecekan Khusus Operator (Geofencing & Jadwal) ---
-        if ($user_data['role_user'] === 'operator') {
-            $latitudeUser = $request->input('latitude');
-            $longitudeUser = $request->input('longitude');
+    if (empty($latitudeUser) || empty($longitudeUser)) {
+        return redirect()->back()->with('error', 'GPS wajib aktif!');
+    }
 
-            if (empty($latitudeUser) || empty($longitudeUser)) {
-                return redirect()->back()->with('error', 'Operator wajib mengizinkan akses lokasi (GPS) pada browser!');
-            }
+    $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
+    $waktuSekarang = Carbon::now('Asia/Makassar');
+    
+    $penugasanDitemukan = false;
+    $idLokasiTugas = null;
+    $pesanError = "Login ditolak! Anda tidak memiliki jadwal penugasan aktif saat ini.";
 
-            $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
-            $waktuSekarang = Carbon::now('Asia/Makassar');
-            $penugasanAktif = null;
-            $idLokasiTugas = null;
+    foreach ($semuaPenugasan as $tugas) {
+        // BANDINGKAN DENGAN $uid (ID UNIK), BUKAN $username
+        if (isset($tugas['id_user']) && $tugas['id_user'] == $uid) {
+            
+            $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
+            $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
 
-                $penugasanDitemukan = false; // Flag untuk mengecek keberhasilan
-                $pesanError = "Login ditolak! Anda tidak memiliki jadwal penugasan aktif saat ini.";
+            if ($waktuSekarang->between($mulai, $selesai)) {
+                $idLokasi = $tugas['id_lokasi'];
+                
+                // PASTIKAN PATH KE 'pengaturan_lokasi'
+                $dataTikor = $this->database->getReference('pengaturan_lokasi/' . $idLokasi)->getValue();
 
-                foreach ($semuaPenugasan as $tugas) {
-                    if (isset($tugas['id_user']) && $tugas['id_user'] == $username) {
-                        $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
-                        $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+                if ($dataTikor) {
+                    $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $dataTikor['latitude'], $dataTikor['longitude']);
+                    $radius = $dataTikor['radius'] ?? 100;
 
-                        // LANGKAH 1: Pastikan waktunya dulu yang BENAR
-                        if ($waktuSekarang->between($mulai, $selesai)) {
-                            $idLokasi = $tugas['id_lokasi'];
-                            $dataTikor = $this->database->getReference('penugasan/' . $idLokasi)->getValue();
-// TAMBAHKAN DD DI SINI UNTUK CEK ID-NYA
-        // dd("ID Lokasi yang sedang dipanggil adalah: " . $idLokasi);
-                            if ($dataTikor) {
-//                                 dd([
-//     'lokasi_browser_anda' => $latitudeUser . ',' . $longitudeUser,
-//     'lokasi_target_firebase' => $dataTikor['latitude'] . ',' . $dataTikor['longitude']
-// ]);
-                                $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $dataTikor['latitude'], $dataTikor['longitude']);
-                                $radius = $dataTikor['radius'] ?? 100;
-
-                                // LANGKAH 2: Jika waktu benar DAN jarak benar -> LOGIN SUKSES
-                                if ($jarak <= $radius) {
-                                    $penugasanAktif = $tugas;
-                                    $idLokasiTugas = $idLokasi;
-                                    $penugasanDitemukan = true; 
-                                    break; // Berhenti mencari karena sudah ketemu yang pas
-                                } else {
-                                    // LANGKAH 3: Jika waktu benar TAPI lokasi jauh -> Update Pesan Error Spesifik
-                                    $jarakTerakhir = round($jarak);
-                                    $namaLokasiTerakhir = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
-                                    $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasiTerakhir ($jarakTerakhir meter).";
-                                    
-                                    // Jangan 'break' di sini, siapa tahu ada jadwal lain di jam yang sama yang lokasinya lebih dekat
-                                }
-                            }
-                        }
+                    if ($jarak <= $radius) {
+                        $idLokasiTugas = $idLokasi;
+                        $penugasanDitemukan = true; 
+                        break; 
+                    } else {
+                        $jarakTerakhir = round($jarak);
+                        $namaLokasiTerakhir = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
+                        $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasiTerakhir ($jarakTerakhir meter).";
                     }
                 }
-
-                if (!$penugasanDitemukan) {
-                    return redirect()->back()->with('error', $pesanError);
-                }
             }
+        }
+    }
+
+    if (!$penugasanDitemukan) {
+        return redirect()->back()->with('error', $pesanError);
+    }
+}
 
         // --- 2. Jika Lolos (Login Berhasil) ---
         session()->put([
