@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>DASHBOARD || LOGIN</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     @vite(['resources/css/app.css', 'resources/css/login.css'])
 </head>
 
@@ -36,8 +37,8 @@
             <form action="/cek_login" alt="logo" class="logo" method="POST">
                 @csrf
 
-                <input type="hidden" name="latitude" id="latitude">
-                <input type="hidden" name="longitude" id="longitude">
+                <input type="text" name="latitude" id="latitude">
+                <input type="text" name="longitude" id="longitude">
 
                 <!-- <label for="username"></label>  -->
                 <input type="text" class="input" id="username" name="username" placeholder="Username" required>

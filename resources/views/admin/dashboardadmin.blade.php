@@ -18,6 +18,7 @@
         </div>
 
         <nav class="flex-1 space-y-1">
+
            <a href="/dashboard-admin"
                class="relative flex items-center px-6 py-4 text-white group overflow-hidden transition-all">
                 @if(request()->is('dashboard') || request()->is('/'))
@@ -335,7 +336,5 @@
             icon.classList.toggle('rotate-180');
         }
     </script>
-</body>
-</html>
 </body>
 </html>
