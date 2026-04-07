@@ -18,7 +18,7 @@
         </div>
 
         <nav class="flex-1 space-y-1">
-           <a href="{{ route('dashboard') }}"
+           <a href="/dashboard-admin"
                class="relative flex items-center px-6 py-4 text-white group overflow-hidden transition-all">
                 @if(request()->is('dashboard') || request()->is('/'))
                     <div class="absolute inset-0" style="background-color: rgba(37, 61, 107, 0.55);"></div>
