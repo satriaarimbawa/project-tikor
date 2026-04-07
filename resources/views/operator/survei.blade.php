@@ -11,6 +11,7 @@ $totalSemua = collect($riwayat)->count();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>DASHBOARD || OPERATOR</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -24,7 +25,8 @@ $totalSemua = collect($riwayat)->count();
                 <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo">
             </div>
             <div>
-                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - {{ $namaLokasi }} </h1>
+                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - {{ $namaLokasi }}
+                </h1>
                 <p class="text-xs lg:text-sm text-slate-500">{{ \Carbon\Carbon::now()->translatedFormat('j F Y') }}</p>
             </div>
         </div>
@@ -35,7 +37,8 @@ $totalSemua = collect($riwayat)->count();
 
             <div class="bg-slate-100 rounded-2xl p-4 text-center border border-slate-100">
                 <p class="text-slate-500 text-sm">Total Survei Kendaraan : <span
-                        class="text-slate-900 font-bold text-lg" id="total-survei">{{ $dataSurvei['total_survei'] ?? 0 }}</span></p>
+                        class="text-slate-900 font-bold text-lg"
+                        id="total-survei">{{ $dataSurvei['total_survei'] ?? 0 }}</span></p>
                 <hr class="my-3 border-slate-200">
 
                 <div class="grid grid-cols-2 gap-4">
@@ -99,7 +102,8 @@ $totalSemua = collect($riwayat)->count();
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
 
-                <button onclick="hitungKendaraan('motor')" style="background: linear-gradient(to right, #fdba74, #ffedd5);"
+                <button onclick="hitungKendaraan('motor')"
+                    style="background: linear-gradient(to right, #fdba74, #ffedd5);"
                     class="flex items-center p-4 rounded-2xl shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95 w-full">
 
                     <div class="bg-orange-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-md">
@@ -110,7 +114,8 @@ $totalSemua = collect($riwayat)->count();
                 </button>
 
 
-                <button onclick="hitungKendaraan('minibus')" style="background: linear-gradient(to right, #fde047, #fef9c3);"
+                <button onclick="hitungKendaraan('minibus')"
+                    style="background: linear-gradient(to right, #fde047, #fef9c3);"
                     class="flex items-center p-4 rounded-2xl shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95 w-full">
 
                     <div class="bg-yellow-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-md">
@@ -120,7 +125,8 @@ $totalSemua = collect($riwayat)->count();
                     <span class="ml-4 font-bold text-slate-800 text-lg">Mini Bus</span>
                 </button>
 
-                <button onclick="hitungKendaraan('bus')" style="background: linear-gradient(to right, #93c5fd, #dbeafe);"
+                <button onclick="hitungKendaraan('bus')"
+                    style="background: linear-gradient(to right, #93c5fd, #dbeafe);"
                     class="flex items-center p-4 rounded-2xl shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95 w-full">
 
                     <div class="bg-blue-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-md">
@@ -131,7 +137,8 @@ $totalSemua = collect($riwayat)->count();
                 </button>
 
 
-                <button onclick="hitungKendaraan('truk')" style="background: linear-gradient(to right, #c4b5fd, #ede9fe);"
+                <button onclick="hitungKendaraan('truk')"
+                    style="background: linear-gradient(to right, #c4b5fd, #ede9fe);"
                     class="flex items-center p-4 rounded-2xl shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95 w-full">
 
                     <div class="bg-purple-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-md">
@@ -147,16 +154,18 @@ $totalSemua = collect($riwayat)->count();
         <div class="fixed bottom-0 left-0 right-0 bg-[#5A6C8F] shadow-2xl rounded-t-2xl z-50">
             <div class="flex justify-around p-3 text-slate-300 max-w-md mx-auto">
                 <button class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition">
-                    <a href="/dashboard-operator"><i class="fas fa-home text-lg mb-1"></i>Beranda</a>
+                    <a href="/dashboard-operator"><i class="fas fa-home text-lg mb-1"></i></a>Beranda
                 </button>
-                <a href="/dashboard-operator-penugasan" class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition">
+                <a href="/dashboard-operator-penugasan"
+                    class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition">
                     <i class="fas fa-clipboard-list text-lg mb-1"></i>Penugasan
                 </a>
                 <button class="flex flex-col items-center text-xs text-white transition">
                     <i class="fas fa-poll text-lg mb-1"></i>Survei
                 </button>
-                <button class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition">
-                    <i class="fas fa-user-circle text-lg mb-1"></i>Profil
+                <button
+                    class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110"><a
+                        href="/dashboard-operator-profile" class="fas fa-user-circle text-lg mb-1"></a>Profil
                 </button>
             </div>
         </div>
@@ -164,36 +173,36 @@ $totalSemua = collect($riwayat)->count();
 
 
 
-<script>
-function hitungKendaraan(jenis) {
-    // 1. Ambil elemen angka di UI
-    let elKendaran = document.getElementById('count-' + jenis);
-    let elTotal = document.getElementById('total-survei');
+        <script>
+        function hitungKendaraan(jenis) {
+            // 1. Ambil elemen angka di UI
+            let elKendaran = document.getElementById('count-' + jenis);
+            let elTotal = document.getElementById('total-survei');
 
-    // 2. Tambah angka secara lokal (UI)
-    let currentCount = parseInt(elKendaran.innerText) + 1;
-    elKendaran.innerText = currentCount;
-    elTotal.innerText = parseInt(elTotal.innerText) + 1;
+            // 2. Tambah angka secara lokal (UI)
+            let currentCount = parseInt(elKendaran.innerText) + 1;
+            elKendaran.innerText = currentCount;
+            elTotal.innerText = parseInt(elTotal.innerText) + 1;
 
-    // 3. Kirim ke Laravel via AJAX
-    fetch("{{ route('simpan.hitung.kendaraan') }}", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-TOKEN": "{{ csrf_token() }}"
-    },
-    body: JSON.stringify({
-        jenis_kendaraan: jenis,
-        // id_lokasi tidak wajib dikirim jika sudah ada di session Laravel
-    })
-})
-    .then(response => response.json())
-    .then(data => {
-        console.log("Berhasil simpan ke Firebase:", data);
-    })
-    .catch(error => console.error("Gagal kirim:", error));
-}
-</script>
+            // 3. Kirim ke Laravel via AJAX
+            fetch("{{ route('simpan.hitung.kendaraan') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({
+                        jenis_kendaraan: jenis,
+                        // id_lokasi tidak wajib dikirim jika sudah ada di session Laravel
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Berhasil simpan ke Firebase:", data);
+                })
+                .catch(error => console.error("Gagal kirim:", error));
+        }
+        </script>
 </body>
 
 </html>
