@@ -43,8 +43,8 @@ $totalSemua = collect($riwayat)->count();
                 <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo">
             </div>
             <div>
-                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - Terminal Galiran</h1>
-                <p class="text-xs lg:text-sm text-slate-500">Shift Pagi | 18 Maret 2026</p>
+                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - {{ $nama_lokasi }}</h1>
+                <p class="text-xs lg:text-sm text-slate-500">{{ \Carbon\Carbon::now()->translatedFormat('j F Y') }}</p>
             </div>
         </div>
 
@@ -126,17 +126,17 @@ $totalSemua = collect($riwayat)->count();
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($riwayat as $row)
+                        @foreach($riwayat_kendaraan as $row)
                         <tr
                             class="bg-white shadow-md rounded-xl overflow-hidden transform transition hover:scale-[1.01]">
                             <td class="p-4 rounded-l-xl border-y border-l border-slate-100">
-                                {{ $row->jam }}
+                                {{ $row['motor'] ?? 0 }}
                             </td>
                             <td class="p-4 text-center border-y border-slate-100 font-medium text-slate-900">
-                                {{ $row->kendaraan }}
+                                {{ $row['kendaraan'] ?? 'Tidak Dikenal' }}
                             </td>
                             <td class="p-4 rounded-r-xl border-y border-r border-slate-100 text-slate-500">
-                                {{ $row->lokasi }}
+                                {{ $row['lokasi'] ?? 'Tidak Dikenal' }}
                             </td>
                         </tr>
                         @endforeach
@@ -171,46 +171,14 @@ $totalSemua = collect($riwayat)->count();
     </div>
     <script src="{{ asset('js/deteksiTikorUser.js') }}"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const geofence = new GeofenceManager({
-            targetLat: {
-                {
-                    session('lat_target')
-                }
-            }
-            targetLng: {
-                {
-                    session('lng_target')
-                }
-            }
-            maxRadius: {
-                {
-                    session('radius_target') ?? 100
-                }
-            }
-            logoutUrl: "{{ url('/auto-logout') }}"
-            csrfToken: "{{ csrf_token() }}"
-            redirectUrl: "{{ url('/login?error=out_of_range') }}"
-        });
-        console.log('Inisialisasi Geofence dengan:', {
-            targetLat: {
-                {
-                    session('lat_target')
-                }
-            }
-            targetLng: {
-                {
-                    session('lng_target')
-                }
-            }
-            maxRadius: {
-                {
-                    session('radius_target') ?? 100
-                }
-            }
-        });
-        geofence.init();
+    document.addEventListener("DOMContentLoaded", function() {
+        startGeofencing(
+            "{{ route('check.location.radius') }}", 
+            "{{ csrf_token() }}",                  
+            "{{ url('/login') }}"                      
+        );
     });
+
     </script>
 </body>
 

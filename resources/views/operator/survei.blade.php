@@ -171,9 +171,16 @@ $totalSemua = collect($riwayat)->count();
         </div>
 
 
-
+    <script src="{{ asset('js/deteksiTikorUser.js') }}"></script>
 
         <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            startGeofencing(
+                "{{ route('check.location.radius') }}", // URL Route
+                "{{ csrf_token() }}",                  // Token Keamanan
+                "{{ url('/') }}"                        // URL Redirect jika logout
+            );
+        });
         function hitungKendaraan(jenis) {
             // 1. Ambil elemen angka di UI
             let elKendaran = document.getElementById('count-' + jenis);

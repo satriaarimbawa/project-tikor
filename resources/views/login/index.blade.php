@@ -37,8 +37,8 @@
             <form action="/cek_login" alt="logo" class="logo" method="POST">
                 @csrf
 
-                <input type="text" name="latitude" id="latitude">
-                <input type="text" name="longitude" id="longitude">
+                <input type="hidden" name="latitude" id="latitude">
+                <input type="hidden" name="longitude" id="longitude">
 
                 <!-- <label for="username"></label>  -->
                 <input type="text" class="input" id="username" name="username" placeholder="Username" required>
