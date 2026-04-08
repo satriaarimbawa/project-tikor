@@ -8,6 +8,7 @@ use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\TikorController;
 use App\Http\Controllers\PenugasanController;
 use App\Http\Controllers\ObjekTarifController;
+use App\Http\Controllers\DaftarUserController;
 
 
 //link landing page 
@@ -54,3 +55,5 @@ Route::middleware(['operator'])->group(function () {
 //operator punya
 
 Route::get('Objek_Tarif', [ObjekTarifController::class, 'index']);
+
+Route::get('daftar-user', [DaftarUserController::class, 'index']);
