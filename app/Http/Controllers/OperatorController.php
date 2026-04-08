@@ -20,18 +20,76 @@ class OperatorController extends Controller
 
     public function index()
     {     
-        return view('operator.index');
+        $userId = session('user_id');
+        $riwayatRaw = $this->database->getReference('penugasan')
+                            ->orderByChild('id_user')
+                            ->equalTo($userId)
+                            ->getValue() ?? [];
+
+
+        $semuaLokasi = $this->database->getReference('pengaturan_lokasi')->getValue() ?? [];
+        $idLokasiAktif = session('id_lokasi_aktif');
+        $dataLokasi = $this->database->getReference("pengaturan_lokasi/{$idLokasiAktif}")->getValue();
+        $namaLokasi = $dataLokasi['nama_lokasi'] ?? ($dataLokasi['alamat'] ?? 'Lokasi Tidak Dikenal');
+        $riwayatSelesai = [];
+        foreach ($riwayatRaw as $key => $item) {
+                $idLokasi = $item['id_lokasi'] ?? null;
+                
+                $namaLokasi = isset($semuaLokasi[$idLokasi]) 
+                            ? ($semuaLokasi[$idLokasi]['alamat'] ?? 'Lokasi Tidak Dikenal') 
+                            : 'ID Lokasi Tidak Ditemukan';
+
+                $item['nama_lokasi_display'] = $namaLokasi;
+                $riwayatSelesai[$key] = $item;
+            }
+        $namaLokasi = isset($semuaLokasi[$idLokasi]) 
+            ? ($semuaLokasi[$idLokasi]['alamat'] ?? 'Lokasi Tidak Dikenal') 
+            : 'ID Lokasi Tidak Ditemukan';
+
+        $item['nama_lokasi_display'] = $namaLokasi;
+
+        $uid = session('user_id'); // UID user (misal: -Oo7v...)
+        $idLokasi = session('id_lokasi_aktif'); // ID Lokasi aktif (misal: -OpRHw...)
+
+        // 1. Ambil semua data di bawah lokasi tersebut
+        $dataLokasi = $this->database->getReference('survei_harian/' . $idLokasi)->getValue() ?? [];
+
+        $riwayatKendaraan = [];
+
+        // 2. Lakukan perulangan untuk setiap tanggal
+        foreach ($dataLokasi as $tanggal => $dataPerTanggal) {
+            // 3. Cek apakah di tanggal tersebut ada data milik UID user ini
+            if (isset($dataPerTanggal[$uid])) {
+                $record = $dataPerTanggal[$uid];
+                
+                // Tambahkan info tanggal ke dalam record agar bisa ditampilkan di tabel
+                $record['tanggal_survei'] = $tanggal;
+                $riwayatKendaraan[] = $record;
+            }
+        }
+
+        // Urutkan berdasarkan tanggal terbaru (opsional)
+        usort($riwayatKendaraan, function($a, $b) {
+            return strcmp($b['tanggal_survei'], $a['tanggal_survei']);
+        });
+
+        return view('operator.index',[
+            'riwayat' => $riwayatSelesai,
+            'nama_lokasi' => $namaLokasi,
+            'riwayat_kendaraan' => $riwayatKendaraan
+        ]);
     }
     public function profile()
     {     
-        return view('operator.profile');
+        return view('operator.profile',[
+            'user_id' => session('user_id'),
+            'nama_lokasi' => session('nama_lokasi_aktif')
+        ]);
     }
 
     public function penugasan()
     {     
         $userId = session('user_id');
-        // @dd($userId);
-            // Ambil data penugasan yang memiliki user_id yang sama
         $riwayatRaw = $this->database->getReference('penugasan')
                             ->orderByChild('id_user')
                             ->equalTo($userId)
@@ -44,16 +102,13 @@ class OperatorController extends Controller
             foreach ($riwayatRaw as $key => $item) {
                 $idLokasi = $item['id_lokasi'] ?? null;
                 
-                // Cari nama lokasi di master data lokasi berdasarkan ID
                 $namaLokasi = isset($semuaLokasi[$idLokasi]) 
                             ? ($semuaLokasi[$idLokasi]['alamat'] ?? 'Lokasi Tidak Dikenal') 
                             : 'ID Lokasi Tidak Ditemukan';
 
-                // Tambahkan field baru 'nama_lokasi' ke dalam array item
                 $item['nama_lokasi_display'] = $namaLokasi;
                 $riwayatSelesai[$key] = $item;
             }
-            // @dd($riwayat);
                 return view('operator.penugasan', [
                     'riwayat' => $riwayatSelesai,
                     'namaLokasi' => $namaLokasi

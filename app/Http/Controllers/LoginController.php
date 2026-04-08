@@ -131,4 +131,33 @@ if ($user_data['role_user'] === 'operator') {
         Session::flush();
         return redirect('/');
     }
+
+
+    public function checkLocationRadius(Request $request)
+{
+    $latUser = $request->input('latitude');
+    $longUser = $request->input('longitude');
+    $idLokasiAktif = session()->get('id_lokasi_aktif');
+
+    if (!$idLokasiAktif) return response()->json(['status' => 'ok']);
+
+    // Ambil data titik koordinat target dari Firebase
+    $dataTikor = $this->database->getReference('pengaturan_lokasi/' . $idLokasiAktif)->getValue();
+
+    if ($dataTikor) {
+        $jarak = $this->hitungJarak($latUser, $longUser, $dataTikor['latitude'], $dataTikor['longitude']);
+        $radius = $dataTikor['radius'] ?? 100;
+
+        if ($jarak > $radius) {
+            // Jika di luar radius, hapus session (Logout Otomatis)
+            session()->flush();
+            return response()->json([
+                'status' => 'logout',
+                'message' => 'Anda keluar dari radius area penugasan!'
+            ]);
+        }
+    }
+
+    return response()->json(['status' => 'ok', 'distance' => round($jarak) . 'm']);
+}
 }

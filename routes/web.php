@@ -48,6 +48,7 @@ Route::middleware(['operator'])->group(function () {
     Route::get('/dashboard-operator-survei', [OperatorController::class, 'survei']);
     Route::post('/simpan-hitung-kendaraan', [OperatorController::class, 'simpanHitung'])->name('simpan.hitung.kendaraan');
     Route::get('/dashboard-operator-profile', [OperatorController::class, 'profile']);
+    Route::post('/check-location-radius', [LoginController::class, 'checkLocationRadius'])->name('check.location.radius');
 });
 
 //operator punya

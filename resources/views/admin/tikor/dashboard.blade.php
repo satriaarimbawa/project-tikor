@@ -71,27 +71,21 @@
 <h3>Titik Absen Saat Ini</h3>
 <div id="mapIndex" style="height: 400px; width: 100%; border-radius: 8px;"></div>
 <script>
-    // 1. Ambil data dari Firebase (Bentuknya sekarang adalah Object/Kumpulan Data)
     var dataLokasi = @json($lokasiKantor);
 
-    // 2. Siapkan peta dasar (Zoom out sedikit agar seluruh area Bali terlihat)
     var mapIndex = L.map('mapIndex').setView([-8.5414, 115.4057], 10);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(mapIndex);
 
-    // 3. Siapkan fitur "Fit Bounds" agar peta otomatis menyesuaikan zoom 
-    // untuk memperlihatkan SEMUA titik yang ada
+
     var markersLayer = L.featureGroup().addTo(mapIndex);
 
-    // 4. Cek apakah ada data di Firebase
     if (dataLokasi && typeof dataLokasi === 'object') {
         
-        // Lakukan perulangan (Looping) untuk setiap titik koordinat yang ada di Firebase
         Object.values(dataLokasi).forEach(function(lokasi) {
             
-            // Pastikan data memiliki latitude dan longitude
             if (lokasi.latitude && lokasi.longitude) {
                 var lat = lokasi.latitude;
                 var lng = lokasi.longitude;

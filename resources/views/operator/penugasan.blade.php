@@ -203,6 +203,17 @@ $penugasan = [
 
 
     </div>
+
+
+    <script src="{{ asset('js/deteksiTikorUser.js') }}"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        startGeofencing(
+            "{{ route('check.location.radius') }}", // URL Route
+            "{{ csrf_token() }}",                  // Token Keamanan
+            "{{ url('/') }}"                        // URL Redirect jika logout
+        );
+    });
 </body>
 
 </html>
