@@ -7,6 +7,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\TikorController;
 use App\Http\Controllers\PenugasanController;
+use App\Http\Controllers\ObjekTarifController;
 
 
 //link landing page 
@@ -30,7 +31,7 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/test-store', [UserController::class, 'store']);
 
     //penugasan operator
-    route::get('/dashboard-penugasan', [PenugasanController::class, 'index']);
+    Route::get('/dashboard-penugasan', [PenugasanController::class, 'index']);
     route::get('/dashboard-penugasan/create', [PenugasanController::class, 'create']);
     route::post('/dashboard-penugasan/store', [PenugasanController::class, 'store']);
 
@@ -46,6 +47,7 @@ Route::middleware(['operator'])->group(function () {
     Route::get('/dashboard-operator', [OperatorController::class, 'index']);
     Route::get('/dashboard-operator-penugasan', [OperatorController::class, 'penugasan']);
     Route::get('/dashboard-operator-survei', [OperatorController::class, 'survei']);
+    Route::get('/dashboard-operator-survei', [OperatorController::class, 'survei']);
     Route::post('/simpan-hitung-kendaraan', [OperatorController::class, 'simpanHitung'])->name('simpan.hitung.kendaraan');
     Route::get('/dashboard-operator-profile', [OperatorController::class, 'profile']);
     Route::post('/check-location-radius', [LoginController::class, 'checkLocationRadius'])->name('check.location.radius');
@@ -53,4 +55,4 @@ Route::middleware(['operator'])->group(function () {
 
 //operator punya
 
-
+Route::get('Objek_Tarif', [ObjekTarifController::class, 'index']);

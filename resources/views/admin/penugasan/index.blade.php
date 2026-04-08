@@ -26,12 +26,12 @@
         <nav class="flex-1 space-y-1">
             <a href="/dashboard-admin"
                 class="relative flex items-center px-6 py-4 text-white group overflow-hidden transition-all">
-                <!-- @if(request()->is('dashboard') || request()->is('/'))
+                @if(request()->is('dashboard') || request()->is('/'))
                 <div class="absolute inset-0" style="background-color: rgba(37, 61, 107, 0.55);"></div>
-                @endif -->
-                <!-- <div class="relative z-10 flex items-center gap-4 ml-2"> -->
-                <img src="{{ asset('assets/Beranda.png') }}" class="w-6 h-6 mr-4 object-contain" alt="Beranda">
-                <span class="font-bold text">Beranda</span>
+                @endif
+                <div class="relative z-10 flex items-center gap-4 ml-2">
+                    <img src="{{ asset('assets/Beranda.png') }}" class="w-6 h-6 mr-4 object-contain" alt="Beranda">
+                    <span class="font-bold text">Beranda</span>
                 </div>
             </a>
 
@@ -111,17 +111,26 @@
             </div>
         </header>
 
-        <div class="bg-white rounded-xl shadow-lg p-8 min-h-[600px] relative">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold text-black">Data Penugasan</h1>
+        <h1 class="text-3xl font-bold text-black mb-6">Data Penugasan</h1>
 
+        <div class="bg-white rounded-xl shadow-lg p-8 min-h-[600px] relative">
+
+            <div class="flex justify-between items-center mb-6">
                 <div class="relative group">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                        <iconify-icon icon="lucide:search" class="text-white text-xl"></iconify-icon>
-                    </span>
+                    <a href="/dashboard-penugasan/create">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <iconify-icon icon="lucide:search" class="text-white text-xl"></iconify-icon>
+                        </span>
+                    </a>
                     <input type="text" placeholder="Cari data penugasan"
-                        class="bg-[#253D6B] text-white text-sm rounded-full pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-white/70">
+                        class="bg-[#253D6B] text-white text-sm rounded-full pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-white/70 shadow-md">
                 </div>
+
+                <a href="/dashboard-penugasan/create"
+                    class="bg-[#253D6B] hover:bg-[#1a2e52] text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md transition-all active:scale-95 inline-flex">
+                    <iconify-icon icon="lucide:plus-circle" class="text-xl"></iconify-icon>
+                    <span class="font-semibold text-sm">Tambah Data</span>
+                </a>
             </div>
 
             <div class="overflow-hidden border border-gray-300 rounded-sm">
