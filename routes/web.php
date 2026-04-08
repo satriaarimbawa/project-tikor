@@ -3,11 +3,12 @@
 use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
-use Illuminate\Auth\Events\Login;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\TikorController;
 use App\Http\Controllers\PenugasanController;
+use App\Http\Controllers\ObjekTarifController;
+
 
 //link landing page 
 Route::get('/', function () {
@@ -48,12 +49,9 @@ Route::middleware(['operator'])->group(function () {
     Route::get('/dashboard-operator-survei', [OperatorController::class, 'survei']);
     Route::get('/dashboard-operator-survei', [OperatorController::class, 'survei']);
     Route::post('/simpan-hitung-kendaraan', [OperatorController::class, 'simpanHitung'])->name('simpan.hitung.kendaraan');
-
-
-
-    // ini yang baru
     Route::get('/dashboard-operator-profile', [OperatorController::class, 'profile']);
-    
 });
 
 //operator punya
+
+Route::get('Objek_Tarif', [ObjekTarifController::class, 'index']);

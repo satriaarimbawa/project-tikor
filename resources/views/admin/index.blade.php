@@ -22,6 +22,7 @@
         </tr>
     </thead>
     <tbody>
+      @dd($user)
       @if ($users != null)
         @foreach ($users as $index => $user)
             <tr>
