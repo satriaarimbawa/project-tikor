@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
+use Carbon\Carbon;
 
 
 class PenugasanController extends Controller
@@ -20,10 +21,45 @@ class PenugasanController extends Controller
 
     public function index()
     {
-        // menambahkan fungsi retrun di depan retry
-        return retry(100, function() {
-            return view('admin.penugasan.index');
-        }, 100);
+
+    $tugas = $this->database->getReference('penugasan')->getValue() ?? [];
+    $users = $this->database->getReference('users')->getValue() ?? [];
+    $lokasitikor = $this->database->getReference('pengaturan_lokasi')->getValue() ?? [];
+ 
+    $dataFinal = [];
+
+    foreach ($tugas as $idPenugasan => $data) {
+        $uid = $data['id_user'] ?? null;
+        $idLokasi = $data['id_lokasi'] ?? null;
+
+    $rawMulai = $data['waktu_mulai'];
+    $rawSelesai = $data['waktu_selesai'];
+    $tglMulai = \Carbon\Carbon::parse($rawMulai)->locale('id')->translatedFormat('d F Y');
+    $tglSelesai = \Carbon\Carbon::parse($rawSelesai)->locale('id')->translatedFormat('d F Y');
+    
+    $jamMulai = \Carbon\Carbon::parse($rawMulai)->format('H:i');
+    $jamSelesai = \Carbon\Carbon::parse($rawSelesai)->format('H:i');
+
+        $dataFinal[] = [
+            'id' => $idPenugasan,
+            'nama_operator' => $users[$uid]['username'] ?? 'User Tidak Ditemukan',
+            'alamat_lokasi' => $lokasitikor[$idLokasi]['alamat'] ?? 'Lokasi Tidak Ditemukan',
+            'waktu_mulai'   => $data['waktu_mulai'] ?? '-',
+            'waktu_selesai' => $data['waktu_selesai'] ?? '-',
+            'no_spt'        => $data['surat_spt'] ?? '-',
+            'tanggal_rentang' => $tglMulai . ' s/d ' . $tglSelesai,
+            'jam_rentang' => $jamMulai . ' - ' . $jamSelesai . ' WITA',
+        ];
+    }
+
+
+    // @dd($dataFinal); 
+
+            return view('admin.penugasan.index',
+            [
+                'dataPenugasan' => $dataFinal
+            ]);
+
     }
 
     /**
@@ -47,58 +83,41 @@ class PenugasanController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi Input (Pastikan admin tidak mengirim form kosong)
         $request->validate([
-            'id_lokasi'     => 'required|string',
-            'id_user'       => 'required|string',
-            'waktu_mulai'   => 'required|date',
-            'waktu_selesai' => 'required|date|after:waktu_mulai', // Selesai harus setelah mulai
-            'surat_spt'     => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048' // Maksimal 2MB
+            'id_user' => 'required',
+            'id_lokasi' => 'required',
+            'waktu_mulai' => 'required',
+            'waktu_selesai' => 'required',
+            'surat_spt' => 'required|file|mimes:pdf,jpg,png|max:2048', // Max 2MB
         ]);
 
         try {
-            // 2. Proses Upload File Surat Tugas (SPT)
-            $pathSpt = '';
-            // Mengecek apakah ada file yang diunggah
-            if ($request->hasFile('surat_spt')) {
-                $file = $request->file('surat_spt');
-                
-                // Membuat nama file unik (gabungan waktu saat ini + nama asli file)
-                // Contoh: 1710582000_surattugas_budi.pdf
-                $namaFile = time() . '_' . $file->getClientOriginalName(); 
-                
-                // Menyimpan file secara fisik ke dalam folder public/uploads/spt di project Anda
-                $file->move(public_path('uploads/spt'), $namaFile); 
-                
-                // Menyimpan rute lokasi file untuk ditaruh di Firebase
-                $pathSpt = 'uploads/spt/' . $namaFile; 
-            }
+            $file = $request->file('surat_spt');
+            $namaFile = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/spt'), $namaFile);
 
-            // 3. Rapikan Format Waktu (Menggunakan Carbon)
-            // Mengubah format bawaan HTML menjadi format baku YYYY-MM-DD HH:MM:SS
-            $waktuMulai = \Carbon\Carbon::parse($request->input('waktu_mulai'))->format('Y-m-d H:i:s');
-            $waktuSelesai = \Carbon\Carbon::parse($request->input('waktu_selesai'))->format('Y-m-d H:i:s');
+        
+            $mulai = Carbon::parse($request->waktu_mulai)->format('Y-m-d H:i:s');
+            $selesai = Carbon::parse($request->waktu_selesai)->format('Y-m-d H:i:s');
 
-            // 4. Bungkus Data ke dalam Array
+            
             $dataPenugasan = [
-                'id_lokasi'     => $request->input('id_lokasi'),
-                'id_user'       => $request->input('id_user'),
-                'waktu_mulai'   => $waktuMulai,
-                'waktu_selesai' => $waktuSelesai,
-                'surat_spt'     => $pathSpt,
-                'dibuat_pada'   => \Carbon\Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s')
+                'id_user'       => $request->id_user,
+                'id_lokasi'     => $request->id_lokasi,
+                'waktu_mulai'   => $mulai,
+                'waktu_selesai' => $selesai,
+                'file_spt'      => $namaFile,
+                'objek_survei'  => $request->objek_terpilih, // Diambil dari hidden input JS Anda
+                'keterangan'    => $request->keterangan ?? '-',
+                'created_at'    => Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s'),
             ];
 
-            // 5. Simpan ke Firebase!
-            // Menggunakan push() agar data baru ditambahkan ke bawah daftar, bukan menimpa yang lama
             $this->database->getReference('penugasan')->push($dataPenugasan);
 
-            // 6. Arahkan kembali ke Dashboard Admin dengan pesan sukses
-            return redirect('/dashboard-admin')->with('success', 'Penugasan operator berhasil disimpan!');
+            return redirect()->to('dashboard-penugasan')->with('success', 'Penugasan berhasil dibuat!');
 
         } catch (\Exception $e) {
-            // Jika ada yang error (misal folder upload belum ada atau Firebase down)
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
     }
 

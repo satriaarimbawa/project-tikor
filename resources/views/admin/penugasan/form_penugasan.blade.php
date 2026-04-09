@@ -9,6 +9,8 @@
     <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="{{ asset('css/dashboardadmin.css') }}">
 </head>
 
@@ -157,7 +159,7 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan Lokasi</label>
-                            <textarea class="w-full border border-gray-300 rounded-md p-2 h-24 outline-none"
+                            <textarea name="keterangan" class="w-full border border-gray-300 rounded-md p-2 h-24 outline-none"
                                 placeholder="Masukkan detail lokasi..."></textarea>
                         </div>
 
@@ -222,10 +224,8 @@
 
                             <div
                                 class="w-full h-72 bg-gray-100 rounded-lg overflow-hidden shadow-inner border border-gray-200">
-                                <iframe id="googleMapsView" class="w-full h-full"
-                                    src="https://maps.google.com/maps?q=Klungkung&t=&z=13&ie=UTF8&iwloc=&output=embed"
-                                    frameborder="0" style="border:0" allowfullscreen>
-                                </iframe>
+                                <div id="map" class="w-full h-full"></div>
+                                </div>
                             </div>
 
                             <div class="border border-gray-200 rounded-lg overflow-hidden text-sm">
@@ -296,74 +296,10 @@
             </form>
         </div>
     </main>
+<script>
+    window.LokasiTerdaftar = @json($lokasitikor);
+</script>
+<script src="{{ asset('js/PenugasanUser.js') }}"></script>
 
-
-    <script>
-    function toggleSubMenu() {
-        const subMenu = document.getElementById('subMenuLaporan');
-        const icon = document.getElementById('chevron-icon');
-        subMenu.classList.toggle('hidden');
-        icon.classList.toggle('rotate-180');
-    }
-
-    function searchLocation() {
-        const address = document.getElementById('mapSearch').value;
-        const iframe = document.getElementById('googleMapsView');
-        if (address) {
-            iframe.src =
-                `https://maps.google.com/maps?q=${encodeURIComponent(address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-        }
-    }
-
-
-
-
-
-    let selectedItems = [];
-
-    function syncFromDropdown(select) {
-        const val = select.value;
-        if (val) {
-            const row = document.getElementById(`row-${val}`);
-            if (row) {
-                const statusText = row.querySelector('.status-text');
-                if (statusText.innerText === "-") {
-                    toggleObjek(val);
-                }
-            }
-            select.value = "";
-        }
-    }
-
-    function toggleObjek(type) {
-        const row = document.getElementById(`row-${type}`);
-        if (!row) return;
-
-        const statusText = row.querySelector('.status-text');
-        const btn = row.querySelector('.action-btn');
-        const icon = btn.querySelector('iconify-icon');
-        const displayInput = document.getElementById('displayObjek');
-        const hiddenInput = document.getElementById('hiddenObjekInput');
-
-        if (statusText.innerText === "-") {
-            statusText.innerText = "Terpilih";
-            statusText.classList.add('text-navy-900', 'font-bold');
-            btn.classList.replace('text-green-500', 'text-red-500');
-            icon.setAttribute('icon', 'lucide:x-circle');
-            if (!selectedItems.includes(type)) selectedItems.push(type);
-        } else {
-            statusText.innerText = "-";
-            statusText.classList.remove('text-navy-900', 'font-bold');
-            btn.classList.replace('text-red-500', 'text-green-500');
-            icon.setAttribute('icon', 'lucide:plus-circle');
-            selectedItems = selectedItems.filter(item => item !== type);
-        }
-
-        const formattedText = selectedItems.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(', ');
-        displayInput.value = formattedText;
-        hiddenInput.value = selectedItems.join(',');
-    }
-    </script>
 </body>
-
 </html>
