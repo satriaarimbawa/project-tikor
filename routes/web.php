@@ -10,6 +10,7 @@ use App\Http\Controllers\PenugasanController;
 use App\Http\Controllers\ObjekTarifController;
 use App\Http\Controllers\DaftarUserController;
 use App\Http\Controllers\TambahUserController;
+use App\Http\Controllers\PenetapanLokasiController;
 
 
 //link landing page 
@@ -61,3 +62,9 @@ Route::get('Objek_Tarif', [ObjekTarifController::class, 'index']);
 Route::get('daftar-user', [DaftarUserController::class, 'index']);
 Route::get('/tambahuser', [TambahUserController::class, 'create'])->name('user.create');
 Route::post('/user/simpan', [TambahUserController::class, 'store'])->name('user.store');
+
+Route::get('/penetapanlokasi', [PenetapanLokasiController::class, 'index'])->name('penetapan-lokasi.index');
+
+Route::post('/penetapanlokasi', [PenetapanLokasiController::class, 'store'])->name('penetapan-lokasi.store');
+
+Route::delete('/penetapanlokasi/{id}', [PenetapanLokasiController::class, 'destroy'])->name('penetapan-lokasi.destroy');
