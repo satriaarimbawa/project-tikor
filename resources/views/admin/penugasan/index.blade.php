@@ -149,12 +149,19 @@
                         </tr>
                     </thead>
                     <tbody class="bg-[#FFFBEB]">
+
+                        @foreach ($dataPenugasan as $penugasan)
                         <tr class="border-b border-gray-300">
-                            <td class="py-3 px-4 border-r border-gray-300 text-center text-sm">1</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">Alex</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">Terminal Galiran</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">08:00 - 12:00</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">SPT/2024/001</td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-center text-sm">{{ $loop->iteration }}</td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['nama_operator'] }}</td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['alamat_lokasi'] }}</td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['tanggal_rentang'] }}
+                                <br>{{ $penugasan['jam_rentang'] }}</td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm"><a href="{{ asset('uploads/spt/' . $penugasan['no_spt']) }}" 
+                                                                                    download="SPT_Penugasan_{{ $penugasan['nama_operator'] }}.png" 
+                                                                                    class="text-blue-600 hover:underline font-bold">
+                                                                                    Download SPT
+                                                                                    </a></td>
                             <td class="py-3 px-4 border-r border-gray-300 text-sm">Aktif</td>
                             <td class="py-3 px-4 border-r border-gray-300 text-sm">Motor</td>
                             <td class="py-3 px-4 flex justify-center gap-2">
@@ -168,8 +175,10 @@
                                 </button>
                             </td>
                         </tr>
+                            @endforeach
 
-                        @for ($i = 2; $i <= 10; $i++) <tr class="border-b border-gray-300">
+
+                        {{-- @for ($i = 2; $i <= 10; $i++) <tr class="border-b border-gray-300">
                             <td class="py-3 px-4 border-r border-gray-300 text-center h-10"></td>
                             <td class="py-3 px-4 border-r border-gray-300 text-sm">
                             </td>
@@ -190,7 +199,7 @@
                                 </button>
                             </td>
                             </tr>
-                            @endfor
+                            @endfor --}}
                     </tbody>
                 </table>
             </div>
