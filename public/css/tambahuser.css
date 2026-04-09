@@ -1,0 +1,214 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --navy-base: #253D6B;
+    --navy-light: #4A5B78;
+    --navy-active: #3B547C;
+    --bg-canvas: #F5F7FA;
+    --accent-yellow: #FFB800;
+    --success-green: #24AD45;
+    --border-gray: #CBD5E1;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(180deg, #E7EFF6 0%, #FFFFFF 100%) !important;
+    min-height: 100vh;
+}
+
+.sidebar-navy {
+    width: 260px;
+    background-color: rgba(37, 61, 107, 0.9);
+    backdrop-filter: blur(10px);
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column; 
+    position: fixed;
+    height: 100vh;
+    z-index: 50;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.logo-container {
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.logo-container img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
+}
+
+.sidebar-nav {
+    flex: 1; 
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+/* Link Navigasi */
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 14px 28px;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.nav-link:hover {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link.active {
+    background-color: var(--navy-active);
+    color: #FFFFFF;
+    font-weight: 700;
+    border-left: 5px solid var(--accent-yellow);
+}
+
+.nav-link img {
+    width: 20px;
+    height: 20px;
+    margin-right: 15px;
+    opacity: 0.7;
+}
+
+.profile-section {
+    padding: 20px;
+    background-color: rgba(37, 61, 107, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto; 
+}
+
+main {
+    background: transparent !important;
+    flex: 1;
+    margin-left: 260px; 
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- FORM CARD STYLE --- */
+.form-container {
+    width: 100%;
+    max-width: 800px;
+    background: #ffffff;
+    border-radius: 25px;
+    padding: 3rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+}
+
+.form-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    color: #000000;
+}
+
+/* Input & Label Styling */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+label {
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-gray);
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+input:focus {
+    border-color: var(--success-green);
+    box-shadow: 0 0 0 3px rgba(36, 173, 69, 0.1);
+    outline: none;
+}
+
+input:disabled {
+    background-color: #F1F5F9;
+    border-color: #E2E8F0;
+    color: #94A3B8;
+    cursor: not-allowed;
+}
+
+.note-text {
+    color: #EF4444;
+    font-size: 13px;
+    font-style: italic;
+    margin: 1rem 0 2rem 0;
+}
+
+/* Button Styling */
+.btn-simpan {
+    width: 100%;
+    background-color: var(--success-green);
+    color: white;
+    font-weight: 700;
+    font-size: 1.5rem;
+    padding: 1rem;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(36, 173, 69, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-simpan:hover {
+    background-color: #1e913a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(36, 173, 69, 0.4);
+}
+
+.btn-simpan:active {
+    transform: translateY(0);
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 1024px) {
+    .form-container {
+        padding: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    main {
+        margin-left: 0;
+        padding: 1.5rem;
+    }
+    
+    .sidebar-navy {
+        transform: translateX(-100%);
+        /* Tambahkan class 'active' lewat JS untuk menampilkan sidebar */
+    }
+}
