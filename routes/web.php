@@ -59,5 +59,4 @@ Route::middleware(['operator'])->group(function () {
 
 Route::get('Objek_Tarif', [ObjekTarifController::class, 'index']);
 Route::get('daftar-user', [DaftarUserController::class, 'index']);
-Route::get('/tambahuser', [TambahUserController::class, 'create'])->name('user.create');
 Route::post('/user/simpan', [TambahUserController::class, 'store'])->name('user.store');

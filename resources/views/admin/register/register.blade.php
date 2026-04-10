@@ -3,28 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Daftar User - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/tambahuser.css') }}?v={{ time() }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+         body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(180deg, #E7EFF6 70%, #FFFFFF 100%);
+            min-height: 100vh;
+        }
+        .sidebar-navy {
+            background-color: rgba(37, 61, 107, 0.75) !important;
+            backdrop-filter: blur(10px);
+        }
+    </style>
 </head>
-<body>
-    <!-- Contoh potongan kode di register.blade.php -->
-<form action="/test-store" method="POST">
-    <!-- Wajib ada @csrf untuk keamanan Laravel -->
-    @csrf 
+<body class="bg-gradient-to-b from-[#E7EFF6] to-[#FFFFFF] min-h-screen flex">
 
-    <label for="username">Username:</label>
-    <input type="text" id="username" name="username" required>
+    @include('admin.template.navbar')
 
-    <label for="email">email:</label>
-    <input type="text" id="email" name="email" required>
+    <main class="flex-1 ml-64 p-8 flex justify-center items-start pt-20">
+    
+    <div class="fixed top-6 right-8">
+        <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-12 h-12 object-contain" alt="Logo">
+    </div>
 
-    <label for="role user">Role user:</label>
-    <input type="text" id="role_user" name="role_user" required>
+    <div class="bg-white w-full max-w-3xl rounded-[25px] shadow-[0_10px_40px_rgba(0,0,0,0.1)] p-12 relative">
+    <h2 class="text-4xl font-bold text-center text-black mb-10">Form Tambah User</h2>
 
-    <label for="password">Password:</label>
-    <input type="password" id="password" name="password" required>
+    <form action="{{ route('user.store') }}" method="POST" class="space-y-6">
+        @csrf
 
-    <button type="submit">Daftar</button>
-</form>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Id_User</label>
+            <input type="text" name="id_user" 
+                class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-all shadow-sm"
+                placeholder="Masukkan ID User">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <input type="text" name="username" 
+                class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-all shadow-sm"
+                placeholder="Masukkan Username">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input type="email" name="email" 
+                class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-all shadow-sm"
+                placeholder="Masukkan Email">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Level User</label>
+            <div class="relative">
+                <select name="level_user" 
+                    class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 appearance-none focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-all shadow-sm text-gray-600">
+                    <option value="" disabled selected>Pilih Level</option>
+                    <option value="Administrator">Administrator</option>
+                    <option value="Operator">Operator</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                    <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input type="password" name="password" 
+                class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-all shadow-sm"
+                placeholder="Masukkan Password">
+        </div>
+
+        <p class="text-red-600 text-[13px] italic mt-4">
+            *Periksa kembali kebenaran data sebelum dikirim
+        </p>
+
+        <div class="pt-8">
+            <button type="submit" 
+                class="w-full bg-[#24AD45] hover:bg-[#1e913a] text-white font-bold py-4 rounded-xl text-2xl transition-all shadow-lg transform active:scale-[0.98]">
+                Simpan User
+            </button>
+        </div>
+    </form>
+</div>
+</main>
+
+<script src="{{ asset('js/navbar.js') }}"></script>
+
 </body>
 </html>
