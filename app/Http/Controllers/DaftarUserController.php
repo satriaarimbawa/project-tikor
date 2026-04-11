@@ -19,6 +19,6 @@ class DaftarUserController extends Controller
             (object)['username' => 'Wawan', 'email' => 'wawan@gmail.com', 'role' => 'Operator'],
     ]);
 
-    return view('daftar-user', compact('users'));
+    return view('admin.register.daftar-user', compact('users'));
 }
 }

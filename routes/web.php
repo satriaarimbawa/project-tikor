@@ -70,9 +70,7 @@ Route::post('/penetapanlokasi', [PenetapanLokasiController::class, 'store'])->na
 
 Route::delete('/penetapanlokasi/{id}', [PenetapanLokasiController::class, 'destroy'])->name('penetapan-lokasi.destroy');
 
-// Hapus atau keluarkan dari grup middleware auth
 Route::get('/laporan_lokasi', [LaporanLokasiController::class, 'index'])->name('laporan.lokasi');
 
-// Route tambahan jika diperlukan
 Route::post('/laporan_lokasi/filter', [LaporanLokasiController::class, 'filter'])->name('laporan.lokasi.filter');
 Route::get('/laporan_lokasi/download', [LaporanLokasiController::class, 'downloadPdf'])->name('laporan.lokasi.download');

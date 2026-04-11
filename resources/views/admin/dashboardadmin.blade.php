@@ -12,80 +12,8 @@
 </head>
 <body class="flex bg-[#F5F7FA]">
 
-    <aside class="sidebar-navy w-64 min-h-screen text-white flex flex-col fixed z-50 shadow-2xl">
-        <div class="py-10 flex justify-center items-center">
-            <img src="{{ asset('assets/logo_dishub.png') }}" class="w-28 h-28 object-contain drop-shadow-xl" alt="Logo Dishub">
-        </div>
+    @include('admin.template.navbar')
 
-        <nav class="flex-1 space-y-1">
-
-           <a href="/dashboard-admin"
-               class="relative flex items-center px-6 py-4 text-white group overflow-hidden transition-all">
-                @if(request()->is('dashboard') || request()->is('/'))
-                    <div class="absolute inset-0" style="background-color: rgba(37, 61, 107, 0.55);"></div>
-                @endif
-                <div class="relative z-10 flex items-center gap-4 ml-2">
-                    <img src="{{ asset('assets/Beranda.png') }}" class="w-6 h-6 object-contain" alt="Beranda">
-                    <span class="font-bold text-sm">Beranda</span>
-                </div>
-            </a>
-
-            <a href="#" class="nav-link flex items-center px-6 py-3 text-sm rounded-r-full transition-all">
-                <img src="{{ asset('assets/Objek Survey.png') }}" class="w-5 h-5 mr-4 object-contain" alt="Objek Survey">
-                <span>Objek Survey & Tarif</span>
-            </a>
-
-            <a href="#" class="nav-link flex items-center px-6 py-3 text-sm rounded-r-full transition-all">
-                <img src="{{ asset('assets/Lokasi.png') }}" class="w-5 h-5 mr-4 object-contain" alt="Lokasi">
-                <span>Penetapan Lokasi</span>
-            </a>
-
-            <a href="/dashboard-penugasan" class="nav-link flex items-center px-6 py-3 text-sm rounded-r-full transition-all">
-                <img src="{{ asset('assets/Penugasan.png') }}" class="w-5 h-5 mr-4 object-contain" alt="Penugasan">
-                <span>Penugasan</span>
-            </a>
-            <a href="#" class="nav-link flex items-center px-6 py-3 text-sm rounded-r-full transition-all">
-                <img src="{{ asset('assets/User.png') }}" class="w-5 h-5 mr-4 object-contain" alt="Daftar User">
-                <span>Daftar User</span>
-            </a>
-
-            <div class="relative">
-                <button onclick="toggleSubMenu()" class="nav-link w-full flex items-center px-6 py-3 text-sm rounded-r-full transition-all focus:outline-none">
-                    <img src="{{ asset('assets/Laporan.png') }}" class="w-6 h-6 mr-4 object-contain" alt="Laporan">
-                    <span>Laporan</span>
-                    <iconify-icon icon="lucide:chevron-down" id="chevron-icon" class="ml-auto transition-transform duration-300"></iconify-icon>
-                </button>
-                
-                <div id="subMenuLaporan" class="hidden flex flex-col mt-2 space-y-2 mx-2 transition-all">
-                    <a href="#" class="py-2 pl-10 text-[11px] text-white/70 hover:text-white flex items-center gap-4 transition-colors">
-                        <img src="{{ asset('assets/Laporan_Lokasi.png') }}" class="w-6 h-6 object-contain" alt="Laporan Lokasi">
-                        <span>Berdasarkan Lokasi</span>
-                    </a>
-                    <a href="#" class="py-2 pl-10 text-[11px] text-white/70 hover:text-white flex items-center gap-4 transition-colors">
-                        <img src="{{ asset('assets/Laporan_Kedatangan.png') }}" class="w-6 h-6 object-contain" alt="Laporan Kedatangan">
-                        <span>Berdasarkan Waktu</span>
-                    </a>
-                    <a href="#" class="py-2 pl-10 text-[11px] text-white/70 hover:text-white flex items-center gap-4 transition-colors">
-                        <img src="{{ asset('assets/Laporan_Operator.png') }}" class="w-6 h-6 object-contain" alt="Laporan Operator">
-                        <span>Berdasarkan Operator</span>
-                    </a>
-                </div>
-            </div>
-        </nav>
-
-        <div class="p-6 mt-auto flex items-center gap-3" style="background-color: rgba(37, 61, 107, 0.55);">
-            <div class="w-10 h-10 flex items-center justify-center">
-                <img src="{{ asset('assets/Profil.png') }}" class="w-8 h-8 object-contain" alt="User Profile">
-            </div>
-            <div class="flex-1 overflow-hidden">
-                <p class="text-xs font-bold leading-none truncate text-white">Rani</p>
-                <p class="text-[10px] text-white/50 uppercase tracking-tighter mt-1">Administrator</p>
-            </div>
-            <button class="text-white/30 hover:text-white transition">
-                <iconify-icon icon="lucide:log-out" class="text-lg"></iconify-icon>
-            </button>
-        </div>
-    </aside>
 
     <main class="main-content ml-64 p-8 w-full">
         <header class="flex justify-between items-center mb-8">
@@ -238,6 +166,7 @@
         </div>
     </main>
 
+    <script src="{{ asset('js/navbar.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -329,12 +258,6 @@
             });
         });
 
-        function toggleSubMenu() {
-            const subMenu = document.getElementById('subMenuLaporan');
-            const icon = document.getElementById('chevron-icon');
-            subMenu.classList.toggle('hidden');
-            icon.classList.toggle('rotate-180');
-        }
     </script>
 </body>
 </html>
