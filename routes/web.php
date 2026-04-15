@@ -14,10 +14,20 @@ use App\Http\Controllers\PenetapanLokasiController;
 use App\Http\Controllers\LaporanLokasiController;
 
 
+
+use App\Http\Controllers\LaporanOperatorController; 
+
+
+
 //link landing page 
 Route::get('/', function () {
     return view('landing');
 });
+
+
+
+
+
 
 //route login
 Route::get('/login', [LoginController::class, 'index']);
@@ -74,3 +84,10 @@ Route::get('/laporan_lokasi', [LaporanLokasiController::class, 'index'])->name('
 
 Route::post('/laporan_lokasi/filter', [LaporanLokasiController::class, 'filter'])->name('laporan.lokasi.filter');
 Route::get('/laporan_lokasi/download', [LaporanLokasiController::class, 'downloadPdf'])->name('laporan.lokasi.download');
+
+
+
+
+
+Route::get('/lapOperator', [LaporanOperatorController::class, 'lapOperator']);
+;
