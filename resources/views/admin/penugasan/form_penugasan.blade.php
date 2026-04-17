@@ -12,96 +12,26 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="{{ asset('css/dashboardadmin.css') }}">
+    
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+    <style>
+        .flatpickr-calendar {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            border: none;
+        }
+        .flatpickr-day.selected {
+            background: #253D6B !important;
+            border-color: #253D6B !important;
+        }
+    </style>
 </head>
 
 <body class="flex bg-[#F5F7FA]">
 
-    <aside class="sidebar-navy w-64 min-h-screen text-white flex flex-col fixed z-50 shadow-2xl">
-        <div class="py-8 flex justify-center items-center">
-            <img src="{{ asset('assets/logo_dishub.png') }}"
-                class="w-20 h-20 object-contain drop-shadow-xl transition-all duration-300" alt="Logo Dishub">
-        </div>
-
-        <nav class="flex-1 space-y-1">
-            <a href="/dashboard-admin"
-                class="relative flex items-center px-6 py-4 text-white group overflow-hidden transition-all">
-                @if(request()->is('dashboard') || request()->is('/'))
-                <div class="absolute inset-0" style="background-color: rgba(37, 61, 107, 0.55);"></div>
-                @endif
-                <div class="relative z-10 flex items-center gap-4 ml-2">
-                    <img src="{{ asset('assets/Beranda.png') }}" class="w-6 h-6 mr-4 object-contain" alt="Beranda">
-                    <span class="font-bold text">Beranda</span>
-                </div>
-            </a>
-
-            <a href="#" class="nav-link flex items-center px-6 py-3 text-sm rounded-r-full transition-all">
-                <img src="{{ asset('assets/Objek Survey.png') }}" class="w-5 h-5 mr-4 object-contain"
-                    alt="Objek Survey">
-                <span>Objek Survey & Tarif</span>
-            </a>
-
-            <a href="#" class="nav-link flex items-center px-6 py-3 text-sm rounded-r-full transition-all">
-                <img src="{{ asset('assets/Lokasi.png') }}" class="w-5 h-5 mr-4 object-contain" alt="Lokasi">
-                <span>Penetapan Lokasi</span>
-            </a>
-
-            <a href="/dashboard-penugasan"
-                class="nav-link flex items-center px-6 py-3 text-sm rounded-r-full transition-all">
-                <div class="absolute inset-0" style="background-color: rgba(37, 61, 107, 0.55);"></div>
-                <img src="{{ asset('assets/Penugasan.png') }}" class="w-5 h-5 mr-4 object-contain" alt="Penugasan">
-                <span>Penugasan</span>
-            </a>
-            <a href="#" class="nav-link flex items-center px-6 py-3 text-sm rounded-r-full transition-all">
-                <img src="{{ asset('assets/User.png') }}" class="w-5 h-5 mr-4 object-contain" alt="Daftar User">
-                <span>Daftar User</span>
-            </a>
-
-            <div class="relative">
-                <button onclick="toggleSubMenu()"
-                    class="nav-link w-full flex items-center px-6 py-3 text-sm rounded-r-full transition-all focus:outline-none">
-                    <img src="{{ asset('assets/Laporan.png') }}" class="w-6 h-6 mr-4 object-contain" alt="Laporan">
-                    <span>Laporan</span>
-                    <iconify-icon icon="lucide:chevron-down" id="chevron-icon"
-                        class="ml-auto transition-transform duration-300"></iconify-icon>
-                </button>
-
-                <div id="subMenuLaporan" class="hidden flex flex-col mt-2 space-y-2 mx-2 transition-all">
-                    <a href="#"
-                        class="py-2 pl-10 text-[11px] text-white/70 hover:text-white flex items-center gap-4 transition-colors">
-                        <img src="{{ asset('assets/Laporan_Lokasi.png') }}" class="w-6 h-6 object-contain"
-                            alt="Laporan Lokasi">
-                        <span>Berdasarkan Lokasi</span>
-                    </a>
-                    <a href="#"
-                        class="py-2 pl-10 text-[11px] text-white/70 hover:text-white flex items-center gap-4 transition-colors">
-                        <img src="{{ asset('assets/Laporan_Kedatangan.png') }}" class="w-6 h-6 object-contain"
-                            alt="Laporan Kedatangan">
-                        <span>Berdasarkan Waktu</span>
-                    </a>
-                    <a href="#"
-                        class="py-2 pl-10 text-[11px] text-white/70 hover:text-white flex items-center gap-4 transition-colors">
-                        <img src="{{ asset('assets/Laporan_Operator.png') }}" class="w-6 h-6 object-contain"
-                            alt="Laporan Operator">
-                        <span>Berdasarkan Operator</span>
-                    </a>
-                </div>
-            </div>
-        </nav>
-
-        <div class="p-6 mt-auto flex items-center gap-3" style="background-color: rgba(37, 61, 107, 0.55);">
-            <div class="w-5 h-5 flex items-center justify-center">
-                <img src="{{ asset('assets/Profil.png') }}" class="w-8 h-8 object-contain" alt="User Profile">
-            </div>
-            <div class="flex-1 overflow-hidden">
-                <p class="text-xs font-bold leading-none truncate text-white">Rani</p>
-                <p class="text-[10px] text-white/50 uppercase tracking-tighter mt-1">Administrator</p>
-            </div>
-            <button class="text-white/30 hover:text-white transition">
-                <iconify-icon icon="lucide:log-out" class="text-lg"></iconify-icon>
-            </button>
-        </div>
-    </aside>
-
+    @include('admin.template.navbar')
 
     <main class="main-content ml-64 p-8 w-full">
         <header class="flex justify-end items-center mb-8">
@@ -109,9 +39,34 @@
         </header>
 
         <div class="bg-white rounded-xl shadow-lg p-10 min-h-[600px]">
-            <h1 class="text-4xl font-bold text-center text-black mb-10">Form Penugasan</h1>
+            <h1 class="text-4xl font-bold text-center text-black mb-10">{{ isset($penugasan) ? 'Edit Penugasan' : 'Form Penugasan' }}</h1>
 
-            <form action="/dashboard-penugasan/store" method="POST" enctype="multipart/form-data">
+            <!-- Alert Notifikasi -->
+            @if(session('success'))
+                <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl flex items-center gap-3">
+                    <iconify-icon icon="lucide:check-circle" class="text-xl"></iconify-icon>
+                    <span class="font-bold">{{ session('success') }}</span>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-xl flex items-center gap-3">
+                    <iconify-icon icon="lucide:alert-circle" class="text-xl"></iconify-icon>
+                    <span class="font-bold">{{ session('error') }}</span>
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl">
+                    <ul class="list-disc list-inside font-medium text-sm">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form action="{{ isset($penugasan) ? url('/dashboard-penugasan/update/'.$id) : '/dashboard-penugasan/store' }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
@@ -124,7 +79,7 @@
                                 @if(!empty($users) && is_array($users))
                                 @foreach($users as $id_user => $user)
                                 @if(isset($user['role_user']) && $user['role_user'] == 'operator')
-                                <option value="{{ $id_user }}">{{ $user['username'] }}</option>
+                                <option value="{{ $id_user }}" {{ (isset($penugasan) && $penugasan['id_user'] == $id_user) ? 'selected' : '' }}>{{ $user['username'] }}</option>
                                 @endif
                                 @endforeach
                                 @endif
@@ -138,7 +93,9 @@
                                 <option value="">-- Pilih Lokasi --</option>
                                 @if(!empty($lokasitikor) && is_array($lokasitikor))
                                 @foreach($lokasitikor as $id_lokasi => $lokasi)
-                                <option value="{{ $id_lokasi }}">{{ $lokasi['alamat'] ?? 'Lokasi Tanpa Nama' }}</option>
+                                <option value="{{ $id_lokasi }}" {{ (isset($penugasan) && $penugasan['id_lokasi'] == $id_lokasi) ? 'selected' : '' }}>
+                                    {{ $lokasi['nama_lokasi'] ?? $lokasi['alamat'] ?? 'Lokasi Tanpa Nama' }}
+                                </option>
                                 @endforeach
                                 @endif
                             </select>
@@ -147,20 +104,24 @@
                         <div class="grid grid-cols-2 gap-4 items-end">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
-                                <input type="datetime-local" name="waktu_mulai" required
-                                    class="w-full border border-gray-300 rounded-md p-2 text-sm">
+                                <input type="text" name="waktu_mulai" id="waktu_mulai" required
+                                    class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white cursor-pointer" 
+                                    placeholder="Pilih Tanggal & Waktu"
+                                    value="{{ $penugasan['waktu_mulai'] ?? '' }}">
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="text-gray-500 text-sm">S/D</span>
-                                <input type="datetime-local" name="waktu_selesai" required
-                                    class="w-full border border-gray-300 rounded-md p-2 text-sm">
+                                <input type="text" name="waktu_selesai" id="waktu_selesai" required
+                                    class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white cursor-pointer" 
+                                    placeholder="Pilih Tanggal & Waktu"
+                                    value="{{ $penugasan['waktu_selesai'] ?? '' }}">
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan Lokasi</label>
                             <textarea name="keterangan" class="w-full border border-gray-300 rounded-md p-2 h-24 outline-none"
-                                placeholder="Masukkan detail lokasi..."></textarea>
+                                placeholder="Masukkan detail lokasi...">{{ $penugasan['keterangan'] ?? '' }}</textarea>
                         </div>
 
                         <div>
@@ -169,7 +130,8 @@
                                 <div class="relative flex-1 group">
                                     <input type="text" id="displayObjek" readonly
                                         class="w-full border border-gray-300 rounded-t-md p-2 bg-gray-50 outline-none text-sm font-semibold text-navy-900 border-b-0"
-                                        placeholder="Pilih objek di bawah atau lewat tabel...">
+                                        placeholder="Pilih objek di bawah atau lewat tabel..."
+                                        value="{{ $penugasan['objek_survei'] ?? '' }}">
 
                                     <select id="dropdownObjek" onchange="syncFromDropdown(this)"
                                         class="w-full border border-gray-300 rounded-b-md p-2 appearance-none outline-none text-sm cursor-pointer bg-white hover:bg-gray-50 transition-colors">
@@ -186,7 +148,7 @@
                                 </div>
                             </div>
 
-                            <input type="hidden" name="objek_terpilih" id="hiddenObjekInput">
+                            <input type="hidden" name="objek_terpilih" id="hiddenObjekInput" value="{{ $penugasan['objek_survei'] ?? '' }}">
                         </div>
 
                         <div>
@@ -194,19 +156,19 @@
                                 (PDF/JPG/PNG)</label>
                             <div
                                 class="border-2 border-dashed border-gray-300 rounded-md p-4 flex justify-between items-center bg-gray-50">
-                                <span class="text-gray-400 text-sm italic">Pilih file...</span>
+                                <span class="text-gray-400 text-sm italic">{{ isset($penugasan['file_spt']) ? $penugasan['file_spt'] : 'Pilih file...' }}</span>
                                 <input type="file" name="surat_spt" class="hidden" id="fileSpt">
                                 <label for="fileSpt" class="cursor-pointer">
                                     <iconify-icon icon="lucide:upload" class="text-gray-400 text-xl"></iconify-icon>
                                 </label>
                             </div>
-                            <small style="color: gray;">Maksimal ukuran file: 2MB.</small>
+                            <small style="color: gray;">Maksimal ukuran file: 2MB. {{ isset($penugasan) ? '(Biarkan kosong jika tidak ingin mengganti SPT)' : '' }}</small>
                         </div>
 
                         <div class="flex justify-end mt-8">
                             <button type="submit"
                                 class="bg-[#253D6B] text-white px-10 py-2 rounded-full font-bold hover:bg-navy-800 transition-all shadow-lg">
-                                Kirim
+                                {{ isset($penugasan) ? 'Update' : 'Kirim' }}
                             </button>
                         </div>
                     </div>
@@ -239,54 +201,29 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr class="border-b" id="row-motor">
-                                            <td class="p-3 text-center">1</td>
-                                            <td class="p-3 font-bold">Motor</td>
-                                            <td class="p-3 status-text">-</td>
-                                            <td class="p-3 text-center">
-                                                <button type="button" onclick="toggleObjek('motor')"
-                                                    class="action-btn text-green-500">
-                                                    <iconify-icon icon="lucide:plus-circle" class="text-2xl">
-                                                    </iconify-icon>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr class="border-b" id="row-mobil">
-                                            <td class="p-3 text-center">2</td>
-                                            <td class="p-3 font-bold">Mobil</td>
-                                            <td class="p-3 status-text">-</td>
-                                            <td class="p-3 text-center">
-                                                <button type="button" onclick="toggleObjek('mobil')"
-                                                    class="action-btn text-green-500">
-                                                    <iconify-icon icon="lucide:plus-circle" class="text-2xl">
-                                                    </iconify-icon>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr class="border-b" id="row-truk">
-                                            <td class="p-3 text-center">3</td>
-                                            <td class="p-3 font-bold">Truk</td>
-                                            <td class="p-3 status-text">-</td>
-                                            <td class="p-3 text-center">
-                                                <button type="button" onclick="toggleObjek('truk')"
-                                                    class="action-btn text-green-500">
-                                                    <iconify-icon icon="lucide:plus-circle" class="text-2xl">
-                                                    </iconify-icon>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr id="row-mini">
-                                            <td class="p-3 text-center">4</td>
-                                            <td class="p-3 font-bold">Mini Bus</td>
-                                            <td class="p-3 status-text">-</td>
-                                            <td class="p-3 text-center">
-                                                <button type="button" onclick="toggleObjek('mini')"
-                                                    class="action-btn text-green-500">
-                                                    <iconify-icon icon="lucide:plus-circle" class="text-2xl">
-                                                    </iconify-icon>
-                                                </button>
-                                            </td>
-                                        </tr>
+                                        @php $no = 1; @endphp
+                                        @if(!empty($objekTarif) && is_array($objekTarif))
+                                            @foreach($objekTarif as $id_objek => $objek)
+                                                @if(isset($objek['status']) && $objek['status'] == 'Aktif')
+                                                    <tr class="border-b" id="row-{{ strtolower(str_replace(' ', '-', $objek['nama'])) }}">
+                                                        <td class="p-3 text-center">{{ $no++ }}</td>
+                                                        <td class="p-3 font-bold">{{ $objek['nama'] }}</td>
+                                                        <td class="p-3 status-text">-</td>
+                                                        <td class="p-3 text-center">
+                                                            <button type="button" onclick="toggleObjek('{{ $objek['nama'] }}')"
+                                                                class="action-btn text-green-500">
+                                                                <iconify-icon icon="lucide:plus-circle" class="text-2xl">
+                                                                </iconify-icon>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                @endif
+                                            @endforeach
+                                        @else
+                                            <tr>
+                                                <td colspan="4" class="p-3 text-center text-gray-400 italic">Tidak ada data objek tarif aktif</td>
+                                            </tr>
+                                        @endif
                                     </tbody>
                                 </table>
                             </div>
@@ -298,7 +235,50 @@
     </main>
 <script>
     window.LokasiTerdaftar = @json($lokasitikor);
+    
+    // Inisialisasi Objek Survei Terpilih (Mode Edit)
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedObjects = "{{ $penugasan['objek_survei'] ?? '' }}";
+        if (savedObjects) {
+            const objectList = savedObjects.split(',').map(s => s.trim().toLowerCase());
+            objectList.forEach(obj => {
+                if (obj) {
+                    // Beri sedikit delay agar script PenugasanUser.js siap
+                    setTimeout(() => {
+                        if (typeof toggleObjek === 'function') {
+                            toggleObjek(obj);
+                        }
+                    }, 100);
+                }
+            });
+        }
+    });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr("#waktu_mulai", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            time_24hr: true,
+            minDate: "today",
+            locale: {
+                firstDayOfWeek: 1
+            }
+        });
+
+        flatpickr("#waktu_selesai", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            time_24hr: true,
+            minDate: "today",
+            locale: {
+                firstDayOfWeek: 1
+            }
+        });
+    });
+</script>
+<script src="{{ asset('js/navbar.js') }}"></script>
 <script src="{{ asset('js/PenugasanUser.js') }}"></script>
 
 </body>

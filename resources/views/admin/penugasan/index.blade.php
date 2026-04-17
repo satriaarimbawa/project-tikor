@@ -38,7 +38,7 @@
                             <iconify-icon icon="lucide:search" class="text-white text-xl"></iconify-icon>
                         </span>
                     </a>
-                    <input type="text" placeholder="Cari data penugasan"
+                    <input type="text" id="searchInputPenugasan" placeholder="Cari data penugasan"
                         class="bg-[#253D6B] text-white text-sm rounded-full pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-white/70 shadow-md">
                 </div>
 
@@ -70,28 +70,36 @@
                         <tr class="border-b border-gray-300">
                             <td class="py-3 px-4 border-r border-gray-300 text-center text-sm">{{ $loop->iteration }}</td>
                             <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['nama_operator'] }}</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['alamat_lokasi'] }}</td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['nama_lokasi'] }}</td>
                             <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['tanggal_rentang'] }}
                                 <br>{{ $penugasan['jam_rentang'] }}</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm"><a href="{{ asset('uploads/spt/' . $penugasan['no_spt']) }}" 
-                                                                                    download="SPT_Penugasan_{{ $penugasan['nama_operator'] }}.png" 
-                                                                                    class="text-blue-600 hover:underline font-bold">
-                                                                                    Download SPT
-                                                                                    </a></td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">Aktif</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">Motor</td>
-                            <td class="py-3 px-4 flex justify-center gap-2">
-                                <button
-                                    class="bg-yellow-400 p-1.5 rounded hover:bg-yellow-500 flex items-center justify-center">
-                                    <iconify-icon icon="lucide:edit-3" class="text-white text-lg"></iconify-icon>
-                                </button>
-                                <button
-                                    class="bg-red-500 p-1.5 rounded hover:bg-red-600 flex items-center justify-center">
-                                    <iconify-icon icon="lucide:trash-2" class="text-white text-lg"></iconify-icon>
-                                </button>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm">
+                                <a href="{{ asset('uploads/spt/' . $penugasan['file_spt']) }}" 
+                                   download="SPT_Penugasan_{{ $penugasan['nama_operator'] }}.png" 
+                                   class="text-blue-600 hover:underline font-bold">
+                                   Download SPT
+                                </a>
+                            </td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm">
+                                <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase">Aktif</span>
+                            </td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm italic">{{ $penugasan['objek_survei'] }}</td>
+                            <td class="py-3 px-4">
+                                <div class="flex justify-center gap-2">
+                                    <a href="{{ url('/dashboard-penugasan/edit/'.$penugasan['id']) }}" class="bg-yellow-400 p-1.5 rounded hover:bg-yellow-500 flex items-center justify-center transition-colors">
+                                        <iconify-icon icon="lucide:edit-3" class="text-white text-lg"></iconify-icon>
+                                    </a>
+                                    <form action="{{ url('/delete-penugasan/'.$penugasan['id']) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus penugasan ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="bg-red-500 p-1.5 rounded hover:bg-red-600 flex items-center justify-center transition-colors">
+                                            <iconify-icon icon="lucide:trash-2" class="text-white text-lg"></iconify-icon>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
-                            @endforeach
+                        @endforeach
 
 
                         {{-- @for ($i = 2; $i <= 10; $i++) <tr class="border-b border-gray-300">
@@ -120,22 +128,46 @@
                 </table>
             </div>
 
-            <div class="flex justify-center gap-4 mt-8">
-                <button
-                    class="w-10 h-10 flex items-center justify-center bg-[#E29A81] rounded-full shadow-md hover:bg-[#d18970] transition-all">
+            <div class="flex justify-center items-center gap-4 mt-8">
+                <a href="{{ $currentPage > 1 ? url('/dashboard-penugasan?page='.($currentPage - 1)) : '#' }}" 
+                    class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
                     <iconify-icon icon="lucide:chevron-left" class="text-white text-xl"></iconify-icon>
-                </button>
-                <button
-                    class="w-10 h-10 flex items-center justify-center bg-[#E29A81] rounded-full shadow-md hover:bg-[#d18970] transition-all">
+                </a>
+                
+                <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
+
+                <a href="{{ $currentPage < $totalPages ? url('/dashboard-penugasan?page='.($currentPage + 1)) : '#' }}" 
+                    class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
                     <iconify-icon icon="lucide:chevron-right" class="text-white text-xl"></iconify-icon>
-                </button>
+                </a>
             </div>
         </div>
     </main>
 
     <script src="{{ asset('js/navbar.js') }}"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInputPenugasan');
+            const tableRows = document.querySelectorAll('tbody tr:not(.no-data)');
 
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+
+                    tableRows.forEach(row => {
+                        // Cek Username (td index 1) atau Nama Lokasi (td index 2)
+                        const username = row.querySelectorAll('td')[1]?.textContent.toLowerCase() || '';
+                        const lokasi = row.querySelectorAll('td')[2]?.textContent.toLowerCase() || '';
+                        
+                        if (username.includes(searchTerm) || lokasi.includes(searchTerm)) {
+                            row.style.display = "";
+                        } else {
+                            row.style.display = "none";
+                        }
+                    });
+                });
+            }
+        });
     </script>
 </body>
 

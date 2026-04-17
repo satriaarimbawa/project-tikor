@@ -16,27 +16,22 @@ class LoginController extends Controller
         $this->database = $database;
     }
 
-    public function index()
-    {
-        return view('login.index');
-    }
-
     private function hitungJarak($lat1, $lon1, $lat2, $lon2)
     {
-        $radiusBumi = 6371000; 
+        $radiusBumi = 6371000; // Dalam meter
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
-        
-        $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-        
-        return $radiusBumi * $c; 
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $radiusBumi * $c;
     }
 
     public function cek_login(Request $request)
     {
         $username = $request->input('username');
-        $password = $request->input('password');    
+        $password = $request->input('password');
 
         $users = $this->database->getReference('users')
             ->orderByChild('username')
@@ -49,61 +44,62 @@ class LoginController extends Controller
 
         $uid = array_key_first($users);
         $user_data = $users[$uid];
-            
+
         if ($user_data['password'] !== $password) {
             return redirect()->back()->with('error', 'Password salah!');
         }
-// --- 1. Pengecekan Khusus Operator (Geofencing & Jadwal) ---
-if ($user_data['role_user'] === 'operator') {
-    $latitudeUser = $request->input('latitude');
-    $longitudeUser = $request->input('longitude');
 
-    if (empty($latitudeUser) || empty($longitudeUser)) {
-        return redirect()->back()->with('error', 'GPS wajib aktif!');
-    }
+        $idLokasiTugas = null;
 
-    $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
-    $waktuSekarang = Carbon::now('Asia/Makassar');
-    
-    $penugasanDitemukan = false;
-    $idLokasiTugas = null;
-    $pesanError = "Login ditolak! Anda tidak memiliki jadwal penugasan aktif saat ini.";
+        // --- 1. Pengecekan Khusus Operator (Geofencing & Jadwal) ---
+        if ($user_data['role_user'] === 'operator') {
+            $latitudeUser = (float) $request->input('latitude');
+            $longitudeUser = (float) $request->input('longitude');
 
-    foreach ($semuaPenugasan as $tugas) {
-        // BANDINGKAN DENGAN $uid (ID UNIK), BUKAN $username
-        if (isset($tugas['id_user']) && $tugas['id_user'] == $uid) {
-            
-            $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
-            $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+            if (empty($latitudeUser) || empty($longitudeUser)) {
+                return redirect()->back()->with('error', 'GPS wajib aktif!');
+            }
 
-            if ($waktuSekarang->between($mulai, $selesai)) {
-                $idLokasi = $tugas['id_lokasi'];
-                
-                // PASTIKAN PATH KE 'pengaturan_lokasi'
-                $dataTikor = $this->database->getReference('pengaturan_lokasi/' . $idLokasi)->getValue();
+            $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
+            $waktuSekarang = Carbon::now('Asia/Makassar');
 
-                if ($dataTikor) {
-                    $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $dataTikor['latitude'], $dataTikor['longitude']);
-                    $radius = $dataTikor['radius'] ?? 100;
+            $penugasanDitemukan = false;
+            $pesanError = "Login ditolak! Anda tidak memiliki jadwal penugasan aktif saat ini.";
 
-                    if ($jarak <= $radius) {
-                        $idLokasiTugas = $idLokasi;
-                        $penugasanDitemukan = true; 
-                        break; 
-                    } else {
-                        $jarakTerakhir = round($jarak);
-                        $namaLokasiTerakhir = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
-                        $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasiTerakhir ($jarakTerakhir meter).";
+            foreach ($semuaPenugasan as $tugas) {
+                if (isset($tugas['id_user']) && $tugas['id_user'] == $uid) {
+                    $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
+                    $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+
+                    if ($waktuSekarang->between($mulai, $selesai)) {
+                        $idLokasi = $tugas['id_lokasi'];
+                        $dataTikor = $this->database->getReference('lokasi/' . $idLokasi)->getValue();
+
+                        if ($dataTikor) {
+                            $latTarget = $dataTikor['latitude'] ?? 0;
+                            $lonTarget = $dataTikor['longitude'] ?? 0;
+                            $radius = $dataTikor['radius'] ?? 100;
+
+                            $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $latTarget, $lonTarget);
+
+                            if ($jarak <= $radius) {
+                                $idLokasiTugas = $idLokasi;
+                                $penugasanDitemukan = true;
+                                break;
+                            } else {
+                                $jarakTerakhir = round($jarak);
+                                $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
+                                $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasi ($jarakTerakhir meter).";
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
 
-    if (!$penugasanDitemukan) {
-        return redirect()->back()->with('error', $pesanError);
-    }
-}
+            if (!$penugasanDitemukan) {
+                return redirect()->back()->with('error', $pesanError);
+            }
+        }
 
         // --- 2. Jika Lolos (Login Berhasil) ---
         session()->put([
@@ -112,10 +108,8 @@ if ($user_data['role_user'] === 'operator') {
             'role'         => $user_data['role_user'],
             'user_id'      => $uid,
             'isLoggedIn'   => true,
-            'id_lokasi_aktif' => $idLokasiTugas ?? null,
-            
+            'id_lokasi_aktif' => $idLokasiTugas,
         ]);
-
 
         session()->save();
 
@@ -132,32 +126,33 @@ if ($user_data['role_user'] === 'operator') {
         return redirect('/');
     }
 
-
     public function checkLocationRadius(Request $request)
-{
-    $latUser = $request->input('latitude');
-    $longUser = $request->input('longitude');
-    $idLokasiAktif = session()->get('id_lokasi_aktif');
+    {
+        $latUser = (float) $request->input('latitude');
+        $longUser = (float) $request->input('longitude');
+        $idLokasiAktif = session()->get('id_lokasi_aktif');
 
-    if (!$idLokasiAktif) return response()->json(['status' => 'ok']);
+        if (!$idLokasiAktif) return response()->json(['status' => 'ok']);
 
-    // Ambil data titik koordinat target dari Firebase
-    $dataTikor = $this->database->getReference('pengaturan_lokasi/' . $idLokasiAktif)->getValue();
+        $dataTikor = $this->database->getReference('lokasi/' . $idLokasiAktif)->getValue();
 
-    if ($dataTikor) {
-        $jarak = $this->hitungJarak($latUser, $longUser, $dataTikor['latitude'], $dataTikor['longitude']);
-        $radius = $dataTikor['radius'] ?? 100;
+        if ($dataTikor) {
+            $latTarget = $dataTikor['latitude'] ?? 0;
+            $lonTarget = $dataTikor['longitude'] ?? 0;
+            $radius = $dataTikor['radius'] ?? 100;
 
-        if ($jarak > $radius) {
-            // Jika di luar radius, hapus session (Logout Otomatis)
-            session()->flush();
-            return response()->json([
-                'status' => 'logout',
-                'message' => 'Anda keluar dari radius area penugasan!'
-            ]);
+            $jarak = $this->hitungJarak($latUser, $longUser, $latTarget, $lonTarget);
+
+            if ($jarak > $radius) {
+                session()->flush();
+                return response()->json([
+                    'status' => 'logout',
+                    'message' => 'Anda keluar dari radius area penugasan!'
+                ]);
+            }
+            return response()->json(['status' => 'ok', 'distance' => round($jarak) . 'm']);
         }
-    }
 
-    return response()->json(['status' => 'ok', 'distance' => round($jarak) . 'm']);
-}
+        return response()->json(['status' => 'ok']);
+    }
 }
