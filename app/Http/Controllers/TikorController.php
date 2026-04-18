@@ -64,17 +64,18 @@ class TikorController extends Controller
     {
         $request->validate([
             'nama_lokasi' => 'required|string',
-            'koordinat'   => 'required|string',
+            'koordinat'   => ['required', 'string', 'regex:/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/'],
             'target_harian' => 'required',
         ], [
             'nama_lokasi.required' => 'Nama lokasi wajib diisi.',
             'koordinat.required'   => 'Titik koordinat harus ditentukan melalui peta.',
+            'koordinat.regex'      => 'Format koordinat tidak valid (harus latitude,longitude).',
             'target_harian.required' => 'Target harian wajib diisi.',
         ]);
 
         $coords = explode(',', $request->input('koordinat'));
         $latitude = trim($coords[0]);
-        $longitude = trim($coords[1] ?? '');
+        $longitude = trim($coords[1]);
 
         $dataLokasi = [
             'nama_lokasi'   => $request->input('nama_lokasi'),

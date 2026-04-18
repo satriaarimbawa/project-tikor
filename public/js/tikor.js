@@ -78,14 +78,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fitur GPS (Locate Me)
     const locateBtn = document.querySelector('[icon="lucide:locate-fixed"]');
     if (locateBtn) {
-        locateBtn.parentElement.addEventListener('click', function() {
-            map.locate({setView: true, maxZoom: 16});
+        const parentBtn = locateBtn.parentElement;
+        parentBtn.addEventListener('click', function() {
+            // Beri feedback visual kalau sedang loading
+            locateBtn.setAttribute('icon', 'lucide:loader-2');
+            locateBtn.classList.add('animate-spin');
+            
+            map.locate({
+                setView: true, 
+                maxZoom: 16,
+                enableHighAccuracy: true
+            });
         });
     }
 
     map.on('locationfound', function(e) {
-        markerNew.setLatLng(e.latlng);
-        inputKoordinat.value = `${e.latlng.lat}, ${e.latlng.lng}`;
+        // Kembalikan ikon semula
+        if (locateBtn) {
+            locateBtn.setAttribute('icon', 'lucide:locate-fixed');
+            locateBtn.classList.remove('animate-spin');
+        }
+
+        const { lat, lng } = e.latlng;
+        markerNew.setLatLng([lat, lng]);
+        inputKoordinat.value = `${lat}, ${lng}`;
+        
+        // Beri popup sukses kecil
+        L.popup()
+            .setLatLng(e.latlng)
+            .setContent("Lokasi ditemukan!")
+            .openOn(map);
+    });
+
+    map.on('locationerror', function(e) {
+        // Kembalikan ikon semula
+        if (locateBtn) {
+            locateBtn.setAttribute('icon', 'lucide:locate-fixed');
+            locateBtn.classList.remove('animate-spin');
+        }
+        
+        alert("Gagal mendapatkan lokasi: " + e.message + "\nPastikan GPS aktif dan izin lokasi diberikan.");
     });
 
     // --- FITUR LIVE SEARCH TABEL ---

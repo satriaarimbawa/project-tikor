@@ -29,9 +29,9 @@ Route::get('/login-admin', [AdminController::class, 'loginadmin']);
 Route::middleware(['admin'])->group(function () {
 
     //dashboard admin
-    Route::get('/dashboard-admin', [UserController::class, 'index']);
-    Route::get('/register', [UserController::class, 'create']);
-    Route::post('/test-store', [UserController::class, 'store']);
+    Route::get('/dashboard-admin', [AdminController::class, 'index']);
+    Route::get('/register', [DaftarUserController::class, 'create']);
+    Route::post('/test-store', [DaftarUserController::class, 'store']);
 
     //penugasan operator
     Route::get('/dashboard-penugasan', [PenugasanController::class, 'index']);
@@ -56,8 +56,8 @@ Route::middleware(['admin'])->group(function () {
 
     // Manajemen User
     Route::get('daftar-user', [DaftarUserController::class, 'index']);
-    Route::get('/tambahuser', [TambahUserController::class, 'create'])->name('user.create');
-    Route::post('/user/simpan', [TambahUserController::class, 'store'])->name('user.store');
+    Route::get('/tambahuser', [DaftarUserController::class, 'create'])->name('user.create');
+    Route::post('/user/simpan', [DaftarUserController::class, 'store'])->name('user.store');
 
     // Laporan Lokasi
     Route::get('/laporan_lokasi', [LaporanLokasiController::class, 'index'])->name('laporan.lokasi');
@@ -74,6 +74,7 @@ Route::middleware(['operator'])->group(function () {
     Route::get('/dashboard-operator-penugasan', [OperatorController::class, 'penugasan']);
     Route::get('/dashboard-operator-survei', [OperatorController::class, 'survei']);
     Route::post('/simpan-hitung-kendaraan', [OperatorController::class, 'simpanHitung'])->name('simpan.hitung.kendaraan');
+    Route::post('/lapor-survei', [OperatorController::class, 'laporSurvei'])->name('lapor.survei');
     Route::get('/dashboard-operator-profile', [OperatorController::class, 'profile']);
     Route::post('/check-location-radius', [LoginController::class, 'checkLocationRadius'])->name('check.location.radius');
 });

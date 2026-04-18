@@ -175,12 +175,18 @@
 
                     <div class="space-y-6">
                         <div class="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
-                            <div class="relative mb-4">
-                                <input type="text" id="mapSearch" placeholder="Cari alamat di Google Maps..."
-                                    class="w-full border border-gray-300 rounded-full pl-4 pr-10 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-400">
-                                <button onclick="searchLocation()"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 flex items-center">
-                                    <iconify-icon icon="lucide:search" class="text-xl"></iconify-icon>
+                            <div class="relative mb-4 flex gap-2">
+                                <div class="relative flex-1">
+                                    <input type="text" id="mapSearch" placeholder="Cari alamat di Google Maps..."
+                                        class="w-full border border-gray-300 rounded-full pl-4 pr-10 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-400">
+                                    <button type="button" onclick="searchLocation()"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 flex items-center">
+                                        <iconify-icon icon="lucide:search" class="text-xl"></iconify-icon>
+                                    </button>
+                                </div>
+                                <button type="button" id="locateBtn" title="Dapatkan Lokasi GPS"
+                                    class="bg-white border border-gray-300 rounded-full p-2 text-gray-500 hover:text-blue-500 hover:border-blue-500 transition-all flex items-center justify-center shadow-sm">
+                                    <iconify-icon icon="lucide:locate-fixed" class="text-xl"></iconify-icon>
                                 </button>
                             </div>
 

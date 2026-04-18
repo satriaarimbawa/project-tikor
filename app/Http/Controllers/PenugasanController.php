@@ -71,10 +71,12 @@ class PenugasanController extends Controller
     {
         $users = $this->database->getReference('users')->getValue() ?? [];
         $lokasiMaster = $this->database->getReference('lokasi')->getValue() ?? [];
+        $objekTarif = $this->database->getReference('objek_tarif')->getValue() ?? [];
 
         return view('admin.penugasan.form_penugasan', [
             'lokasitikor' => $lokasiMaster, 
-            'users' => $users,              
+            'users' => $users,
+            'objekTarif' => $objekTarif,
         ]);
     }
 

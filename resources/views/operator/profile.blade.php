@@ -1,26 +1,3 @@
-@php
-//Simulasi database
-$riwayat = [
-(object)['jam' => '10.00', 'kendaraan' => 'Motor', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.20', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.21', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.22', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.24', 'kendaraan' => 'MiniBus', 'lokasi' => 'Terminal Galiran'],
-];
-
-
-$totalMotor = collect($riwayat)->where('kendaraan', 'Motor')->count();
-$totalMobil = collect($riwayat)->where('kendaraan', 'Mobil')->count();
-$totalTruk = collect($riwayat)->where('kendaraan', 'Truk')->count();
-$totalMiniBus = collect($riwayat)->where('kendaraan', 'MiniBus')->count();
-$totalSemua = collect($riwayat)->count();
-@endphp
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -43,8 +20,8 @@ $totalSemua = collect($riwayat)->count();
                 <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo">
             </div>
             <div>
-                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - Terminal Galiran</h1>
-                <p class="text-xs lg:text-sm text-slate-500">Shift Pagi | 18 Maret 2026</p>
+                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - {{ $nama_lokasi }}</h1>
+                <p class="text-xs lg:text-sm text-slate-500">Profil Operator | {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</p>
             </div>
         </div>
 
@@ -53,25 +30,25 @@ $totalSemua = collect($riwayat)->count();
         <div class="max-w-md mx-auto bg-white rounded-2xl shadow-md p-6 mt-4">
             <div class="mb-4">
                 <label class="block text-sm font-medium text-slate-600 mb-1">Username</label>
-                <input type="text" value="Alexander Lorezpierrez"
+                <input type="text" value="{{ $user['username'] ?? '-' }}"
                     class="w-full bg-slate-100 border-none rounded-lg px-4 py-3 text-slate-500 focus:ring-2 focus:ring-blue-500 outline-none"
                     readonly>
             </div>
 
             <div class="mb-8">
                 <label class="block text-sm font-medium text-slate-600 mb-1">Email</label>
-                <input type="email" value="pierrez@gmail.com"
+                <input type="email" value="{{ $user['email'] ?? '-' }}"
                     class="w-full bg-slate-100 border-none rounded-lg px-4 py-3 text-slate-500 focus:ring-2 focus:ring-blue-500 outline-none"
                     readonly>
             </div>
 
             <div class="flex justify-between items-center gap-4">
-                <button onclick="alert('Logout Berhasil')"
-                    class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 active:scale-95">
+                <a href="{{ url('/logout') }}" onclick="return confirm('Apakah Anda yakin ingin keluar?')"
+                    class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 active:scale-95 text-center">
                     Logout
-                </button>
+                </a>
 
-                <button onclick="alert('Ajukan Perubahan Data')"
+                <button onclick="alert('Silakan hubungi admin untuk perubahan data')"
                     class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-slate-800 font-bold py-3 px-4 rounded-lg transition duration-200 active:scale-95 text-sm leading-tight">
                     Ajukan Perubahan Data
                 </button>

@@ -1,8 +1,21 @@
 @php
-$totalMotor = collect($riwayat)->where('kendaraan', 'Motor')->count();
-$totalMobil = collect($riwayat)->where('kendaraan', 'Mobil')->count();
-$totalTruk = collect($riwayat)->where('kendaraan', 'Truk')->count();
-$totalMiniBus = collect($riwayat)->where('kendaraan', 'MiniBus')->count();
+// --- MENGHITUNG BERDASARKAN RIWAYAT PENUGASAN (TABEL DI BAWAH) ---
+$totalMotor = collect($riwayat)->filter(function($item) {
+    return str_contains(strtolower($item['objek_survei'] ?? ''), 'motor');
+})->count();
+
+$totalMobil = collect($riwayat)->filter(function($item) {
+    return str_contains(strtolower($item['objek_survei'] ?? ''), 'minibus') || str_contains(strtolower($item['objek_survei'] ?? ''), 'mobil');
+})->count();
+
+$totalTruk = collect($riwayat)->filter(function($item) {
+    return str_contains(strtolower($item['objek_survei'] ?? ''), 'truk');
+})->count();
+
+$totalMiniBus = collect($riwayat)->filter(function($item) {
+    return str_contains(strtolower($item['objek_survei'] ?? ''), 'minibus');
+})->count();
+
 $totalSemua = collect($riwayat)->count();
 
 // @dd(session()->all());
@@ -78,40 +91,30 @@ $penugasan = [
                 <hr class="my-3 border-slate-200">
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="flex items-center gap-3 border-r border-slate-200 pr-2">
-                        <i class="fas fa-motorcycle text-2xl text-slate-700"></i>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Motor</p>
-                            <p class="font-bold">{{ $totalMotor }}</p>
+                    @php
+                        $iconConfig = [
+                            'motor' => ['icon' => 'fas fa-motorcycle', 'label' => 'Motor'],
+                            'minibus' => ['icon' => 'fas fa-car-side', 'label' => 'Mini Bus'],
+                            'bus' => ['icon' => 'fas fa-bus', 'label' => 'Bus'],
+                            'truk' => ['icon' => 'fas fa-truck', 'label' => 'Truk'],
+                            'default' => ['icon' => 'fas fa-car', 'label' => 'Lainnya']
+                        ];
+                    @endphp
+
+                    @foreach($objekSurvei ?? [] as $obj)
+                        @php 
+                            $key = strtolower(str_replace(' ', '', $obj));
+                            $conf = $iconConfig[$key] ?? $iconConfig['default'];
+                            $label = isset($iconConfig[$key]) ? $conf['label'] : ucfirst($obj);
+                        @endphp
+                        <div class="flex items-center gap-3 border-r border-slate-200 pr-2 last:border-r-0">
+                            <i class="{{ $conf['icon'] }} text-2xl text-slate-700"></i>
+                            <div class="text-left">
+                                <p class="text-xs text-slate-500">{{ $label }}</p>
+                                <p class="font-bold">{{ $counts[$key] ?? 0 }}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class=" p-2 rounded-lg text-2xl text-slate-700">
-                            <i class="fas fa-car text-lg"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Mobil</p>
-                            <p class="font-bold">{{ $totalMobil }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class=" p-2 rounded-lg text-2xl text-slate-700">
-                            <i class="fas fa-bus text-lg"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Mini Bus</p>
-                            <p class="font-bold">{{ $totalMiniBus }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class=" p-2 rounded-lg text-2xl text-slate-700">
-                            <i class="fas fa-truck text-lg"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Truk</p>
-                            <p class="font-bold">{{ $totalTruk }}</p>
-                        </div>
-                    </div>
+                    @endforeach
                 </div>
             </div>
             <div class="mt-4 flex justify-between items-end">
@@ -144,10 +147,8 @@ $penugasan = [
                         </tr>
                     </thead>
                     <tbody>
-                        {{-- @dd($riwayat) --}}
-                        @foreach($riwayat as $data => $item)
+                        @foreach($riwayat as $item)
                         <tr
-                        {{-- @dd($item) --}}
                             class="bg-white shadow-[0_8px_20px_rgb(0,0,0,0.08)] rounded-2xl overflow-hidden transform transition hover:scale-[1.01]">
                             <td class="p-4 rounded-l-2xl border-y border-l border-slate-100">
                                 <span class="block font-medium text-slate-700">{{ $item['waktu_mulai'] }}</span>
@@ -156,11 +157,11 @@ $penugasan = [
                             </td>
 
                             <td class="p-4 border-y border-slate-100 align-middle">
-                                <span class="font-bold text-slate-800 truncate max-w-[200px]">{{ data_get($item, 'nama_lokasi_display', 'Tanpa Lokasi') }}</span>
+                                <span class="font-bold text-slate-800 truncate max-w-[200px]">{{ $item['nama_lokasi_display'] }}</span>
                             </td>
 
                             <td class="p-4 rounded-r-2xl border-y border-r border-slate-100 text-center align-middle">
-                                @if($item['waktu_selesai'] > now())
+                                @if(now()->between(\Carbon\Carbon::parse($item['waktu_mulai']), \Carbon\Carbon::parse($item['waktu_selesai'])))
                                 <span
                                     class="bg-emerald-500 text-white px-4 py-1 rounded-lg text-[10px] font-bold shadow-sm shadow-emerald-200">
                                     Aktif
@@ -214,6 +215,7 @@ $penugasan = [
             "{{ url('/') }}"                        // URL Redirect jika logout
         );
     });
+    </script>
 </body>
 
 </html>

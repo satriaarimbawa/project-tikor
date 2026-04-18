@@ -78,6 +78,62 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // --- FITUR GPS (LOCATE ME) ---
+    const locateBtn = document.getElementById('locateBtn');
+    let userMarker;
+
+    if (locateBtn) {
+        locateBtn.addEventListener('click', function() {
+            const iconElement = this.querySelector('iconify-icon');
+            iconElement.setAttribute('icon', 'lucide:loader-2');
+            iconElement.classList.add('animate-spin');
+
+            map.locate({
+                setView: true,
+                maxZoom: 16,
+                enableHighAccuracy: true
+            });
+        });
+    }
+
+    map.on('locationfound', function(e) {
+        const locateBtn = document.getElementById('locateBtn');
+        if (locateBtn) {
+            const iconElement = locateBtn.querySelector('iconify-icon');
+            iconElement.setAttribute('icon', 'lucide:locate-fixed');
+            iconElement.classList.remove('animate-spin');
+        }
+
+        // Hapus marker lama jika ada
+        if (userMarker) {
+            map.removeLayer(userMarker);
+        }
+
+        // Tambahkan marker posisi user (Warna Merah untuk membedakan dengan lokasi tugas)
+        userMarker = L.marker(e.latlng, {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            })
+        }).addTo(map);
+        
+        userMarker.bindPopup("<b>Posisi Anda Sekarang</b>").openPopup();
+    });
+
+    map.on('locationerror', function(e) {
+        const locateBtn = document.getElementById('locateBtn');
+        if (locateBtn) {
+            const iconElement = locateBtn.querySelector('iconify-icon');
+            iconElement.setAttribute('icon', 'lucide:locate-fixed');
+            iconElement.classList.remove('animate-spin');
+        }
+        alert("Gagal mendapatkan lokasi GPS: " + e.message);
+    });
 });
 
 function searchLocation() {

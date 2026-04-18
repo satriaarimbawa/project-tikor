@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class GeofencingTest extends TestCase
 {
@@ -21,7 +22,7 @@ class GeofencingTest extends TestCase
         return $radiusBumi * $c;
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_distance_correctly_within_50m_radius()
     {
         // Titik A (Pusat): Kantor Bupati Klungkung
@@ -37,7 +38,7 @@ class GeofencingTest extends TestCase
         $this->assertLessThan(50, $distance, "Jarak harus kurang dari 50 meter");
     }
 
-    /** @test */
+    #[Test]
     public function it_rejects_distance_outside_50m_radius()
     {
         // Titik A (Pusat)

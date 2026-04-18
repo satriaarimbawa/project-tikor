@@ -94,7 +94,7 @@
                 <img src="{{ asset('assets/Profil.png') }}" class="w-10 h-10 object-contain rounded-full" alt="User Profile">
             </div>
             <div class="flex-1 overflow-hidden">
-                <p class="text-xs font-bold leading-none truncate text-white">Rani</p>
+                <p class="text-xs font-bold leading-none truncate text-white">{{ session('username') ?? 'Admin' }}</p>
                 <p class="text-[10px] text-white/50 uppercase tracking-tighter mt-1">Administrator</p>
             </div>
             <a href="/logout" class="text-white/30 hover:text-white transition">

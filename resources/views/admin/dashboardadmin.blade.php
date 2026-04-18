@@ -20,9 +20,14 @@
             <h1 class="text-gray-800 font-bold text-[30px] tracking-tight">Pendapatan Harian</h1>
     
             <div class="flex items-center gap-6">
-                <div class="flex items-center gap-2 text-orange-600 font-bold text-sm bg-orange-50 px-5 py-2 rounded-full border border-orange-100 shadow-sm">
+                <div class="flex items-center gap-2 text-orange-600 font-bold text-sm bg-orange-50 px-5 py-2 rounded-full border border-orange-100 shadow-sm relative">
                     <iconify-icon icon="lucide:mail" class="text-lg"></iconify-icon>
                     <span>Pesan Masuk</span>
+                    @if($unreadCount > 0)
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+                            {{ $unreadCount }}
+                        </span>
+                    @endif
                 </div>
                 <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-10 h-10 object-contain" alt="Logo Klungkung">
             </div>
@@ -36,7 +41,7 @@
                 <img src="{{ asset('assets/Pendapatan.png') }}" class="w-20 h-20 object-contain" alt="Icon Pendapatan">
             </div>
             <div class="relative z-10">
-                <h2 class="text-6xl font-bold tracking-tight text-gray-900">Rp. 7.000.000</h2>
+                <h2 class="text-6xl font-bold tracking-tight text-gray-900">Rp. {{ number_format($totalPendapatan, 0, ',', '.') }}</h2>
                 <p class="text-[12px] text-gray-500 font-bold uppercase tracking-wider mt-2">Total Pendapatan Harian ( Today )</p>
             </div>
         </div>
@@ -49,7 +54,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">Bus</p>
-                    <h3 class="text-2xl font-black text-gray-700">200</h3>
+                    <h3 class="text-2xl font-black text-gray-700">{{ $stats['bus'] ?? 0 }}</h3>
                 </div>
             </div>
 
@@ -60,7 +65,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">Motor</p>
-                    <h3 class="text-2xl font-black text-gray-700">1000</h3>
+                    <h3 class="text-2xl font-black text-gray-700">{{ $stats['motor'] ?? 0 }}</h3>
                 </div>
             </div>
 
@@ -71,7 +76,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">Mini Bus</p>
-                    <h3 class="text-2xl font-black text-gray-700">600</h3>
+                    <h3 class="text-2xl font-black text-gray-700">{{ $stats['minibus'] ?? 0 }}</h3>
                 </div>
             </div>
 
@@ -82,7 +87,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">Truk</p>
-                    <h3 class="text-2xl font-black text-gray-700">50</h3>
+                    <h3 class="text-2xl font-black text-gray-700">{{ $stats['truk'] ?? 0 }}</h3>
                 </div>
             </div>
         </div>
@@ -135,30 +140,20 @@
                 </tr>
             </thead>
             <tbody>
+                @forelse($detailPendapatan as $row)
                 <tr class="bg-white group transition-all">
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-l border-black rounded-l-2xl">Mini Bus</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">Pelabuhan Kusamba</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">20</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-r border-black rounded-r-2xl">Rp. 1000.000</td>
+                    <td class="p-4 text-center font-bold text-gray-800 border-y border-l border-black rounded-l-2xl">{{ $row['objek'] }}</td>
+                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">{{ $row['nama_lokasi'] }}</td>
+                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">{{ $row['jumlah'] }}</td>
+                    <td class="p-4 text-center font-bold text-gray-800 border-y border-r border-black rounded-r-2xl">Rp. {{ number_format($row['nominal'], 0, ',', '.') }}</td>
                 </tr>
-                <tr class="bg-white">
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-l border-black rounded-l-2xl">Truk</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">Terminal Galiran</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">150</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-r border-black rounded-r-2xl">Rp. 1.500.000</td>
+                @empty
+                <tr>
+                    <td colspan="4" class="p-10 text-center text-gray-400 italic bg-white rounded-2xl border border-black">
+                        Belum ada data pendapatan untuk hari ini.
+                    </td>
                 </tr>
-                <tr class="bg-white">
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-l border-black rounded-l-2xl">Motor</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">Terminal Galiran</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">50</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-r border-black rounded-r-2xl">Rp. 1.250.000</td>
-                </tr>
-                <tr class="bg-white">
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-l border-black rounded-l-2xl">Mini Bus</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">Pelabuhan Kusamba</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">75</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-r border-black rounded-r-2xl">Rp. 1.350.000</td>
-                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
@@ -175,20 +170,20 @@
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+                    labels: @json($labelsMingguan),
                     datasets: [
                         { 
                             label: 'Bus', 
-                            data: [600, 350, 280, 580, 480, 850], 
+                            data: @json($chartData['bus']), 
                             borderColor: '#4A78D7', 
                             backgroundColor: '#4A78D7', 
-                            tension: 0.1, // Membuat garis melengkung halus
+                            tension: 0.1, 
                             borderWidth: 3,
                             fill: false 
                         },
                         { 
                             label: 'Motor', 
-                            data: [980, 150, 780, 850, 350, 500], 
+                            data: @json($chartData['motor']), 
                             borderColor: '#E9A426', 
                             backgroundColor: '#E9A426', 
                             tension: 0.1, 
@@ -197,7 +192,7 @@
                         },
                         { 
                             label: 'Mini Bus', 
-                            data: [650, 220, 750, 480, 50, 620], 
+                            data: @json($chartData['minibus']), 
                             borderColor: '#953EE1', 
                             backgroundColor: '#953EE1', 
                             tension: 0.1, 
@@ -206,7 +201,7 @@
                         },
                         { 
                             label: 'Truk', 
-                            data: [150, 950, 980, 550, 650, 580], 
+                            data: @json($chartData['truk']), 
                             borderColor: '#E95BA4', 
                             backgroundColor: '#E95BA4', 
                             tension: 0.1, 
@@ -230,9 +225,7 @@
                     scales: {
                         y: { 
                             beginAtZero: true, 
-                            max: 1000, 
                             ticks: { 
-                                stepSize: 250, 
                                 color: '#9CA3AF',
                                 font: { size: 11 }
                             }, 

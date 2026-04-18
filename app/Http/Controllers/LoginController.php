@@ -16,6 +16,11 @@ class LoginController extends Controller
         $this->database = $database;
     }
 
+    public function index()
+    {
+        return view('login.index');
+    }
+
     private function hitungJarak($lat1, $lon1, $lat2, $lon2)
     {
         $radiusBumi = 6371000; // Dalam meter
@@ -33,6 +38,7 @@ class LoginController extends Controller
         $username = $request->input('username');
         $password = $request->input('password');
 
+        // Cari user berdasarkan username menggunakan indeks Firebase
         $users = $this->database->getReference('users')
             ->orderByChild('username')
             ->equalTo($username)
@@ -67,7 +73,7 @@ class LoginController extends Controller
             $pesanError = "Login ditolak! Anda tidak memiliki jadwal penugasan aktif saat ini.";
 
             foreach ($semuaPenugasan as $tugas) {
-                if (isset($tugas['id_user']) && $tugas['id_user'] == $uid) {
+                if (isset($tugas['id_user'], $tugas['id_lokasi']) && $tugas['id_user'] == $uid) {
                     $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
                     $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
 
