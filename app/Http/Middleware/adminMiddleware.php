@@ -21,8 +21,9 @@ class adminMiddleware
         }
 
         if (session()->get('role') !== 'admin') {
-        return redirect('/dashboard-operator')->with('error', 'Akses khusus Operator!');
-    }
+            return redirect('/dashboard-operator-penugasan')->with('error', 'Akses ditolak! Anda bukan Admin.');
+        }
+
         return $next($request);
     }
 }

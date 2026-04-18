@@ -41,10 +41,10 @@
                     class="w-full bg-[#253D6B] text-white text-sm rounded-full py-2.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white/50">
             </div>
             
-            <button class="bg-[#253D6B] hover:bg-[#1a2c4d] text-white text-sm font-bold py-2.5 px-6 rounded-full flex items-center gap-2 transition-all shadow-lg">
+            <a href="{{ route('user.create') }}" class="bg-[#253D6B] hover:bg-[#1a2c4d] text-white text-sm font-bold py-2.5 px-6 rounded-full flex items-center gap-2 transition-all shadow-lg">
                 <iconify-icon icon="lucide:plus-circle" class="text-xl"></iconify-icon>
                 Tambah Data
-            </button>
+            </a>
         </div>
 
         <div class="overflow-x-auto">
@@ -59,23 +59,27 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($users as $index => $user)
+                    @foreach($users as $uid => $user)
                     <tr class="table-row-hover">
-                        <td class="text-center font-medium text-gray-500">{{ $index + 1 }}</td>
-                        <td class="font-bold text-[#253D6B]">{{ $user->username }}</td>
-                        <td class="text-gray-600">{{ $user->email }}</td>
+                        <td class="text-center font-medium text-gray-500">{{ $loop->iteration }}</td>
+                        <td class="font-bold text-[#253D6B]">{{ $user['username'] ?? 'No Name' }}</td>
+                        <td class="text-gray-600">{{ $user['email'] ?? '-' }}</td>
                         <td>
                             <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase">
-                                {{ $user->role }}
+                                {{ $user['role_user'] ?? 'No Role' }}
                             </span>
                         </td>
                         <td class="flex justify-center gap-2">
-                            <button class="w-8 h-8 bg-yellow-400 hover:bg-yellow-500 text-white rounded-md flex items-center justify-center transition-colors">
+                            <a href="{{ route('user.edit', $uid) }}" class="w-8 h-8 bg-yellow-400 hover:bg-yellow-500 text-white rounded-md flex items-center justify-center transition-colors">
                                 <iconify-icon icon="lucide:edit-3"></iconify-icon>
-                            </button>
-                            <button class="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center justify-center transition-colors">
-                                <iconify-icon icon="lucide:trash-2"></iconify-icon>
-                            </button>
+                            </a>
+                            <form action="{{ route('user.destroy', $uid) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus user ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center justify-center transition-colors">
+                                    <iconify-icon icon="lucide:trash-2"></iconify-icon>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     @endforeach
@@ -96,8 +100,5 @@
 
 
 <script src="{{ asset("js/navbar.js") }}"></script>
-    <script>
-
-    </script>
 </body>
 </html>

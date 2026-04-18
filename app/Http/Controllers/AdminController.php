@@ -25,26 +25,29 @@ class AdminController extends Controller
         $waktuSekarang = Carbon::now('Asia/Makassar');
         $hariIni = $waktuSekarang->toDateString();
 
-        // 1. Ambil Data Tarif
         $tarifRaw = $this->database->getReference('objek_tarif')->getValue() ?? [];
         $tarifMap = [];
+        $stats = [];
+        $chartData = [];
+        $objekNames = [];
+
         foreach ($tarifRaw as $item) {
-            $key = strtolower(str_replace(' ', '', $item['nama'] ?? ''));
+            $namaOriginal = $item['nama'] ?? 'Lainnya';
+            $key = strtolower(str_replace(' ', '', $namaOriginal));
             $tarifMap[$key] = (int)($item['harga'] ?? 0);
+            $stats[$key] = 0;
+            $chartData[$key] = [];
+            $objekNames[$key] = $namaOriginal;
+        }
+        
+        if (empty($stats)) {
+            $stats = ['lainnya' => 0];
+            $chartData = ['lainnya' => []];
+            $objekNames = ['lainnya' => 'Lainnya'];
         }
 
-        // 2. Ambil Hasil Survei
         $surveiRaw = $this->database->getReference('hasil_survei')->getValue() ?? [];
-        
         $totalPendapatan = 0;
-        $stats = [
-            'motor' => 0,
-            'bus' => 0,
-            'minibus' => 0,
-            'truk' => 0,
-            'lainnya' => 0
-        ];
-
         $detailPendapatan = [];
 
         foreach ($surveiRaw as $item) {
@@ -61,6 +64,7 @@ class AdminController extends Controller
                 if (isset($stats[$jenis])) {
                     $stats[$jenis]++;
                 } else {
+                    if(!isset($stats['lainnya'])) $stats['lainnya'] = 0;
                     $stats['lainnya']++;
                 }
 
@@ -82,23 +86,13 @@ class AdminController extends Controller
             }
         }
 
-        // 3. Ambil Nama Lokasi
         $lokasiMaster = $this->database->getReference('lokasi')->getValue() ?? [];
         foreach ($detailPendapatan as &$detail) {
             $idL = $detail['id_lokasi'];
             $detail['nama_lokasi'] = $lokasiMaster[$idL]['nama_lokasi'] ?? ($lokasiMaster[$idL]['alamat'] ?? 'Lokasi Tidak Dikenal');
         }
 
-        // 4. Logika Grafik Mingguan (6 Hari Terakhir)
         $labelsMingguan = [];
-        $chartData = [
-            'motor' => [],
-            'bus' => [],
-            'minibus' => [],
-            'truk' => []
-        ];
-
-        // Kelompokkan data survei berdasarkan tanggal untuk mempercepat proses
         $groupedSurvei = [];
         foreach ($surveiRaw as $item) {
             $createdAt = $item['created_at'] ?? null;
@@ -106,7 +100,8 @@ class AdminController extends Controller
                 $dateKey = Carbon::parse($createdAt)->toDateString();
                 $jenis = strtolower(str_replace(' ', '', $item['jenis_kendaraan'] ?? ''));
                 if (!isset($groupedSurvei[$dateKey])) {
-                    $groupedSurvei[$dateKey] = ['motor' => 0, 'bus' => 0, 'minibus' => 0, 'truk' => 0];
+                    $groupedSurvei[$dateKey] = [];
+                    foreach($stats as $k => $v) $groupedSurvei[$dateKey][$k] = 0;
                 }
                 if (isset($groupedSurvei[$dateKey][$jenis])) {
                     $groupedSurvei[$dateKey][$jenis]++;
@@ -119,15 +114,15 @@ class AdminController extends Controller
             $dateString = $date->toDateString();
             $labelsMingguan[] = $date->translatedFormat('D'); 
 
-            $countsForDay = $groupedSurvei[$dateString] ?? ['motor' => 0, 'bus' => 0, 'minibus' => 0, 'truk' => 0];
-            
-            $chartData['motor'][] = $countsForDay['motor'];
-            $chartData['bus'][] = $countsForDay['bus'];
-            $chartData['minibus'][] = $countsForDay['minibus'];
-            $chartData['truk'][] = $countsForDay['truk'];
+            foreach($stats as $key => $val) {
+                $count = 0;
+                if (isset($groupedSurvei[$dateString][$key])) {
+                    $count = $groupedSurvei[$dateString][$key];
+                }
+                $chartData[$key][] = $count;
+            }
         }
 
-        // 5. Ambil Jumlah Pesan Masuk (Unread)
         $notifRaw = $this->database->getReference('notifikasi')->getValue() ?? [];
         $unreadCount = 0;
         foreach ($notifRaw as $notif) {
@@ -139,58 +134,11 @@ class AdminController extends Controller
         return view('admin.dashboardadmin', [
             'totalPendapatan' => $totalPendapatan,
             'stats' => $stats,
+            'objekNames' => $objekNames,
             'detailPendapatan' => $detailPendapatan,
             'labelsMingguan' => $labelsMingguan,
             'chartData' => $chartData,
             'unreadCount' => $unreadCount
         ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
     }
 }

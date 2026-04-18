@@ -9,6 +9,7 @@ use Kreait\Firebase\Database\Reference;
 use Kreait\Firebase\Database\Query;
 use Mockery;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 
 class LoginGeofencingTest extends TestCase
@@ -36,6 +37,7 @@ class LoginGeofencingTest extends TestCase
 
         $username = 'operator_test';
         $password = 'password123';
+        $hashed = Hash::make($password);
         $uid = 'uid_123';
         $idLokasi = 'lokasi_123';
 
@@ -46,7 +48,7 @@ class LoginGeofencingTest extends TestCase
         
         // Return values in order: 1. User data, 2. All Assignments, 3. Specific Location data
         $this->query->shouldReceive('getValue')->once()->andReturn([
-            $uid => ['username' => $username, 'password' => $password, 'role_user' => 'operator']
+            $uid => ['username' => $username, 'password' => $hashed, 'role_user' => 'operator']
         ]);
 
         $this->reference->shouldReceive('getValue')->andReturnValues([

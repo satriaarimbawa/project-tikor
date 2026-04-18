@@ -63,7 +63,7 @@ class ControllerAccessTest extends TestCase
         $this->reference->shouldReceive('getValue')->andReturn([]);
 
         $response = $this->withSession([
-            'role_user' => 'admin', 
+            'role' => 'admin', 
             'login_status' => true,
             'username' => 'Test Admin'
         ])->get('/dashboard-admin');
@@ -81,7 +81,7 @@ class ControllerAccessTest extends TestCase
         $this->query->shouldReceive('getValue')->andReturn([]);
         $this->reference->shouldReceive('getValue')->andReturn([]);
 
-        $response = $this->withSession(['role_user' => 'admin', 'login_status' => true])
+        $response = $this->withSession(['role' => 'admin', 'login_status' => true])
                          ->get('/dashboard-penugasan');
 
         $response->assertStatus(200);

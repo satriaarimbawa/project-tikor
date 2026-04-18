@@ -20,7 +20,7 @@
 
         <div class="left-section">
             <div class="header-logos-login">
-                <img src="{{ asset('assets/logo_klungkung.png') }}" alt="Logo">
+                <img src="{{ asset('assets/Logo_Klungkung.png') }}" alt="Logo">
                 <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo">
             </div>
 
@@ -63,7 +63,7 @@
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox"> Remember me
                         </label>
-                        <a href="#" class="lupa-sandi">Lupa Kata Sandi?</a>
+                        <a href="{{ route('password.request') }}" class="lupa-sandi">Lupa Kata Sandi?</a>
                     </div>
 
                     <button type="submit" class="btn-login">Login</button>

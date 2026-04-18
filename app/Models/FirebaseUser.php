@@ -32,4 +32,18 @@ class FirebaseUser
     {
         return self::database()->getReference(self::$path . '/' . $id)->getValue();
     }
+
+    // Fungsi untuk Update Data
+    public static function update($id, array $data)
+    {
+        self::database()->getReference(self::$path . '/' . $id)->update($data);
+        return true;
+    }
+
+    // Fungsi untuk Hapus Data
+    public static function delete($id)
+    {
+        self::database()->getReference(self::$path . '/' . $id)->remove();
+        return true;
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 class LoginController extends Controller
@@ -23,7 +24,7 @@ class LoginController extends Controller
 
     private function hitungJarak($lat1, $lon1, $lat2, $lon2)
     {
-        $radiusBumi = 6371000; // Dalam meter
+        $radiusBumi = 6371000;
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
         $a = sin($dLat / 2) * sin($dLat / 2) +
@@ -38,7 +39,6 @@ class LoginController extends Controller
         $username = $request->input('username');
         $password = $request->input('password');
 
-        // Cari user berdasarkan username menggunakan indeks Firebase
         $users = $this->database->getReference('users')
             ->orderByChild('username')
             ->equalTo($username)
@@ -51,13 +51,12 @@ class LoginController extends Controller
         $uid = array_key_first($users);
         $user_data = $users[$uid];
 
-        if ($user_data['password'] !== $password) {
+        if (!Hash::check($password, $user_data['password'])) {
             return redirect()->back()->with('error', 'Password salah!');
         }
 
         $idLokasiTugas = null;
 
-        // --- 1. Pengecekan Khusus Operator (Geofencing & Jadwal) ---
         if ($user_data['role_user'] === 'operator') {
             $latitudeUser = (float) $request->input('latitude');
             $longitudeUser = (float) $request->input('longitude');
@@ -107,7 +106,6 @@ class LoginController extends Controller
             }
         }
 
-        // --- 2. Jika Lolos (Login Berhasil) ---
         session()->put([
             'login_status' => true,
             'username'     => $user_data['username'],

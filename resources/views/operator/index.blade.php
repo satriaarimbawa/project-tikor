@@ -156,15 +156,12 @@
         );
     });
 
-    </script>
-</body>
-
-</html>a tambahan jika diperlukan
+    function handleFile() {
+        // Logika file
     }
 
     function handleDownload() {
         alert("Sedang mengunduh laporan ringkasan...");
-        // Logika tambahan jika diperlukan
     }
     </script>
 </body>

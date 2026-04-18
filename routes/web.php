@@ -20,10 +20,19 @@ Route::get('/', function () {
 });
 
 //route login
-Route::get('/login', [LoginController::class, 'index']);
+Route::get('/login', [LoginController::class, 'index'])->name('login');
 Route::get('/logout', [LoginController::class, 'logout']);
 Route::post('/cek_login', [LoginController::class, 'cek_login']);
 Route::get('/login-admin', [AdminController::class, 'loginadmin']);
+
+// Route Lupa Password
+use App\Http\Controllers\ForgotPasswordController;
+Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetCodeEmail'])->name('password.email');
+Route::get('/verify-otp', [ForgotPasswordController::class, 'showOtpForm'])->name('password.otp');
+Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp'])->name('password.verify');
+Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])->name('password.update');
 
 
 Route::middleware(['admin'])->group(function () {
@@ -58,6 +67,9 @@ Route::middleware(['admin'])->group(function () {
     Route::get('daftar-user', [DaftarUserController::class, 'index']);
     Route::get('/tambahuser', [DaftarUserController::class, 'create'])->name('user.create');
     Route::post('/user/simpan', [DaftarUserController::class, 'store'])->name('user.store');
+    Route::get('/user/edit/{id}', [DaftarUserController::class, 'edit'])->name('user.edit');
+    Route::post('/user/update/{id}', [DaftarUserController::class, 'update'])->name('user.update');
+    Route::delete('/user/hapus/{id}', [DaftarUserController::class, 'destroy'])->name('user.destroy');
 
     // Laporan Lokasi
     Route::get('/laporan_lokasi', [LaporanLokasiController::class, 'index'])->name('laporan.lokasi');

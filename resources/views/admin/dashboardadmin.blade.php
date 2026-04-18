@@ -14,7 +14,6 @@
 
     @include('admin.template.navbar')
 
-
     <main class="main-content ml-64 p-8 w-full">
         <header class="flex justify-between items-center mb-8">
             <h1 class="text-gray-800 font-bold text-[30px] tracking-tight">Pendapatan Harian</h1>
@@ -46,50 +45,45 @@
             </div>
         </div>
 
+        @php
+            $colors = [
+                'bg' => ['#4A78D7', '#E9A426', '#953EE1', '#E95BA4', '#10B981', '#3B82F6', '#F59E0B', '#EF4444'],
+                'gradient' => [
+                    'rgba(16, 86, 216, 0.4)', 
+                    'rgba(233, 164, 38, 0.4)', 
+                    'rgba(149, 62, 225, 0.4)', 
+                    'rgba(233, 91, 164, 0.4)',
+                    'rgba(16, 185, 129, 0.4)',
+                    'rgba(59, 130, 246, 0.4)',
+                    'rgba(245, 158, 11, 0.4)',
+                    'rgba(239, 68, 68, 0.4)'
+                ]
+            ];
+            $icons = [
+                'motor' => 'motor.png',
+                'bus' => 'bus.png',
+                'minibus' => 'mini bus.png',
+                'truk' => 'truk.png'
+            ];
+        @endphp
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-            <div class="relative overflow-hidden p-6 rounded-[25px] flex items-center gap-4 border border-blue-100 transition-transform hover:scale-105 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)]"
-                 style="background: linear-gradient(90deg, rgba(16, 86, 216, 0.4) 50%, rgba(255, 255, 255, 0.32) 100%);">
-                <div class="relative z-10 w-14 h-14 bg-[#4A78D7] rounded-2xl flex items-center justify-center shadow-md flex-shrink-0">
-                    <img src="{{ asset('assets/bus.png') }}" alt="Bus" class="w-9 h-9 object-contain">
+            @foreach($stats as $key => $count)
+                @php 
+                    $index = $loop->index % count($colors['bg']);
+                    $iconFile = $icons[$key] ?? 'Bus.png';
+                @endphp
+                <div class="relative overflow-hidden p-6 rounded-[25px] flex items-center gap-4 border border-gray-100 transition-transform hover:scale-105 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)]"
+                     style="background: linear-gradient(90deg, {{ $colors['gradient'][$index] }} 50%, rgba(255, 255, 255, 0.32) 100%);">
+                    <div class="relative z-10 w-14 h-14 rounded-2xl flex items-center justify-center shadow-md flex-shrink-0" style="background-color: {{ $colors['bg'][$index] }};">
+                        <img src="{{ asset('assets/' . $iconFile) }}" alt="{{ $key }}" class="w-9 h-9 object-contain">
+                    </div>
+                    <div class="relative z-10">
+                        <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">{{ $objekNames[$key] ?? $key }}</p>
+                        <h3 class="text-2xl font-black text-gray-700">{{ $count }}</h3>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">Bus</p>
-                    <h3 class="text-2xl font-black text-gray-700">{{ $stats['bus'] ?? 0 }}</h3>
-                </div>
-            </div>
-
-            <div class="relative overflow-hidden p-6 rounded-[25px] flex items-center gap-4 border border-orange-100 transition-transform hover:scale-105 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)]"
-                 style="background: linear-gradient(90deg, rgba(233, 164, 38, 0.4) 63%, rgba(255, 255, 255, 0.32) 100%);">
-                <div class="relative z-10 w-14 h-14 bg-[#E9A426] rounded-2xl flex items-center justify-center shadow-lg shadow-orange-600/30 flex-shrink-0">
-                    <img src="{{ asset('assets/motor.png') }}" alt="Motor" class="w-9 h-9 object-contain">
-                </div>
-                <div class="relative z-10">
-                    <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">Motor</p>
-                    <h3 class="text-2xl font-black text-gray-700">{{ $stats['motor'] ?? 0 }}</h3>
-                </div>
-            </div>
-
-            <div class="relative overflow-hidden p-6 rounded-[25px] flex items-center gap-4 border border-purple-100 transition-transform hover:scale-105 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)]"
-                 style="background: linear-gradient(90deg, rgba(149, 62, 225, 0.4) 61%, rgba(255, 255, 255, 0.32) 100%);">
-                <div class="relative z-10 w-14 h-14 bg-[#953EE1] rounded-2xl flex items-center justify-center shadow-lg shadow-purple-600/30 flex-shrink-0">
-                    <img src="{{ asset('assets/mini bus.png') }}" alt="Mini Bus" class="w-9 h-9 object-contain">
-                </div>
-                <div class="relative z-10">
-                    <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">Mini Bus</p>
-                    <h3 class="text-2xl font-black text-gray-700">{{ $stats['minibus'] ?? 0 }}</h3>
-                </div>
-            </div>
-
-            <div class="relative overflow-hidden p-6 rounded-[25px] flex items-center gap-4 border border-pink-100 transition-transform hover:scale-105 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)]"
-                 style="background: linear-gradient(90deg, rgba(233, 91, 164, 0.4) 50%, rgba(255, 255, 255, 0.32) 100%);">
-                <div class="relative z-10 w-14 h-14 bg-[#E95BA4] rounded-2xl flex items-center justify-center shadow-lg shadow-pink-600/30 flex-shrink-0">
-                    <img src="{{ asset('assets/truk.png') }}" alt="Truk" class="w-9 h-9 object-contain">
-                </div>
-                <div class="relative z-10">
-                    <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">Truk</p>
-                    <h3 class="text-2xl font-black text-gray-700">{{ $stats['truk'] ?? 0 }}</h3>
-                </div>
-            </div>
+            @endforeach
         </div>
 
         <div class="bg-white p-10 rounded-[30px] shadow-sm mb-10 border border-gray-100 w-full">
@@ -104,22 +98,13 @@
                 </div>
 
                 <div class="flex flex-col justify-center gap-3 min-w-[120px]">
-                    <div class="flex items-center gap-3">
-                        <span class="w-4 h-4 rounded-full bg-[#4A78D7]"></span>
-                        <span class="text-sm font-semibold text-gray-700">Bus</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="w-4 h-4 rounded-full bg-[#E9A426]"></span>
-                        <span class="text-sm font-semibold text-gray-700">Motor</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="w-4 h-4 rounded-full bg-[#953EE1]"></span>
-                        <span class="text-sm font-semibold text-gray-700">Mini Bus</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="w-4 h-4 rounded-full bg-[#E95BA4]"></span>
-                        <span class="text-sm font-semibold text-gray-700">Truk</span>
-                    </div>
+                    @foreach($objekNames as $key => $name)
+                        @php $index = $loop->index % count($colors['bg']); @endphp
+                        <div class="flex items-center gap-3">
+                            <span class="w-4 h-4 rounded-full" style="background-color: {{ $colors['bg'][$index] }};"></span>
+                            <span class="text-sm font-semibold text-gray-700">{{ $name }}</span>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -167,55 +152,35 @@
         document.addEventListener('DOMContentLoaded', function () {
             const ctx = document.getElementById('weeklyMonitoringChart').getContext('2d');
             
+            const colors = ['#4A78D7', '#E9A426', '#953EE1', '#E95BA4', '#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
+            const chartDataRaw = @json($chartData);
+            const objekNames = @json($objekNames);
+            const labelsMingguan = @json($labelsMingguan);
+
+            const datasets = Object.keys(chartDataRaw).map((key, index) => {
+                return {
+                    label: objekNames[key] || key,
+                    data: chartDataRaw[key],
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length],
+                    tension: 0.1,
+                    borderWidth: 3,
+                    fill: false
+                };
+            });
+            
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: @json($labelsMingguan),
-                    datasets: [
-                        { 
-                            label: 'Bus', 
-                            data: @json($chartData['bus']), 
-                            borderColor: '#4A78D7', 
-                            backgroundColor: '#4A78D7', 
-                            tension: 0.1, 
-                            borderWidth: 3,
-                            fill: false 
-                        },
-                        { 
-                            label: 'Motor', 
-                            data: @json($chartData['motor']), 
-                            borderColor: '#E9A426', 
-                            backgroundColor: '#E9A426', 
-                            tension: 0.1, 
-                            borderWidth: 3,
-                            fill: false
-                        },
-                        { 
-                            label: 'Mini Bus', 
-                            data: @json($chartData['minibus']), 
-                            borderColor: '#953EE1', 
-                            backgroundColor: '#953EE1', 
-                            tension: 0.1, 
-                            borderWidth: 3,
-                            fill: false
-                        },
-                        { 
-                            label: 'Truk', 
-                            data: @json($chartData['truk']), 
-                            borderColor: '#E95BA4', 
-                            backgroundColor: '#E95BA4', 
-                            tension: 0.1, 
-                            borderWidth: 3,
-                            fill: false
-                        }
-                    ]
+                    labels: labelsMingguan,
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { 
                         legend: { 
-                            display: false // Legenda menggunakan HTML manual di samping canvas
+                            display: false
                         },
                         tooltip: {
                             mode: 'index',

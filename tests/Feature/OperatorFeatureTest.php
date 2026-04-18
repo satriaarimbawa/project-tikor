@@ -8,11 +8,13 @@ use Kreait\Firebase\Contract\Database;
 use Kreait\Firebase\Database\Reference;
 use Kreait\Firebase\Database\Query;
 use Mockery;
+use Kreait\Laravel\Firebase\Facades\Firebase;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 
 class OperatorFeatureTest extends TestCase
 {
     use WithoutMiddleware;
+
     protected $database;
     protected $reference;
     protected $query;
@@ -20,69 +22,63 @@ class OperatorFeatureTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
         $this->database = Mockery::mock(Database::class);
         $this->reference = Mockery::mock(Reference::class);
         $this->query = Mockery::mock(Query::class);
+        
         $this->app->instance(Database::class, $this->database);
+        Firebase::shouldReceive('database')->andReturn($this->database);
     }
 
     #[Test]
-    public function it_can_access_operator_index_with_data()
+    public function it_displays_dashboard_operator_correctly()
     {
-        $userId = 'test_uid';
-        $idLokasi = 'test_lokasi';
+        $uid = 'uid_123';
+        $idLokasi = 'lokasi_1';
+        session(['user_id' => $uid, 'id_lokasi_aktif' => $idLokasi]);
 
-        $this->database->shouldReceive('getReference')->with('hasil_survei')->andReturn($this->reference);
-        $this->reference->shouldReceive('orderByChild')->with('id_user')->andReturn($this->query);
-        $this->query->shouldReceive('equalTo')->with($userId)->andReturn($this->query);
-        $this->query->shouldReceive('getValue')->andReturn([
-            ['id_lokasi' => $idLokasi, 'jenis_kendaraan' => 'motor', 'created_at' => now()->toDateTimeString()],
-        ]);
+        $this->database->shouldReceive('getReference')->with('objek_tarif')->byDefault()->andReturn($this->reference);
+        $this->reference->shouldReceive('getValue')->byDefault()->andReturn(['obj1' => ['nama' => 'Motor']]);
 
-        $this->database->shouldReceive('getReference')->with('lokasi')->andReturn($this->reference);
-        $this->reference->shouldReceive('getValue')->andReturn([
-            $idLokasi => ['nama_lokasi' => 'Terminal Galiran']
-        ]);
+        $this->database->shouldReceive('getReference')->with('hasil_survei')->byDefault()->andReturn($this->reference);
+        $this->reference->shouldReceive('orderByChild')->with('id_user')->byDefault()->andReturn($this->query);
+        $this->query->shouldReceive('equalTo')->with($uid)->byDefault()->andReturn($this->query);
+        $this->query->shouldReceive('getValue')->byDefault()->andReturn([]);
 
-        $response = $this->withSession([
-            'role' => 'operator',
-            'login_status' => true,
-            'user_id' => $userId,
-            'id_lokasi_aktif' => $idLokasi
-        ])->get('/dashboard-operator');
+        $this->database->shouldReceive('getReference')->with('lokasi')->byDefault()->andReturn($this->reference);
+        $this->reference->shouldReceive('getValue')->byDefault()->andReturn([$idLokasi => ['nama_lokasi' => 'Terminal']]);
+
+        $this->database->shouldReceive('getReference')->with('penugasan')->byDefault()->andReturn($this->reference);
+        $this->reference->shouldReceive('orderByChild')->with('id_user')->byDefault()->andReturn($this->query);
+        $this->query->shouldReceive('equalTo')->with($uid)->byDefault()->andReturn($this->query);
+        $this->query->shouldReceive('getValue')->byDefault()->andReturn([]);
+
+        $response = $this->get('/dashboard-operator');
 
         $response->assertStatus(200);
+        $response->assertViewHas('nama_lokasi', 'Terminal');
     }
 
     #[Test]
-    public function it_can_save_survey_count()
+    public function it_can_save_vehicle_survey_count()
     {
-        $this->database->shouldReceive('getReference')->with('hasil_survei')->andReturn($this->reference);
-        $this->reference->shouldReceive('push')->once()->andReturn($this->reference);
+        $uid = 'uid_123';
+        $idLokasi = 'lokasi_1';
+        session(['user_id' => $uid, 'id_lokasi_aktif' => $idLokasi]);
 
-        $response = $this->withSession([
-            'role' => 'operator',
-            'login_status' => true,
-            'user_id' => 'test_uid',
-            'id_lokasi_aktif' => 'test_lokasi'
-        ])->postJson('/simpan-hitung-kendaraan', [
-            'jenis_kendaraan' => 'bus'
+        $this->database->shouldReceive('getReference')->with('hasil_survei')->andReturn($this->reference);
+        
+        // Simpan hitung memanggil push($data) langsung
+        $this->reference->shouldReceive('push')->with(Mockery::on(function($data) {
+            return $data['jenis_kendaraan'] === 'Motor' && 
+                   $data['id_lokasi'] === 'lokasi_1';
+        }))->once()->andReturn($this->reference);
+
+        $response = $this->post('/simpan-hitung-kendaraan', [
+            'jenis_kendaraan' => 'Motor'
         ]);
 
-        $response->assertStatus(200);
-    }
-
-    #[Test]
-    public function it_fails_to_access_survei_without_active_location()
-    {
-        $response = $this->withSession([
-            'role' => 'operator',
-            'login_status' => true,
-            'user_id' => 'test_uid'
-        ])->get('/dashboard-operator-survei');
-
-        $response->assertRedirect('/dashboard-operator-penugasan');
+        $response->assertJson(['success' => true]);
     }
 
     protected function tearDown(): void
