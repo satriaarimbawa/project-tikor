@@ -19,11 +19,11 @@
             <h1 class="text-gray-800 font-bold text-[30px] tracking-tight">Pendapatan Harian</h1>
     
             <div class="flex items-center gap-6">
-                <div class="flex items-center gap-2 text-orange-600 font-bold text-sm bg-orange-50 px-5 py-2 rounded-full border border-orange-100 shadow-sm relative">
+                <div onclick="toggleNotifModal()" class="cursor-pointer flex items-center gap-2 text-orange-600 font-bold text-sm bg-orange-50 px-5 py-2 rounded-full border border-orange-100 shadow-sm relative hover:bg-orange-100 transition-all">
                     <iconify-icon icon="lucide:mail" class="text-lg"></iconify-icon>
                     <span>Pesan Masuk</span>
                     @if($unreadCount > 0)
-                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+                        <span id="notifBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
                             {{ $unreadCount }}
                         </span>
                     @endif
@@ -31,6 +31,14 @@
                 <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-10 h-10 object-contain" alt="Logo Klungkung">
             </div>
         </header>
+
+        <style>
+            @keyframes slideIn {
+                from { transform: translateX(50px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+        </style>
 
         <div class="card-revenue p-10 flex items-center gap-8 mb-10 relative overflow-hidden bg-white rounded-[30px] shadow-[0_10px_25px_rgba(0,0,0,0.1)]">
            <div class="absolute inset-0 opacity-40" 
@@ -149,6 +157,59 @@
     <script src="{{ asset('js/navbar.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        function toggleNotifModal() {
+            const modal = document.getElementById('notifModal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                loadNotifications();
+            }
+        }
+
+        async function loadNotifications() {
+            const container = document.getElementById('notifContainer');
+            try {
+                const response = await fetch('/api/notifications');
+                const data = await response.json();
+                
+                if (Object.keys(data).length === 0) {
+                    container.innerHTML = '<div class="text-center py-10 text-gray-400 italic text-sm">Tidak ada notifikasi pelanggaran.</div>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                for (const key in data) {
+                    const notif = data[key];
+                    const isUnread = notif.status === 'unread';
+                    const html = `
+                        <div class="p-4 rounded-2xl ${isUnread ? 'bg-orange-50 border border-orange-100' : 'bg-gray-50 border border-gray-100'} transition-all">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-[10px] font-bold text-[#253D6B] uppercase tracking-tighter">${notif.judul}</span>
+                                <span class="text-[9px] text-gray-400">${notif.waktu}</span>
+                            </div>
+                            <p class="text-xs text-gray-700 leading-relaxed">${notif.pesan}</p>
+                            ${isUnread ? '<div class="mt-2 w-2 h-2 bg-red-500 rounded-full"></div>' : ''}
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', html);
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="text-center py-10 text-red-400 italic text-sm">Gagal memuat notifikasi.</div>';
+            }
+        }
+
+        async function markAllAsRead() {
+            try {
+                await fetch('/api/notifications/mark-read', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                document.getElementById('notifBadge')?.remove();
+                loadNotifications();
+            } catch (error) {
+                console.error("Gagal memperbarui notifikasi:", error);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const ctx = document.getElementById('weeklyMonitoringChart').getContext('2d');
             

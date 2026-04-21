@@ -7,19 +7,56 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>DASHBOARD || LOGIN</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     @vite(['resources/css/app.css', 'resources/css/login.css'])
+    <style>
+        .guide-overlay {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            background: white;
+            z-index: 9999;
+            border-top-left-radius: 30px;
+            border-top-right-radius: 30px;
+            padding: 20px;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+            transition: bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .guide-overlay.active {
+            bottom: 0;
+        }
+        .guide-handle {
+            width: 40px;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 2px;
+            margin: 0 auto 15px;
+        }
+        #guide-map {
+            height: 250px;
+            width: 100%;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
 </head>
 
 <body>
 
     @if(session('error'))
-    <div style="color: white; background-color: #ff4d4d; padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+    <div style="color: white; background-color: #ff4d4d; padding: 10px; margin-bottom: 15px; border-radius: 5px; position: fixed; top: 20px; left: 20px; right: 20px; z-index: 10000; text-align: center;">
         {{ session('error') }}
     </div>
     @endif
 
     @if(session('success'))
-    <div style="color: white; background-color: #28a745; padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+    <div style="color: white; background-color: #28a745; padding: 10px; margin-bottom: 15px; border-radius: 5px; position: fixed; top: 20px; left: 20px; right: 20px; z-index: 10000; text-align: center;">
         {{ session('success') }}
     </div>
     @endif
@@ -31,7 +68,7 @@
         <div class="login-card">
             <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo" class="logo">
 
-            <form action="/cek_login" method="POST">
+            <form action="/cek_login" method="POST" id="loginForm">
                 @csrf
 
                 <input type="hidden" name="latitude" id="latitude">
@@ -54,43 +91,90 @@
         </div>
     </div>
 
+    <div class="guide-overlay" id="guideOverlay">
+        <div class="guide-handle"></div>
+        <div class="flex justify-between items-center mb-4 px-2">
+            <h3 class="text-sm font-black text-[#253D6B] uppercase tracking-wider">Pemandu Lokasi</h3>
+            <button onclick="toggleGuide(false)" class="text-gray-400 hover:text-gray-600">
+                <iconify-icon icon="lucide:x" class="text-2xl"></iconify-icon>
+            </button>
+        </div>
+        <div id="guide-map"></div>
+        <p id="distanceText" class="text-center text-sm font-bold text-red-600 mt-4"></p>
+        <div class="mt-4 px-2">
+            <button onclick="toggleGuide(false)" class="w-full py-3 bg-[#253D6B] text-white font-bold rounded-xl text-sm shadow-lg">
+                SAYA MENGERTI
+            </button>
+        </div>
+    </div>
+
     <script>
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                document.getElementById('latitude').value = position.coords.latitude;
-                document.getElementById('longitude').value = position.coords.longitude;
-            },
-            function(error) {
-                console.log("Akses lokasi ditolak atau gagal: ", error);
-            }
-        );
-    } else {
-        alert("Browser Anda tidak mendukung fitur lokasi.");
+    let map, userMarker, targetMarker, targetCircle;
+    const targetData = {
+        lat: {{ session('target_lat') ?? 'null' }},
+        lng: {{ session('target_lng') ?? 'null' }},
+        radius: {{ session('target_radius') ?? 'null' }},
+        name: "{{ session('nama_lokasi_target') ?? '' }}"
+    };
+
+    function toggleGuide(show) {
+        const overlay = document.getElementById('guideOverlay');
+        if (show) overlay.classList.add('active');
+        else overlay.classList.remove('active');
     }
 
-    function getLocation() {
-        const options = {
-            enableHighAccuracy: true,
-            timeout: 1000,
-            maximumAge: 0
-        };
+    function initGuideMap(userLat, userLng) {
+        if (!targetData.lat) return;
+        toggleGuide(true);
+        if (!map) {
+            map = L.map('guide-map').setView([userLat, userLng], 17);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            targetMarker = L.marker([targetData.lat, targetData.lng]).addTo(map).bindPopup("<b>" + targetData.name + "</b>").openPopup();
+            targetCircle = L.circle([targetData.lat, targetData.lng], {
+                color: '#10b981', fillColor: '#10b981', fillOpacity: 0.15, radius: targetData.radius
+            }).addTo(map);
+            userMarker = L.circleMarker([userLat, userLng], {
+                color: '#3b82f6', radius: 8, fillColor: '#3b82f6', fillOpacity: 1
+            }).addTo(map);
+        }
+    }
 
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = document.getElementById('latitude');
-                const lon = document.getElementById('longitude');
-                if(lat) lat.value = position.coords.latitude;
-                if(lon) lon.value = position.coords.longitude;
+    function updateDistance(userLat, userLng) {
+        if (!targetData.lat) return;
+        const from = L.latLng(userLat, userLng);
+        const to = L.latLng(targetData.lat, targetData.lng);
+        const distance = from.distanceTo(to);
+        const distText = document.getElementById('distanceText');
+        if (distance <= targetData.radius) {
+            distText.innerHTML = "✅ Anda sudah berada di lokasi! Silakan Login kembali.";
+            distText.classList.replace('text-red-600', 'text-green-600');
+            setTimeout(() => toggleGuide(false), 5000);
+        } else {
+            distText.innerHTML = "📍 Jarak ke lokasi: " + Math.round(distance) + " meter lagi";
+        }
+        if (userMarker) {
+            userMarker.setLatLng([userLat, userLng]);
+            map.panTo([userLat, userLng]);
+        }
+    }
+
+    if (navigator.geolocation) {
+        const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+        navigator.geolocation.watchPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
+                if (targetData.lat) {
+                    initGuideMap(lat, lng);
+                    updateDistance(lat, lng);
+                }
             },
-            (error) => {
-                console.log("Gagal ambil GPS: " + error.message);
-            },
+            function(error) { console.warn("GPS Error: ", error.message); },
             options
         );
     }
-
-    window.onload = getLocation;
     </script>
 </body>
 

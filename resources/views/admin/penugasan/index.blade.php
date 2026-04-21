@@ -74,25 +74,41 @@
                             <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['tanggal_rentang'] }}
                                 <br>{{ $penugasan['jam_rentang'] }}</td>
                             <td class="py-3 px-4 border-r border-gray-300 text-sm">
+                                @if($penugasan['file_spt'] !== '-')
                                 <a href="{{ asset('uploads/spt/' . $penugasan['file_spt']) }}" 
-                                   download="SPT_Penugasan_{{ $penugasan['nama_operator'] }}.png" 
+                                   target="_blank"
                                    class="text-blue-600 hover:underline font-bold">
-                                   Download SPT
+                                   Lihat / Download SPT
                                 </a>
+                                @else
+                                <span class="text-gray-400">Tidak ada file</span>
+                                @endif
                             </td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">
-                                <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase">Aktif</span>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm text-center">
+                                @if(($penugasan['status'] ?? 'aktif') === 'aktif')
+                                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-green-200">Aktif</span>
+                                @else
+                                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-red-200">Inaktif</span>
+                                @endif
                             </td>
                             <td class="py-3 px-4 border-r border-gray-300 text-sm italic">{{ $penugasan['objek_survei'] }}</td>
                             <td class="py-3 px-4">
                                 <div class="flex justify-center gap-2">
-                                    <a href="{{ url('/dashboard-penugasan/edit/'.$penugasan['id']) }}" class="bg-yellow-400 p-1.5 rounded hover:bg-yellow-500 flex items-center justify-center transition-colors">
+                                    @if(($penugasan['status'] ?? 'aktif') === 'inaktif')
+                                    <form action="{{ route('penugasan.reset', $penugasan['id']) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="bg-blue-500 p-1.5 rounded hover:bg-blue-600 flex items-center justify-center transition-colors shadow-md" title="Aktifkan Kembali">
+                                            <iconify-icon icon="lucide:refresh-cw" class="text-white text-lg"></iconify-icon>
+                                        </button>
+                                    </form>
+                                    @endif
+                                    <a href="{{ url('/dashboard-penugasan/edit/'.$penugasan['id']) }}" class="bg-yellow-400 p-1.5 rounded hover:bg-yellow-500 flex items-center justify-center transition-colors shadow-md">
                                         <iconify-icon icon="lucide:edit-3" class="text-white text-lg"></iconify-icon>
                                     </a>
                                     <form action="{{ url('/delete-penugasan/'.$penugasan['id']) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus penugasan ini?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="bg-red-500 p-1.5 rounded hover:bg-red-600 flex items-center justify-center transition-colors">
+                                        <button type="submit" class="bg-red-500 p-1.5 rounded hover:bg-red-600 flex items-center justify-center transition-colors shadow-md">
                                             <iconify-icon icon="lucide:trash-2" class="text-white text-lg"></iconify-icon>
                                         </button>
                                     </form>

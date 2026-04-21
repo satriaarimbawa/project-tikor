@@ -29,7 +29,7 @@ class UserManagementTest extends TestCase
     }
 
     #[Test]
-    public function it_can_list_all_users()
+    public function ia_dapat_menampilkan_semua_daftar_user()
     {
         $this->database->shouldReceive('getReference')->with('users')->andReturn($this->reference);
         $this->reference->shouldReceive('getValue')->andReturn([
@@ -45,7 +45,7 @@ class UserManagementTest extends TestCase
     }
 
     #[Test]
-    public function it_can_update_user_data()
+    public function ia_dapat_memperbarui_data_user()
     {
         $uid = 'uid_to_update';
         $this->database->shouldReceive('getReference')->with("users/{$uid}")->andReturn($this->reference);
@@ -58,11 +58,11 @@ class UserManagementTest extends TestCase
         ]);
 
         $response->assertRedirect('/daftar-user');
-        $response->assertSessionHas('success');
+        $response->assertSessionHas('success', 'User berhasil diperbarui!');
     }
 
     #[Test]
-    public function it_can_delete_user()
+    public function ia_dapat_menghapus_user()
     {
         $uid = 'uid_to_delete';
         $this->database->shouldReceive('getReference')->with("users/{$uid}")->andReturn($this->reference);
@@ -71,7 +71,7 @@ class UserManagementTest extends TestCase
         $response = $this->delete("/user/hapus/{$uid}");
 
         $response->assertRedirect('/daftar-user');
-        $response->assertSessionHas('success');
+        $response->assertSessionHas('success', 'User berhasil dihapus!');
     }
 
     protected function tearDown(): void

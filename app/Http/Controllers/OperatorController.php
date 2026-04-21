@@ -19,53 +19,67 @@ class OperatorController extends Controller
     {
         $userId = session('user_id');
         $idLokasiAktif = session('id_lokasi_aktif');
+        $now = Carbon::now('Asia/Makassar');
+        $today = $now->toDateString();
         
-        // Ambil riwayat survei kendaraan (hasil_survei) untuk user ini menggunakan indeks Firebase
-        $riwayatRaw = $this->database->getReference('hasil_survei')
-                            ->orderByChild('id_user')
-                            ->equalTo($userId)
-                            ->getValue() ?? [];
-
         $semuaLokasi = $this->database->getReference('lokasi')->getValue() ?? [];
         $dataLokasi = $idLokasiAktif ? ($semuaLokasi[$idLokasiAktif] ?? null) : null;
-        
         $nama_lokasi = $dataLokasi ? ($dataLokasi['nama_lokasi'] ?? $dataLokasi['alamat'] ?? 'Lokasi Tidak Dikenal') : 'Lokasi Tidak Aktif';
         
-        $riwayat_kendaraan = [];
+        // 1. Ambil Ringkasan Harian & Riwayat dari struktur berjenjang jam
         $counts = ['motor' => 0, 'minibus' => 0, 'bus' => 0, 'truk' => 0];
+        $totalSemua = 0;
+        $riwayat_kendaraan = [];
+        
+        if ($idLokasiAktif) {
+            // Path: survei_harian/{id_lokasi}/{today}
+            $dataHariIni = $this->database->getReference("survei_harian/{$idLokasiAktif}/{$today}")->getValue() ?? [];
+            
+            // Loop Jam (00-23)
+            foreach ($dataHariIni as $hour => $dataJam) {
+                // Loop Penugasan dalam jam tersebut
+                foreach ($dataJam as $idPenugasan => $dataTugas) {
+                    // Akumulasi angka dashboard (SEMUA operator di lokasi ini)
+                    foreach ($counts as $key => $val) {
+                        $valTambah = $dataTugas[$key] ?? 0;
+                        $counts[$key] += $valTambah;
+                        $totalSemua += $valTambah;
+                    }
 
-        foreach ($riwayatRaw as $item) {
-            $idLokasi = $item['id_lokasi'] ?? null;
-            if ($idLokasi == $idLokasiAktif) {
-                $jenis = strtolower(str_replace(' ', '', $item['jenis_kendaraan'] ?? ''));
-                if (isset($counts[$jenis])) $counts[$jenis]++;
-                else $counts[$jenis] = 1;
-
-                $riwayat_kendaraan[] = [
-                    'jam' => Carbon::parse($item['created_at'] ?? now())->format('H:i'),
-                    'kendaraan' => ucfirst($item['jenis_kendaraan'] ?? 'Tidak Dikenal'),
-                    'lokasi' => $semuaLokasi[$idLokasi]['nama_lokasi'] ?? ($semuaLokasi[$idLokasi]['alamat'] ?? 'Tanpa Nama'),
-                ];
+                    // Riwayat Aktivitas - Ambil per jam per penugasan milik user ini
+                    if (($dataTugas['user_id'] ?? '') == $userId) {
+                        $labelJam = $hour . ':00';
+                        // Karena struktur baru tidak ada node 'logs', kita ringkas per jam per jenis
+                        foreach (['motor', 'minibus', 'bus', 'truk'] as $v) {
+                            if (isset($dataTugas[$v]) && $dataTugas[$v] > 0) {
+                                $riwayat_kendaraan[] = [
+                                    'jam' => $labelJam,
+                                    'kendaraan' => ucfirst($v) . " ({$dataTugas[$v]} unit)",
+                                    'lokasi' => $nama_lokasi,
+                                ];
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        // Urutkan riwayat terbaru di atas
+        // Urutkan riwayat (jam terbaru di atas)
         usort($riwayat_kendaraan, fn($a, $b) => strcmp($b['jam'], $a['jam']));
 
         $isAktif = false;
         $objekSurvei = [];
         if ($idLokasiAktif) {
-            $waktuSekarang = Carbon::now('Asia/Makassar');
             $penugasanAktif = $this->database->getReference('penugasan')
                                 ->orderByChild('id_user')
                                 ->equalTo($userId)
                                 ->getValue() ?? [];
             
             foreach ($penugasanAktif as $tugas) {
-                if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif) {
+                if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
                     $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
                     $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
-                    if ($waktuSekarang->between($mulai, $selesai)) {
+                    if ($now->between($mulai, $selesai)) {
                         $isAktif = true;
                         $rawObjek = $tugas['objek_survei'] ?? '';
                         $objekSurvei = array_filter(array_map('trim', explode(',', $rawObjek)));
@@ -78,7 +92,7 @@ class OperatorController extends Controller
         return view('operator.index', [
             'nama_lokasi' => $nama_lokasi,
             'riwayat_kendaraan' => $riwayat_kendaraan,
-            'totalSemua' => count($riwayat_kendaraan),
+            'totalSemua' => $totalSemua,
             'counts' => $counts,
             'objekSurvei' => $objekSurvei,
             'isAktif' => $isAktif
@@ -89,6 +103,8 @@ class OperatorController extends Controller
     {
         $userId = session('user_id');
         $idLokasiAktif = session('id_lokasi_aktif');
+        $now = Carbon::now('Asia/Makassar');
+        $today = $now->toDateString();
         
         $tugasRaw = $this->database->getReference('penugasan')
                          ->orderByChild('id_user')
@@ -105,32 +121,28 @@ class OperatorController extends Controller
                 'waktu_mulai' => $tugas['waktu_mulai'],
                 'waktu_selesai' => $tugas['waktu_selesai'],
                 'nama_lokasi_display' => $lokasiMaster[$idLokasi]['nama_lokasi'] ?? ($lokasiMaster[$idLokasi]['alamat'] ?? 'Lokasi Tidak Ditemukan'),
-                'objek_survei' => $tugas['objek_survei'] ?? '', // Tambahkan ini
+                'objek_survei' => $tugas['objek_survei'] ?? '',
             ];
         }
 
-        // --- TAMBAHAN UNTUK AKTIFKAN TOTAL SURVEY ---
-        $surveiRaw = $this->database->getReference('hasil_survei')
-                          ->orderByChild('id_user')
-                          ->equalTo($userId)
-                          ->getValue() ?? [];
-
         $counts = ['motor' => 0, 'minibus' => 0, 'bus' => 0, 'truk' => 0];
-        foreach ($surveiRaw as $item) {
-            if (($item['id_lokasi'] ?? '') == $idLokasiAktif) {
-                $jenis = strtolower(str_replace(' ', '', $item['jenis_kendaraan'] ?? ''));
-                if (isset($counts[$jenis])) $counts[$jenis]++;
+        if ($idLokasiAktif) {
+            $dataHariIni = $this->database->getReference("survei_harian/{$idLokasiAktif}/{$today}")->getValue() ?? [];
+            foreach ($dataHariIni as $hour => $dataJam) {
+                foreach ($dataJam as $idPenugasan => $dataTugas) {
+                    foreach ($counts as $key => $val) {
+                        $counts[$key] += ($dataTugas[$key] ?? 0);
+                    }
+                }
             }
         }
 
-        // Ambil objek survei yang aktif saat ini untuk ditampilkan di icon atas
         $objekSurveiAktif = [];
-        $waktuSekarang = Carbon::now('Asia/Makassar');
         foreach ($tugasRaw as $tugas) {
-            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif) {
+            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
                 $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
                 $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
-                if ($waktuSekarang->between($mulai, $selesai)) {
+                if ($now->between($mulai, $selesai)) {
                     $rawObjek = $tugas['objek_survei'] ?? '';
                     $objekSurveiAktif = array_filter(array_map('trim', explode(',', $rawObjek)));
                     break;
@@ -141,8 +153,8 @@ class OperatorController extends Controller
         return view('operator.penugasan', [
             'riwayat' => $riwayat,
             'counts' => $counts,
-            'objekSurvei' => $objekSurveiAktif, // Tambahkan ini
-            'totalSemua' => count($riwayat), // Berpatokan pada jumlah riwayat tugas
+            'objekSurvei' => $objekSurveiAktif,
+            'totalSemua' => array_sum($counts),
             'namaLokasi' => $dataLokasi ? ($dataLokasi['nama_lokasi'] ?? $dataLokasi['alamat'] ?? 'Lokasi Tidak Dikenal') : 'Lokasi Tidak Aktif'
         ]);
     }
@@ -156,7 +168,6 @@ class OperatorController extends Controller
             return redirect('/dashboard-operator-penugasan')->with('error', 'Silakan pilih lokasi penugasan terlebih dahulu.');
         }
 
-        // 1. Ambil penugasan aktif untuk user ini
         $penugasanRaw = $this->database->getReference('penugasan')
                             ->orderByChild('id_user')
                             ->equalTo($userId)
@@ -164,11 +175,12 @@ class OperatorController extends Controller
         
         $objekSurvei = [];
         $waktuSekarang = Carbon::now('Asia/Makassar');
+        $today = $waktuSekarang->toDateString();
         $tugasAktifSaatIni = null;
         $idPenugasanAktif = null;
 
         foreach ($penugasanRaw as $key => $tugas) {
-            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif) {
+            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
                 $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
                 $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
                 
@@ -189,28 +201,21 @@ class OperatorController extends Controller
         $dataLokasi = $this->database->getReference("lokasi/{$idLokasiAktif}")->getValue();
         $nama_lokasi = $dataLokasi['nama_lokasi'] ?? ($dataLokasi['alamat'] ?? 'Lokasi Tidak Dikenal');
 
-        // 2. Ambil SEMUA hasil survei di lokasi ini dalam rentang waktu penugasan (SEMUA OPERATOR)
-        $surveiLokasiRaw = $this->database->getReference('hasil_survei')
-                          ->orderByChild('id_lokasi')
-                          ->equalTo($idLokasiAktif)
-                          ->getValue() ?? [];
+        // Agregasi Data Hari Ini dari seluruh jam
+        $dataHariIni = $this->database->getReference("survei_harian/{$idLokasiAktif}/{$today}")->getValue() ?? [];
 
         $dataSurvei = ['total_survei' => 0];
         foreach ($objekSurvei as $obj) {
             $dataSurvei[strtolower(str_replace(' ', '', $obj))] = 0;
         }
 
-        $mulaiTugas = Carbon::parse($tugasAktifSaatIni['waktu_mulai'], 'Asia/Makassar');
-        $selesaiTugas = Carbon::parse($tugasAktifSaatIni['waktu_selesai'], 'Asia/Makassar');
-
-        foreach ($surveiLokasiRaw as $item) {
-            $waktuInput = Carbon::parse($item['created_at'], 'Asia/Makassar');
-            // Cek apakah input terjadi di dalam jam tugas ini
-            if ($waktuInput->between($mulaiTugas, $selesaiTugas)) {
-                $jenis = strtolower(str_replace(' ', '', $item['jenis_kendaraan'] ?? ''));
-                if (isset($dataSurvei[$jenis])) {
-                    $dataSurvei[$jenis]++;
-                    $dataSurvei['total_survei']++;
+        foreach ($dataHariIni as $hour => $dataJam) {
+            foreach ($dataJam as $idTugasKey => $stats) {
+                foreach ($dataSurvei as $key => $val) {
+                    if ($key === 'total_survei') continue;
+                    $count = $stats[$key] ?? 0;
+                    $dataSurvei[$key] += $count;
+                    $dataSurvei['total_survei'] += $count;
                 }
             }
         }
@@ -223,67 +228,47 @@ class OperatorController extends Controller
         ]);
     }
 
-    public function laporSurvei(Request $request)
-    {
-        $idPenugasan = $request->id_penugasan;
-        $userId = session('user_id');
-        $username = session('username');
-
-        if (!$idPenugasan) {
-            return response()->json(['success' => false, 'message' => 'ID Penugasan tidak ditemukan'], 400);
-        }
-
-        $waktuSekarang = Carbon::now('Asia/Makassar')->format('Y-m-d H:i');
-        
-        try {
-            // 1. Ambil data penugasan sebelum diupdate untuk info pesan
-            $tugas = $this->database->getReference("penugasan/{$idPenugasan}")->getValue();
-            $idLokasi = $tugas['id_lokasi'] ?? '';
-            $dataLokasi = $this->database->getReference("lokasi/{$idLokasi}")->getValue();
-            $namaLokasi = $dataLokasi['nama_lokasi'] ?? ($dataLokasi['alamat'] ?? 'Lokasi Unknown');
-
-            // 2. Update status penugasan menjadi selesai
-            $this->database->getReference("penugasan/{$idPenugasan}")
-                 ->update(['waktu_selesai' => $waktuSekarang]);
-            
-            // 3. Catat sebagai Pesan Masuk (Notifikasi) untuk Admin
-            $notifData = [
-                'id_user' => $userId,
-                'username' => $username,
-                'id_lokasi' => $idLokasi,
-                'nama_lokasi' => $namaLokasi,
-                'pesan' => "Laporan Survei Selesai di {$namaLokasi}",
-                'waktu' => $waktuSekarang,
-                'status' => 'unread'
-            ];
-            
-            $this->database->getReference('notifikasi')->push($notifData);
-            
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
     public function simpanHitung(Request $request)
     {
         $idLokasiAktif = session('id_lokasi_aktif');
         $userId = session('user_id');
+        $idPenugasan = $request->id_penugasan;
 
-        if (!$idLokasiAktif || !$userId) {
-            return response()->json(['success' => false, 'message' => 'Sesi tidak valid'], 401);
+        if (!$idLokasiAktif || !$userId || !$idPenugasan) {
+            return response()->json(['success' => false, 'message' => 'Sesi atau ID Penugasan tidak valid'], 401);
         }
 
-        $data = [
-            'id_user' => $userId,
-            'id_lokasi' => $idLokasiAktif,
-            'jenis_kendaraan' => $request->jenis_kendaraan,
-            'created_at' => Carbon::now('Asia/Makassar')->toDateTimeString()
-        ];
+        $now = Carbon::now('Asia/Makassar');
+        $date = $now->toDateString();
+        $hour = $now->format('H'); // Folder JAM (00-23)
+        $timeFull = $now->format('H:i:s');
+        $jenis = strtolower(str_replace(' ', '', $request->jenis_kendaraan));
 
-        $this->database->getReference('hasil_survei')->push($data);
+        try {
+            // Path: survei_harian/{id_lokasi}/{date}/{hour}/{id_penugasan}
+            $refPath = "survei_harian/{$idLokasiAktif}/{$date}/{$hour}/{$idPenugasan}";
+            $refHarian = $this->database->getReference($refPath);
+            
+            $currentData = $refHarian->getValue() ?? [];
 
-        return response()->json(['success' => true]);
+            if (empty($currentData)) {
+                $currentData = [
+                    'id_lokasi' => $idLokasiAktif,
+                    'user_id' => $userId,
+                    'total_survei' => 0
+                ];
+            }
+
+            $currentData[$jenis] = (int)($currentData[$jenis] ?? 0) + 1;
+            $currentData['total_survei'] = (int)($currentData['total_survei'] ?? 0) + 1;
+            $currentData['updated_at'] = $timeFull;
+
+            $refHarian->set($currentData);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function profile()

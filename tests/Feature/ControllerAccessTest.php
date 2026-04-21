@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use Tests\TestCase;
-use Illuminate\Support\Facades\Session;
 use PHPUnit\Framework\Attributes\Test;
 use Kreait\Firebase\Contract\Database;
 use Kreait\Firebase\Database\Reference;
@@ -26,7 +25,7 @@ class ControllerAccessTest extends TestCase
     }
 
     #[Test]
-    public function it_can_access_tikor_dashboard()
+    public function ia_dapat_mengakses_dashboard_tikor()
     {
         $this->database->shouldReceive('getReference')->andReturn($this->reference);
         $this->reference->shouldReceive('getValue')->andReturn([]);
@@ -34,11 +33,11 @@ class ControllerAccessTest extends TestCase
         $response = $this->withSession(['role' => 'admin', 'login_status' => true])
                          ->get('/dashboard-tikor');
 
-        $response->assertStatus(200);
+        $response->assertStatus(200, 'Admin harus bisa mengakses dashboard tikor');
     }
 
     #[Test]
-    public function it_can_access_operator_dashboard()
+    public function ia_dapat_mengakses_dashboard_operator()
     {
         $this->database->shouldReceive('getReference')->andReturn($this->reference);
         $this->reference->shouldReceive('orderByChild')->andReturn($this->query);
@@ -53,11 +52,11 @@ class ControllerAccessTest extends TestCase
             'id_lokasi_aktif' => 'test_lokasi'
         ])->get('/dashboard-operator');
 
-        $response->assertStatus(200);
+        $response->assertStatus(200, 'Operator harus bisa mengakses dashboard-nya');
     }
 
     #[Test]
-    public function it_can_access_admin_dashboard()
+    public function ia_dapat_mengakses_dashboard_admin()
     {
         $this->database->shouldReceive('getReference')->andReturn($this->reference);
         $this->reference->shouldReceive('getValue')->andReturn([]);
@@ -73,7 +72,7 @@ class ControllerAccessTest extends TestCase
     }
 
     #[Test]
-    public function it_can_access_assignment_dashboard()
+    public function ia_dapat_mengakses_dashboard_penugasan()
     {
         $this->database->shouldReceive('getReference')->andReturn($this->reference);
         $this->reference->shouldReceive('orderByChild')->andReturn($this->query);
@@ -88,10 +87,10 @@ class ControllerAccessTest extends TestCase
     }
 
     #[Test]
-    public function it_redirects_unauthorized_users()
+    public function ia_mengalihkan_pengguna_yang_tidak_sah()
     {
         $response = $this->get('/dashboard-admin');
-        $response->assertStatus(302);
+        $response->assertStatus(302, 'Pengguna tanpa login harus dialihkan');
     }
 
     protected function tearDown(): void

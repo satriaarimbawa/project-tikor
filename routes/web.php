@@ -48,7 +48,12 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/dashboard-penugasan/store', [PenugasanController::class, 'store']);
     Route::get('/dashboard-penugasan/edit/{id}', [PenugasanController::class, 'edit']);
     Route::post('/dashboard-penugasan/update/{id}', [PenugasanController::class, 'update']);
+    Route::post('/dashboard-penugasan/reset/{id}', [PenugasanController::class, 'resetStatus'])->name('penugasan.reset');
     Route::delete('/delete-penugasan/{id}', [PenugasanController::class, 'destroy']);
+
+    // Notifikasi
+    Route::get('/api/notifications', [AdminController::class, 'getNotifications']);
+    Route::post('/api/notifications/mark-read', [AdminController::class, 'markNotificationsRead']);
 
     //penetapan titik koordinat uji
     Route::get('/dashboard-tikor', [TikorController::class, 'index'])->name('penetapan-lokasi.index');

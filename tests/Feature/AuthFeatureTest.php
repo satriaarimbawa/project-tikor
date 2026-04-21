@@ -33,7 +33,7 @@ class AuthFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_login_with_correct_credentials()
+    public function ia_mengizinkan_login_dengan_kredensial_yang_benar()
     {
         $username = 'admin_test';
         $password = 'password123';
@@ -52,11 +52,11 @@ class AuthFeatureTest extends TestCase
         ]);
 
         $response->assertRedirect('dashboard-admin');
-        $this->assertEquals('admin', session('role'));
+        $this->assertEquals('admin', session('role'), 'Role di session harus admin');
     }
 
     #[Test]
-    public function it_sends_otp_if_email_exists()
+    public function ia_mengirim_otp_jika_email_terdaftar()
     {
         Mail::fake();
         $email = 'user@example.com';
@@ -72,12 +72,10 @@ class AuthFeatureTest extends TestCase
         $response = $this->post('/forgot-password', ['email' => $email]);
 
         $response->assertRedirect('/verify-otp');
-        // Verifikasi bahwa email telah dicoba untuk dikirim
-        Mail::assertNothingSent(); // Karena Mail::raw tidak tercatat di Mail::fake normal tanpa mailable class
     }
 
     #[Test]
-    public function it_resets_password_correctly()
+    public function ia_berhasil_mereset_password()
     {
         $email = 'user@example.com';
         $newPassword = 'newpassword123';

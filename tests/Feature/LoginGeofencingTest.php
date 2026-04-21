@@ -29,9 +29,8 @@ class LoginGeofencingTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_login_if_within_radius_and_schedule()
+    public function ia_mengizinkan_login_jika_berada_dalam_radius_dan_jadwal()
     {
-        // Set fixed time for consistency
         $now = Carbon::parse('2026-04-18 10:00:00', 'Asia/Makassar');
         Carbon::setTestNow($now);
 
@@ -41,22 +40,18 @@ class LoginGeofencingTest extends TestCase
         $uid = 'uid_123';
         $idLokasi = 'lokasi_123';
 
-        // Set expectations in order of execution
         $this->database->shouldReceive('getReference')->andReturn($this->reference);
         $this->reference->shouldReceive('orderByChild')->andReturn($this->query);
         $this->query->shouldReceive('equalTo')->andReturn($this->query);
         
-        // Return values in order: 1. User data, 2. All Assignments, 3. Specific Location data
         $this->query->shouldReceive('getValue')->once()->andReturn([
             $uid => ['username' => $username, 'password' => $hashed, 'role_user' => 'operator']
         ]);
 
         $this->reference->shouldReceive('getValue')->andReturnValues([
-            // Assignment list
             [
-                ['id_user' => $uid, 'id_lokasi' => $idLokasi, 'waktu_mulai' => '2026-04-18 08:00:00', 'waktu_selesai' => '2026-04-18 12:00:00']
+                ['id_user' => $uid, 'id_lokasi' => $idLokasi, 'waktu_mulai' => '2026-04-18 08:00:00', 'waktu_selesai' => '2026-04-18 12:00:00', 'status' => 'aktif']
             ],
-            // Location data
             [
                 'latitude' => -8.5353,
                 'longitude' => 115.4042,
@@ -72,13 +67,9 @@ class LoginGeofencingTest extends TestCase
             'longitude' => 115.40421
         ]);
 
-        if (session('error')) {
-            $this->fail('Login failed with error: ' . session('error'));
-        }
-
         $response->assertRedirect('dashboard-operator-penugasan');
         
-        Carbon::setTestNow(); // Reset time
+        Carbon::setTestNow();
     }
 
     protected function tearDown(): void

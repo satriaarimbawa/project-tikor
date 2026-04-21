@@ -70,13 +70,21 @@ class LoginController extends Controller
 
             $penugasanDitemukan = false;
             $pesanError = "Login ditolak! Anda tidak memiliki jadwal penugasan aktif saat ini.";
+            $lokasiTerdekatData = null;
 
             foreach ($semuaPenugasan as $tugas) {
                 if (isset($tugas['id_user'], $tugas['id_lokasi']) && $tugas['id_user'] == $uid) {
+                    // Cek Waktu
                     $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
                     $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
 
                     if ($waktuSekarang->between($mulai, $selesai)) {
+                        // Cek Status Penugasan
+                        if (($tugas['status'] ?? 'inaktif') !== 'aktif') {
+                            $pesanError = "Login ditolak! Sesi penugasan ini sudah tidak aktif/dihentikan.";
+                            continue;
+                        }
+
                         $idLokasi = $tugas['id_lokasi'];
                         $dataTikor = $this->database->getReference('lokasi/' . $idLokasi)->getValue();
 
@@ -87,14 +95,22 @@ class LoginController extends Controller
 
                             $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $latTarget, $lonTarget);
 
+                            // Jika user berada di dalam radius salah satu lokasi tugasnya
                             if ($jarak <= $radius) {
                                 $idLokasiTugas = $idLokasi;
                                 $penugasanDitemukan = true;
-                                break;
+                                break; // Berhenti karena sudah ketemu lokasi yang cocok
                             } else {
-                                $jarakTerakhir = round($jarak);
+                                // Simpan data jarak untuk pesan error yang lebih informatif (opsional: simpan yang terdekat)
                                 $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
-                                $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasi ($jarakTerakhir meter).";
+                                $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasi (" . round($jarak) . " meter).";
+                                
+                                $lokasiTerdekatData = [
+                                    'target_lat' => $latTarget,
+                                    'target_lng' => $lonTarget,
+                                    'target_radius' => $radius,
+                                    'nama_lokasi_target' => $namaLokasi
+                                ];
                             }
                         }
                     }
@@ -102,6 +118,9 @@ class LoginController extends Controller
             }
 
             if (!$penugasanDitemukan) {
+                if ($lokasiTerdekatData) {
+                    return redirect()->back()->with(array_merge(['error' => $pesanError], $lokasiTerdekatData));
+                }
                 return redirect()->back()->with('error', $pesanError);
             }
         }
@@ -148,10 +167,43 @@ class LoginController extends Controller
             $jarak = $this->hitungJarak($latUser, $longUser, $latTarget, $lonTarget);
 
             if ($jarak > $radius) {
+                $uid = session()->get('user_id');
+                $username = session()->get('username');
+                $now = Carbon::now('Asia/Makassar');
+                $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
+                
+                foreach ($semuaPenugasan as $keyTugas => $tugas) {
+                    // Cek: Milik user ini, di lokasi ini, dan sedang berlangsung (status aktif)
+                    if (isset($tugas['id_user']) && $tugas['id_user'] == $uid && 
+                        ($tugas['id_lokasi'] ?? '') == $idLokasiAktif && 
+                        ($tugas['status'] ?? '') == 'aktif' &&
+                        isset($tugas['waktu_mulai'], $tugas['waktu_selesai'])) {
+                        
+                        $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
+                        $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+
+                        if ($now->between($mulai, $selesai)) {
+                            // HANYA penugasan spesifik ini yang diinaktifkan
+                            $this->database->getReference('penugasan/' . $keyTugas . '/status')->set('inaktif');
+                            
+                            // Kirim Notifikasi ke Admin
+                            $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
+                            $this->database->getReference('notifikasi')->push([
+                                'judul' => 'Pelanggaran Geofencing',
+                                'pesan' => "Operator $username keluar dari radius penugasan di $namaLokasi.",
+                                'id_user' => $uid,
+                                'username' => $username,
+                                'waktu' => $now->toDateTimeString(),
+                                'status' => 'unread'
+                            ]);
+                        }
+                    }
+                }
+
                 session()->flush();
                 return response()->json([
                     'status' => 'logout',
-                    'message' => 'Anda keluar dari radius area penugasan!'
+                    'message' => 'Anda keluar dari radius area penugasan! Kejadian ini telah dilaporkan ke Admin.'
                 ]);
             }
             return response()->json(['status' => 'ok', 'distance' => round($jarak) . 'm']);

@@ -22,72 +22,8 @@
 
 
     @php
-    $dataRingkasan = [
-    'bus' => 489,
-    'motor' => 30,
-    'minibus' => 11,
-    'truk' => 50
-    ];
-
-    $totalKedatangan = array_sum($dataRingkasan);
-
-    $keuangan = [
-    'target' => 2037000,
-    'realisasi' => 1473000,
-    ];
     $selisih = $keuangan['target'] - $keuangan['realisasi'];
-
-    $rekapitulasi = [
-    [
-    'no' => 1,
-    'waktu' => '08 - 09',
-    'details' => [
-    ['jenis' => 'Motor', 'jumlah' => 476, 'tarif' => 1000, 'penerimaan_lama' => 476000],
-    ['jenis' => 'Mini Bus', 'jumlah' => 13, 'tarif' => 2000, 'penerimaan_lama' => 26000],
-    ],
-    'total_penerimaan' => 952000
-    ],
-    [
-    'no' => 2,
-    'waktu' => '09 - 10',
-    'details' => [
-    ['jenis' => 'Motor', 'jumlah' => 476, 'tarif' => 1000, 'penerimaan_lama' => 476000],
-    ['jenis' => 'Mini Bus', 'jumlah' => 13, 'tarif' => 2000, 'penerimaan_lama' => 26000],
-    ],
-    'total_penerimaan' => 952000
-    ]
-    ];
-
-    $totalJumlah = 0;
-    $totalPenerimaanLama = 0;
-    $totalPenerimaanBaru = 0;
-
-    foreach($rekapitulasi as $row) {
-    foreach($row['details'] as $detail) {
-    $totalJumlah += $detail['jumlah'];
-    $totalPenerimaanLama += $detail['penerimaan_lama'];
-    }
-    $totalPenerimaanBaru += $row['total_penerimaan'];
-    }
-
-
-
-
-    $grafikWaktu = [
-    'labels' => ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
-    '17:00','18.00','19.00','20.00','21.00','22.00'],
-    'data' => [210, 145, 120, 110, 185, 130, 115, 200, 120, 225, 120, 200, 195, 90,220]
-    ];
-
-    // Data untuk Grafik Batang (Volume Kendaraan)
-    $grafikVolume = [
-    'labels' => ['Motor', 'Mobil', 'Mini Bus', 'Truk'],
-    'data' => [476, 313, 145, 98]
-    ];
     @endphp
-
-
-
 
     <main class="main-content ml-64 p-8 w-full font-sans">
         <div class="flex justify-between items-center mb-6">
@@ -95,13 +31,12 @@
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-12 h-12 object-contain" alt="Logo">
         </div>
 
-        <div class="grid grid-cols-12 gap-6 mb-6">
+        <form action="{{ url()->current() }}" method="GET" class="grid grid-cols-12 gap-6 mb-6">
             <div class="col-span-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
                     <h2 class="text-lg font-bold mb-4 text-black">Ringkasan Harian</h2>
                     <div class="grid grid-cols-2 gap-4">
-                        <div
-                            class="flex items-center p-4 rounded-xl border border-blue-100 shadow-sm flex-1 bg-gradient-to-r from-white via-blue-100 to-white">
+                        <div class="flex items-center p-4 rounded-xl border border-blue-100 shadow-sm flex-1 bg-gradient-to-r from-white via-blue-100 to-white">
                             <div class="bg-[#4169E1] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:bus" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -110,8 +45,7 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['bus']) }}</p>
                             </div>
                         </div>
-                        <div
-                            class="flex items-center p-4 rounded-xl border border-orange-100 shadow-sm flex-1 bg-gradient-to-r from-white via-orange-100 to-white">
+                        <div class="flex items-center p-4 rounded-xl border border-orange-100 shadow-sm flex-1 bg-gradient-to-r from-white via-orange-100 to-white">
                             <div class="bg-[#FCA24C] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:motorbike" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -120,19 +54,16 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['motor']) }}</p>
                             </div>
                         </div>
-                        <!-- logo mini bus coba sesuain sama punya operator -->
-                        <div
-                            class="flex items-center p-4 rounded-xl border border-yellow-100 shadow-sm flex-1 bg-gradient-to-r from-white via-yellow-100 to-white">
+                        <div class="flex items-center p-4 rounded-xl border border-yellow-100 shadow-sm flex-1 bg-gradient-to-r from-white via-yellow-100 to-white">
                             <div class="bg-[#F0C13D] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:bus-side" class="text-white text-3xl"></iconify-icon>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500">Mini Bus</p>
-                                <p class="text-xl font-bold"> {{ number_format($dataRingkasan['minibus']) }}</p>
+                                <p class="text-xl font-bold">{{ number_format($dataRingkasan['minibus']) }}</p>
                             </div>
                         </div>
-                        <div
-                            class="flex items-center p-4 rounded-xl border border-purple-100 shadow-sm flex-1 bg-gradient-to-r from-white via-purple-100 to-white">
+                        <div class="flex items-center p-4 rounded-xl border border-purple-100 shadow-sm flex-1 bg-gradient-to-r from-white via-purple-100 to-white">
                             <div class="bg-[#A020F0] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:truck" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -141,8 +72,7 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['truk']) }}</p>
                             </div>
                         </div>
-                        <div
-                            class="col-span-2 flex items-center justify-between px-8 py-4 bg-[#E5E7EB] rounded-xl mt-2">
+                        <div class="col-span-2 flex items-center justify-between px-8 py-4 bg-[#E5E7EB] rounded-xl mt-2">
                             <p class="text-sm font-bold text-gray-700 uppercase">Total Kedatangan</p>
                             <p class="text-4xl font-black text-gray-700">{{ number_format($totalKedatangan) }}</p>
                         </div>
@@ -151,13 +81,21 @@
             </div>
 
             <div class="col-span-4 space-y-4">
-                <select class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm">
-                    <option>Pilih Lokasi</option>
+                <select name="lokasi_id" onchange="this.form.submit()" class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm">
+                    <option value="">Pilih Lokasi</option>
+                    @foreach($lokasiMaster as $id => $loc)
+                        <option value="{{ $id }}" {{ $lokasiId == $id ? 'selected' : '' }}>{{ $loc['nama_lokasi'] ?? ($loc['alamat'] ?? 'Tanpa Nama') }}</option>
+                    @endforeach
                 </select>
                 <div class="flex gap-2">
-                    <input type="date" class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm text-sm">
-                    <select class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm">
-                        <option>[ Nama Petugas ]</option>
+                    <input type="date" name="date" value="{{ $selectedDate }}" onchange="this.form.submit()" class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm text-sm">
+                    <select name="user_id" onchange="this.form.submit()" class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm">
+                        <option value="">Semua Petugas</option>
+                        @foreach($userMaster as $id => $u)
+                            @if(($u['role_user'] ?? '') == 'operator')
+                                <option value="{{ $id }}" {{ $userId == $id ? 'selected' : '' }}>{{ $u['username'] }}</option>
+                            @endif
+                        @endforeach
                     </select>
                 </div>
 
@@ -170,21 +108,17 @@
                         <span class="text-xs font-semibold text-gray-500 uppercase">Total Realisasi</span>
                         <span class="font-bold">Rp. {{ number_format($keuangan['realisasi'], 0, ',', '.') }}</span>
                     </div>
-                    <div
-                        class="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 text-red-600">
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 text-red-600">
                         <span class="text-xs font-semibold uppercase">Selisih</span>
                         <span class="font-bold">Rp. {{ number_format($selisih, 0, ',', '.') }}</span>
                     </div>
                 </div>
 
-                <button
-                    class="w-full bg-[#3B82F6] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg">
+                <button type="button" class="w-full bg-[#3B82F6] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg">
                     <iconify-icon icon="mdi:printer"></iconify-icon> Unduh PDF
                 </button>
             </div>
-        </div>
-
-
+        </form>
 
         <div class="grid grid-cols-12 gap-6 mb-6">
             <div class="col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -206,32 +140,19 @@
                     </div>
 
                     <div class="w-1/3 space-y-2">
+                        @foreach(['motor', 'mobil', 'minibus', 'truk'] as $v)
                         <div class="bg-gray-50 p-2 rounded text-center border border-gray-100">
-                            <p class="text-[10px] text-gray-500 uppercase">Total Motor</p>
-                            <p class="font-bold text-lg text-blue-500">476</p>
+                            <p class="text-[10px] text-gray-500 uppercase">Total {{ ucfirst($v) }}</p>
+                            <p class="font-bold text-lg text-blue-500">{{ number_format($dataRingkasan[$v] ?? 0) }}</p>
                         </div>
-                        <div class="bg-gray-50 p-2 rounded text-center border border-gray-100">
-                            <p class="text-[10px] text-gray-500 uppercase">Total Mobil</p>
-                            <p class="font-bold text-lg text-indigo-500">313</p>
-                        </div>
-                        <div class="bg-gray-50 p-2 rounded text-center border border-gray-100">
-                            <p class="text-[10px] text-gray-500 uppercase">Total Mini Bus</p>
-                            <p class="font-bold text-lg text-indigo-500">145</p>
-                        </div>
-                        <div class="bg-gray-50 p-2 rounded text-center border border-gray-100">
-                            <p class="text-[10px] text-gray-500 uppercase">Total Truk</p>
-                            <p class="font-bold text-lg text-indigo-500">98</p>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
         </div>
 
-
-
-
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 class="font-bold mb-6 text-lg">Rekapitulasi Tarif dan Penerimaan Baru</h3>
+            <h3 class="font-bold mb-6 text-lg">Rekapitulasi Tarif dan Penerimaan</h3>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-separate border-spacing-y-3">
@@ -242,18 +163,18 @@
                             <th class="p-4">Jenis</th>
                             <th class="p-4 text-center">Jumlah</th>
                             <th class="p-4">Tarif</th>
-                            <th class="p-4">Total Penerimaan Lama</th>
                             <th class="p-4 rounded-r-xl">Total Penerimaan</th>
                         </tr>
                     </thead>
                     <tbody class="text-sm">
-                        @foreach($rekapitulasi as $row)
+                        @php $no = 1; @endphp
+                        @forelse($rekapitulasi as $row)
                         @foreach($row['details'] as $index => $detail)
                         <tr class="bg-white shadow-[0_2px_10px_-3px_rgba(0,0,0,0.07)] rounded-xl overflow-hidden">
                             @if($index === 0)
                             <td class="p-4 font-medium border-l border-t border-b rounded-l-xl text-center"
                                 rowspan="{{ count($row['details']) }}">
-                                {{ $row['no'] }}
+                                {{ $no++ }}
                             </td>
                             <td class="p-4 border-t border-b text-center font-medium"
                                 rowspan="{{ count($row['details']) }}">
@@ -270,9 +191,6 @@
                             <td class="p-4 border-t border-b text-gray-500 italic">
                                 Rp. {{ number_format($detail['tarif'], 0, ',', '.') }}
                             </td>
-                            <td class="p-4 border-t border-b font-semibold">
-                                Rp. {{ number_format($detail['penerimaan_lama'], 0, ',', '.') }}
-                            </td>
 
                             @if($index === 0)
                             <td class="p-4 border-r border-t border-b rounded-r-xl font-bold text-gray-800"
@@ -282,18 +200,12 @@
                             @endif
                         </tr>
                         @endforeach
-                        @endforeach
-                    </tbody>
-
-                    <tfoot>
-                        <tr class="bg-gray-200 text-gray-800 font-black">
-                            <td class="p-4 rounded-l-xl text-center uppercase italic" colspan="3">Total</td>
-                            <td class="p-4 text-center">{{ number_format($totalJumlah) }}</td>
-                            <td class="p-4 text-center">-</td>
-                            <td class="p-4">Rp. {{ number_format($totalPenerimaanLama, 0, ',', '.') }}</td>
-                            <td class="p-4 rounded-r-xl">Rp. {{ number_format($totalPenerimaanBaru, 0, ',', '.') }}</td>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="p-10 text-center text-gray-400 italic">Belum ada data survei untuk filter ini.</td>
                         </tr>
-                    </tfoot>
+                        @endforelse
+                    </tbody>
                 </table>
             </div>
         </div>

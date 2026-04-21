@@ -42,6 +42,7 @@ class PenugasanController extends Controller
                 'objek_survei'  => $data['objek_survei'] ?? '-',
                 'tanggal_rentang' => $tglMulai . ' s/d ' . $tglSelesai,
                 'jam_rentang' => Carbon::parse($rawMulai)->format('H:i') . ' - ' . Carbon::parse($rawSelesai)->format('H:i') . ' WITA',
+                'status'        => $data['status'] ?? 'aktif',
                 'created_at_raw' => $data['created_at'] ?? '2000-01-01 00:00:00'
             ];
         }
@@ -101,6 +102,8 @@ class PenugasanController extends Controller
         try {
             $file = $request->file('surat_spt');
             $namaFile = time() . '_' . $file->getClientOriginalName();
+            
+            // Simpan ke folder lokal public/uploads/spt
             $file->move(public_path('uploads/spt'), $namaFile);
 
             $dataPenugasan = [
@@ -111,6 +114,7 @@ class PenugasanController extends Controller
                 'file_spt'      => $namaFile,
                 'objek_survei'  => $request->objek_terpilih,
                 'keterangan'    => $request->keterangan ?? '-',
+                'status'        => 'aktif',
                 'created_at'    => Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s'),
             ];
 
@@ -169,7 +173,16 @@ class PenugasanController extends Controller
             if ($request->hasFile('surat_spt')) {
                 $file = $request->file('surat_spt');
                 $namaFile = time() . '_' . $file->getClientOriginalName();
+                
+                // Simpan file baru secara lokal
                 $file->move(public_path('uploads/spt'), $namaFile);
+
+                // Hapus file lama jika ada
+                if (isset($dataPenugasan['file_spt']) && $dataPenugasan['file_spt'] !== '-') {
+                    $oldPath = public_path('uploads/spt/' . $dataPenugasan['file_spt']);
+                    if (file_exists($oldPath)) unlink($oldPath);
+                }
+
                 $updateData['file_spt'] = $namaFile;
             }
 
@@ -185,14 +198,27 @@ class PenugasanController extends Controller
     {
         try {
             $data = $this->database->getReference('penugasan/' . $id)->getValue();
-            if (isset($data['file_spt'])) {
+            
+            // Hapus file lokal
+            if (isset($data['file_spt']) && $data['file_spt'] !== '-') {
                 $path = public_path('uploads/spt/' . $data['file_spt']);
                 if (file_exists($path)) unlink($path);
             }
+
             $this->database->getReference('penugasan/' . $id)->remove();
             return redirect()->back()->with('success', 'Penugasan berhasil dihapus!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menghapus: ' . $e->getMessage());
+        }
+    }
+
+    public function resetStatus($id)
+    {
+        try {
+            $this->database->getReference('penugasan/' . $id . '/status')->set('aktif');
+            return redirect()->back()->with('success', 'Status penugasan berhasil diaktifkan kembali!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal reset status: ' . $e->getMessage());
         }
     }
 }

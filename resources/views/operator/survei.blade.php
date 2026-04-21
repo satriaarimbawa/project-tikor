@@ -224,12 +224,12 @@
                     },
                     body: JSON.stringify({
                         jenis_kendaraan: jenis,
-                        // id_lokasi tidak wajib dikirim jika sudah ada di session Laravel
+                        id_penugasan: "{{ $idPenugasan }}"
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log("Berhasil simpan ke Firebase:", data);
+                    console.log("Berhasil update survei harian:", data);
                 })
                 .catch(error => console.error("Gagal kirim:", error));
         }

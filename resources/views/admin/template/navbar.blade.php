@@ -73,7 +73,7 @@
                 </button>
                 
                 <div id="subMenuLaporan" class="hidden flex flex-col mt-2 space-y-2 mx-2 transition-all">
-                        <a href="/laporan_lokasi" class="py-2 pl-10 text-[11px] text-white/70 hover:text-white flex items-center gap-4 transition-colors">
+                        <a href="/laporan_lokasi" class="py-2 pl-10 text-[11px] {{ request()->is('laporan_lokasi') ? 'text-white bg-[#253D6B]/50 rounded-lg' : 'text-white/70' }} hover:text-white flex items-center gap-4 transition-colors">
                             <img src="{{ asset('assets/Laporan_Lokasi.png') }}" class="w-6 h-6 object-contain" alt="Laporan Lokasi">
                             <span>Berdasarkan Lokasi</span>
                         </a>
@@ -81,7 +81,7 @@
                             <img src="{{ asset('assets/Laporan_Kedatangan.png') }}" class="w-6 h-6 object-contain" alt="Laporan Kedatangan">
                             <span>Berdasarkan Waktu</span>
                         </a>
-                        <a href="#" class="py-2 pl-10 text-[11px] text-white/70 hover:text-white flex items-center gap-4 transition-colors">
+                        <a href="/lapOperator" class="py-2 pl-10 text-[11px] {{ request()->is('lapOperator') ? 'text-white bg-[#253D6B]/50 rounded-lg' : 'text-white/70' }} hover:text-white flex items-center gap-4 transition-colors">
                             <img src="{{ asset('assets/Laporan_Operator.png') }}" class="w-6 h-6 object-contain" alt="Laporan Operator">
                             <span>Berdasarkan Operator</span>
                         </a>
@@ -102,3 +102,35 @@
             </a>
         </div>
     </aside>
+
+    <div id="notifModal" class="hidden fixed inset-0 z-[100] flex items-start justify-end p-8 bg-black/20 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-[25px] shadow-2xl overflow-hidden animate-slide-in">
+            <div class="bg-[#253D6B] p-6 text-white flex justify-between items-center">
+                <h3 class="font-bold flex items-center gap-2 text-white">
+                    <iconify-icon icon="lucide:bell" class="text-xl"></iconify-icon>
+                    Notifikasi Pelanggaran
+                </h3>
+                <button onclick="toggleNotifModal()" class="hover:rotate-90 transition-transform">
+                    <iconify-icon icon="lucide:x" class="text-2xl text-white"></iconify-icon>
+                </button>
+            </div>
+            <div class="max-h-[400px] overflow-y-auto p-4 space-y-3 bg-white" id="notifContainer">
+                <div class="text-center py-10 text-gray-400 italic text-sm">
+                    Memuat notifikasi...
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-center">
+                <button onclick="markAllAsRead()" class="text-[11px] font-bold text-[#253D6B] hover:underline uppercase tracking-widest">
+                    Tandai Semua Dibaca
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+    </style>
