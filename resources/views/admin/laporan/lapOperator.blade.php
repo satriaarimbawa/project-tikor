@@ -36,7 +36,8 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
                     <h2 class="text-lg font-bold mb-4 text-black">Ringkasan Harian</h2>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="flex items-center p-4 rounded-xl border border-blue-100 shadow-sm flex-1 bg-gradient-to-r from-white via-blue-100 to-white">
+                        <div
+                            class="flex items-center p-4 rounded-xl border border-blue-100 shadow-sm flex-1 bg-gradient-to-r from-white via-blue-100 to-white">
                             <div class="bg-[#4169E1] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:bus" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -45,7 +46,8 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['bus']) }}</p>
                             </div>
                         </div>
-                        <div class="flex items-center p-4 rounded-xl border border-orange-100 shadow-sm flex-1 bg-gradient-to-r from-white via-orange-100 to-white">
+                        <div
+                            class="flex items-center p-4 rounded-xl border border-orange-100 shadow-sm flex-1 bg-gradient-to-r from-white via-orange-100 to-white">
                             <div class="bg-[#FCA24C] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:motorbike" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -54,7 +56,8 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['motor']) }}</p>
                             </div>
                         </div>
-                        <div class="flex items-center p-4 rounded-xl border border-yellow-100 shadow-sm flex-1 bg-gradient-to-r from-white via-yellow-100 to-white">
+                        <div
+                            class="flex items-center p-4 rounded-xl border border-yellow-100 shadow-sm flex-1 bg-gradient-to-r from-white via-yellow-100 to-white">
                             <div class="bg-[#F0C13D] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:bus-side" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -63,7 +66,8 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['minibus']) }}</p>
                             </div>
                         </div>
-                        <div class="flex items-center p-4 rounded-xl border border-purple-100 shadow-sm flex-1 bg-gradient-to-r from-white via-purple-100 to-white">
+                        <div
+                            class="flex items-center p-4 rounded-xl border border-purple-100 shadow-sm flex-1 bg-gradient-to-r from-white via-purple-100 to-white">
                             <div class="bg-[#A020F0] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:truck" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -72,7 +76,8 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['truk']) }}</p>
                             </div>
                         </div>
-                        <div class="col-span-2 flex items-center justify-between px-8 py-4 bg-[#E5E7EB] rounded-xl mt-2">
+                        <div
+                            class="col-span-2 flex items-center justify-between px-8 py-4 bg-[#E5E7EB] rounded-xl mt-2">
                             <p class="text-sm font-bold text-gray-700 uppercase">Total Kedatangan</p>
                             <p class="text-4xl font-black text-gray-700">{{ number_format($totalKedatangan) }}</p>
                         </div>
@@ -81,20 +86,24 @@
             </div>
 
             <div class="col-span-4 space-y-4">
-                <select name="lokasi_id" onchange="this.form.submit()" class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm">
+                <select name="lokasi_id" onchange="this.form.submit()"
+                    class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm">
                     <option value="">Pilih Lokasi</option>
                     @foreach($lokasiMaster as $id => $loc)
-                        <option value="{{ $id }}" {{ $lokasiId == $id ? 'selected' : '' }}>{{ $loc['nama_lokasi'] ?? ($loc['alamat'] ?? 'Tanpa Nama') }}</option>
+                    <option value="{{ $id }}" {{ $lokasiId == $id ? 'selected' : '' }}>
+                        {{ $loc['nama_lokasi'] ?? ($loc['alamat'] ?? 'Tanpa Nama') }}</option>
                     @endforeach
                 </select>
                 <div class="flex gap-2">
-                    <input type="date" name="date" value="{{ $selectedDate }}" onchange="this.form.submit()" class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm text-sm">
-                    <select name="user_id" onchange="this.form.submit()" class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm">
+                    <input type="date" name="date" value="{{ $selectedDate }}" onchange="this.form.submit()"
+                        class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm text-sm">
+                    <select name="user_id" onchange="this.form.submit()"
+                        class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm">
                         <option value="">Semua Petugas</option>
                         @foreach($userMaster as $id => $u)
-                            @if(($u['role_user'] ?? '') == 'operator')
-                                <option value="{{ $id }}" {{ $userId == $id ? 'selected' : '' }}>{{ $u['username'] }}</option>
-                            @endif
+                        @if(($u['role_user'] ?? '') == 'operator')
+                        <option value="{{ $id }}" {{ $userId == $id ? 'selected' : '' }}>{{ $u['username'] }}</option>
+                        @endif
                         @endforeach
                     </select>
                 </div>
@@ -108,13 +117,15 @@
                         <span class="text-xs font-semibold text-gray-500 uppercase">Total Realisasi</span>
                         <span class="font-bold">Rp. {{ number_format($keuangan['realisasi'], 0, ',', '.') }}</span>
                     </div>
-                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 text-red-600">
+                    <div
+                        class="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 text-red-600">
                         <span class="text-xs font-semibold uppercase">Selisih</span>
                         <span class="font-bold">Rp. {{ number_format($selisih, 0, ',', '.') }}</span>
                     </div>
                 </div>
 
-                <button type="button" class="w-full bg-[#3B82F6] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg">
+                <button type="button"
+                    class="w-full bg-[#3B82F6] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg">
                     <iconify-icon icon="mdi:printer"></iconify-icon> Unduh PDF
                 </button>
             </div>
@@ -152,57 +163,61 @@
         </div>
 
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 class="font-bold mb-6 text-lg">Rekapitulasi Tarif dan Penerimaan</h3>
+            <h3 class="font-bold mb-6 text-lg text-gray-800">Rekapitulasi Tarif dan Penerimaan</h3>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-separate border-spacing-y-3">
+            <div class="overflow-x-auto max-h-[600px] overflow-y-auto border border-gray-200 rounded-xl">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
-                            <th class="p-4 rounded-l-xl">No</th>
-                            <th class="p-4">Waktu</th>
-                            <th class="p-4">Jenis</th>
-                            <th class="p-4 text-center">Jumlah</th>
-                            <th class="p-4">Tarif</th>
-                            <th class="p-4 rounded-r-xl">Total Penerimaan</th>
+                        <tr
+                            class="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider sticky top-0 z-10 shadow-sm">
+                            <th class="p-4 border-b">No</th>
+                            <th class="p-4 border-b">Waktu</th>
+                            <th class="p-4 border-b">Jenis</th>
+                            <th class="p-4 border-b text-center">Jumlah</th>
+                            <th class="p-4 border-b">Tarif</th>
+                            <th class="p-4 border-b">Total Penerimaan</th>
                         </tr>
                     </thead>
                     <tbody class="text-sm">
                         @php $no = 1; @endphp
                         @forelse($rekapitulasi as $row)
                         @foreach($row['details'] as $index => $detail)
-                        <tr class="bg-white shadow-[0_2px_10px_-3px_rgba(0,0,0,0.07)] rounded-xl overflow-hidden">
+                        <tr class="hover:bg-blue-50/30 transition-colors border-b border-gray-100">
                             @if($index === 0)
-                            <td class="p-4 font-medium border-l border-t border-b rounded-l-xl text-center"
-                                rowspan="{{ count($row['details']) }}">
+                            <td class="p-4 font-medium text-center bg-white" rowspan="{{ count($row['details']) }}">
                                 {{ $no++ }}
                             </td>
-                            <td class="p-4 border-t border-b text-center font-medium"
-                                rowspan="{{ count($row['details']) }}">
-                                {{ $row['waktu'] }}
+                            <td class="p-4 text-center font-medium bg-white" rowspan="{{ count($row['details']) }}">
+                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs">
+                                    {{ $row['waktu'] }}
+                                </span>
                             </td>
                             @endif
 
-                            <td class="p-4 border-t border-b text-gray-600 font-medium italic">
+                            <td class="p-4 text-gray-600">
                                 {{ $detail['jenis'] }}
                             </td>
-                            <td class="p-4 border-t border-b text-center font-bold">
+                            <td class="p-4 text-center font-bold text-gray-700">
                                 {{ number_format($detail['jumlah']) }}
                             </td>
-                            <td class="p-4 border-t border-b text-gray-500 italic">
-                                Rp. {{ number_format($detail['tarif'], 0, ',', '.') }}
+                            <td class="p-4 text-gray-500 font-mono">
+                                Rp {{ number_format($detail['tarif'], 0, ',', '.') }}
                             </td>
 
                             @if($index === 0)
-                            <td class="p-4 border-r border-t border-b rounded-r-xl font-bold text-gray-800"
-                                rowspan="{{ count($row['details']) }}">
-                                Rp. {{ number_format($row['total_penerimaan'], 0, ',', '.') }}
+                            <td class="p-4 font-bold text-gray-800 bg-white" rowspan="{{ count($row['details']) }}">
+                                <div class="text-blue-600">
+                                    Rp {{ number_format($row['total_penerimaan'], 0, ',', '.') }}
+                                </div>
                             </td>
                             @endif
                         </tr>
                         @endforeach
                         @empty
                         <tr>
-                            <td colspan="6" class="p-10 text-center text-gray-400 italic">Belum ada data survei untuk filter ini.</td>
+                            <td colspan="6" class="p-10 text-center text-gray-400 italic">
+                                Belum ada data survei untuk filter ini.
+                            </td>
                         </tr>
                         @endforelse
                     </tbody>
