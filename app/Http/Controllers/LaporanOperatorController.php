@@ -27,13 +27,18 @@ class LaporanOperatorController extends Controller
         $tarifRaw = $this->database->getReference('objek_tarif')->getValue() ?? [];
         
         $mapTarif = [];
+        $objekNames = [];
+        $dataRingkasan = []; // Dinamis
+
         foreach ($tarifRaw as $t) {
-            $key = strtolower(str_replace(' ', '', $t['nama'] ?? ''));
+            $namaOriginal = $t['nama'] ?? 'Lainnya';
+            $key = strtolower(str_replace(' ', '', $namaOriginal));
             $mapTarif[$key] = $t['harga'] ?? 0;
+            $objekNames[$key] = $namaOriginal;
+            $dataRingkasan[$key] = 0; // Inisialisasi awal 0
         }
 
-        // 2. Inisialisasi Data Output
-        $dataRingkasan = ['motor' => 0, 'minibus' => 0, 'bus' => 0, 'truk' => 0];
+        // 2. Inisialisasi Data Output Tambahan
         $rekapitulasi = [];
         $grafikWaktu = ['labels' => [], 'data' => []];
         $totalKeuangan = ['target' => 0, 'realisasi' => 0];
@@ -48,7 +53,7 @@ class LaporanOperatorController extends Controller
                 $labelJam = $hourKey . ':00';
                 $jamTotal = 0;
                 
-                if (isset($dataHarian[$hourKey])) {
+                if (isset($dataHarian[$hourKey]) && is_array($dataHarian[$hourKey])) {
                     $detailsJam = [];
                     $totalPenerimaanJam = 0;
 
@@ -67,7 +72,7 @@ class LaporanOperatorController extends Controller
                                 $totalKeuangan['realisasi'] += $penerimaan;
 
                                 $detailsJam[] = [
-                                    'jenis' => ucfirst($jenis),
+                                    'jenis' => $objekNames[$jenis],
                                     'jumlah' => $vol,
                                     'tarif' => $harga,
                                     'penerimaan' => $penerimaan
@@ -85,16 +90,20 @@ class LaporanOperatorController extends Controller
                     }
                 }
 
-                // Untuk Grafik Waktu (hanya jam kerja atau semua)
+                // Untuk Grafik Waktu
                 if ($h >= 6 && $h <= 22) {
                     $grafikWaktu['labels'][] = $labelJam;
                     $grafikWaktu['data'][] = $jamTotal;
                 }
             }
+        }
 
-            // Ambil Target Harian dari Lokasi
-            $target = $lokasiMaster[$lokasiId]['target_harian'] ?? 0;
-            $totalKeuangan['target'] = (int)$target;
+        // 6. Siapkan Data Grafik Volume (Dinamis)
+        $volumeChartLabels = [];
+        $volumeChartValues = [];
+        foreach ($objekNames as $key => $nama) {
+            $volumeChartLabels[] = $nama;
+            $volumeChartValues[] = $dataRingkasan[$key] ?? 0;
         }
 
         return view('admin.laporan.lapOperator', [
@@ -104,13 +113,14 @@ class LaporanOperatorController extends Controller
             'userId' => $userId,
             'selectedDate' => $selectedDate,
             'dataRingkasan' => $dataRingkasan,
+            'objekNames' => $objekNames,
             'totalKedatangan' => array_sum($dataRingkasan),
             'keuangan' => $totalKeuangan,
             'rekapitulasi' => $rekapitulasi,
             'grafikWaktu' => $grafikWaktu,
             'grafikVolume' => [
-                'labels' => ['Motor', 'Mini Bus', 'Bus', 'Truk'],
-                'data' => [$dataRingkasan['motor'], $dataRingkasan['minibus'], $dataRingkasan['bus'], $dataRingkasan['truk']]
+                'labels' => $volumeChartLabels,
+                'data' => $volumeChartValues
             ]
         ]);
     }

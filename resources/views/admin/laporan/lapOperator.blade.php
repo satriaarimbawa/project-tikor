@@ -35,44 +35,53 @@
             <div class="col-span-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
                     <h2 class="text-lg font-bold mb-4 text-black">Ringkasan Harian</h2>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="flex items-center p-4 rounded-xl border border-blue-100 shadow-sm flex-1 bg-gradient-to-r from-white via-blue-100 to-white">
-                            <div class="bg-[#4169E1] p-3 rounded-lg mr-4">
-                                <iconify-icon icon="mdi:bus" class="text-white text-3xl"></iconify-icon>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @php
+                            $colors = [
+                                'blue' => ['bg-[#4169E1]', 'border-blue-100', 'via-blue-100'],
+                                'orange' => ['bg-[#FCA24C]', 'border-orange-100', 'via-orange-100'],
+                                'yellow' => ['bg-[#F0C13D]', 'border-yellow-100', 'via-yellow-100'],
+                                'purple' => ['bg-[#A020F0]', 'border-purple-100', 'via-purple-100'],
+                                'green' => ['bg-[#10B981]', 'border-green-100', 'via-green-100'],
+                                'pink' => ['bg-[#F43F5E]', 'border-pink-100', 'via-pink-100'],
+                            ];
+                            $colorKeys = array_keys($colors);
+                            
+                            $icons = [
+                                'motor' => 'mdi:motorbike',
+                                'bus' => 'mdi:bus',
+                                'minibus' => 'mdi:bus-side',
+                                'mobil' => 'mdi:car',
+                                'truk' => 'mdi:truck',
+                                'traktor' => 'mdi:tractor',
+                                'pickup' => 'mdi:truck-delivery'
+                            ];
+                        @endphp
+
+                        @foreach($dataRingkasan as $key => $val)
+                            @php 
+                                $cKey = $colorKeys[$loop->index % count($colorKeys)];
+                                $c = $colors[$cKey];
+                                $iconName = 'mdi:bus'; // Default
+                                foreach($icons as $iconKey => $icon) {
+                                    if(strpos($key, $iconKey) !== false) {
+                                        $iconName = $icon;
+                                        break;
+                                    }
+                                }
+                            @endphp
+                            <div class="flex items-center p-4 rounded-xl border {{ $c[1] }} shadow-sm bg-gradient-to-r from-white {{ $c[2] }} to-white">
+                                <div class="{{ $c[0] }} p-3 rounded-lg mr-4 flex-shrink-0">
+                                    <iconify-icon icon="{{ $iconName }}" class="text-white text-2xl"></iconify-icon>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <p class="text-xs text-gray-500 uppercase truncate">{{ $objekNames[$key] ?? $key }}</p>
+                                    <p class="text-xl font-bold">{{ number_format($val) }}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Bus</p>
-                                <p class="text-xl font-bold">{{ number_format($dataRingkasan['bus']) }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-4 rounded-xl border border-orange-100 shadow-sm flex-1 bg-gradient-to-r from-white via-orange-100 to-white">
-                            <div class="bg-[#FCA24C] p-3 rounded-lg mr-4">
-                                <iconify-icon icon="mdi:motorbike" class="text-white text-3xl"></iconify-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Motor</p>
-                                <p class="text-xl font-bold">{{ number_format($dataRingkasan['motor']) }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-4 rounded-xl border border-yellow-100 shadow-sm flex-1 bg-gradient-to-r from-white via-yellow-100 to-white">
-                            <div class="bg-[#F0C13D] p-3 rounded-lg mr-4">
-                                <iconify-icon icon="mdi:bus-side" class="text-white text-3xl"></iconify-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Mini Bus</p>
-                                <p class="text-xl font-bold">{{ number_format($dataRingkasan['minibus']) }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-4 rounded-xl border border-purple-100 shadow-sm flex-1 bg-gradient-to-r from-white via-purple-100 to-white">
-                            <div class="bg-[#A020F0] p-3 rounded-lg mr-4">
-                                <iconify-icon icon="mdi:truck" class="text-white text-3xl"></iconify-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Truk</p>
-                                <p class="text-xl font-bold">{{ number_format($dataRingkasan['truk']) }}</p>
-                            </div>
-                        </div>
-                        <div class="col-span-2 flex items-center justify-between px-8 py-4 bg-[#E5E7EB] rounded-xl mt-2">
+                        @endforeach
+                        
+                        <div class="col-span-full flex items-center justify-between px-8 py-4 bg-[#E5E7EB] rounded-xl mt-2">
                             <p class="text-sm font-bold text-gray-700 uppercase">Total Kedatangan</p>
                             <p class="text-4xl font-black text-gray-700">{{ number_format($totalKedatangan) }}</p>
                         </div>
@@ -139,11 +148,11 @@
                         </canvas>
                     </div>
 
-                    <div class="w-1/3 space-y-2">
-                        @foreach(['motor', 'mobil', 'minibus', 'truk'] as $v)
+                    <div class="w-1/3 space-y-2 overflow-y-auto max-h-64 pr-2">
+                        @foreach($dataRingkasan as $k => $v)
                         <div class="bg-gray-50 p-2 rounded text-center border border-gray-100">
-                            <p class="text-[10px] text-gray-500 uppercase">Total {{ ucfirst($v) }}</p>
-                            <p class="font-bold text-lg text-blue-500">{{ number_format($dataRingkasan[$v] ?? 0) }}</p>
+                            <p class="text-[10px] text-gray-500 uppercase truncate">Total {{ $objekNames[$k] ?? $k }}</p>
+                            <p class="font-bold text-lg text-blue-500">{{ number_format($v) }}</p>
                         </div>
                         @endforeach
                     </div>

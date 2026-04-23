@@ -14,6 +14,17 @@ use App\Http\Controllers\LaporanLokasiController;
 use App\Http\Controllers\LaporanOperatorController; 
 
 
+Route::get('/debug-gd', function() {
+    return [
+        'gd_loaded' => extension_loaded('gd'),
+        'gd_info' => function_exists('gd_info') ? gd_info() : 'N/A',
+        'php_version' => phpversion(),
+        'php_ini' => php_ini_loaded_file(),
+        'extensions_dir' => ini_get('extension_dir'),
+        'all_extensions' => get_loaded_extensions(),
+    ];
+});
+
 //link landing page 
 Route::get('/', function () {
     return view('landing');
