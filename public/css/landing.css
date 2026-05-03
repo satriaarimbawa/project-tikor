@@ -6,32 +6,35 @@
 
 body, html {
     height: 100%;
-    font-family: 'Playfair Display', sans-serif;
+    font-family: 'Inter', sans-serif;
     overflow-x: hidden;
 }
 
 .hero-section {
-    height: 100vh;
+    min-height: 100vh;
     width: 100%;
-    background-image: linear-gradient(to right, rgba(0, 7, 20, 0.6) 20%, rgba(0, 7, 20, 0.292) 100%), 
+    background-image: linear-gradient(to right, rgba(0, 10, 30, 0.85) 30%, rgba(0, 10, 30, 0.2) 100%), 
                       url('../assets/Background_landing.png');
     background-size: cover;
-    background-position: center left; 
+    background-position: center; 
     background-repeat: no-repeat;
     display: flex;
     flex-direction: column;
 }
 
+/* --- HEADER & NAVIGASI --- */
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 30px 80px;
+    padding: 40px 80px;
+    width: 100%;
 }
 
 .logo-group {
     display: flex;
-    gap: 20px;
+    gap: 15px;
+    align-items: center;
 }
 
 .logo-group img {
@@ -39,18 +42,25 @@ header {
     width: auto;
 }
 
+nav {
+    display: flex;
+    gap: 30px;
+}
+
 nav a {
     text-decoration: none;
-    color: rgba(255,255,255,0.8); 
-    margin-left: 30px;
-    font-size: 15px;
-    font-weight: 400;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Playfair Display', serif; 
+    transition: 0.3s;
 }
 
 nav a:hover {
-    color: white;
+    opacity: 1;
 }
 
+/* --- AREA UTAMA --- */
 .main-content {
     flex-grow: 1;
     display: flex;
@@ -69,24 +79,83 @@ nav a:hover {
     margin-bottom: 40px;
 }
 
+/* --- TOMBOL LOGIN --- */
+.button-group {
+    display: flex;
+    gap: 20px; /* Jarak antar tombol */
+    justify-content: center;
+}
+
+.btn-login {
+    display: inline-block !important;
+    padding: 14px 35px !important;
+    border-radius: 10px !important;
+    font-size: 17px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: all 0.3s ease !important;
+    min-width: 200px !important;
+    border: none !important;
+    cursor: pointer;
+}
+
 .btn-dashboard {
     display: inline-block;
     padding: 16px 32px;
     background-color: #007bff;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
+    color: white !important;
+    text-decoration: none !important;
+    border-radius: 10px;
     font-weight: 600;
+    font-size: 16px;
+    font-family: 'Playfair Display', serif;
     transition: 0.3s;
+    min-width: 180px;
+    border: none;
+    cursor: pointer;
 }
 
 .btn-dashboard:hover {
     background-color: #0056b3;
     transform: translateY(-2px);
+    color: white; 
 }
 
+.btn-primary, .btn-secondary {
+    background-color: #007bff !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3) !important;
+}
+
+.btn-login:hover {
+    background-color: #0056b3 !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.5) !important;
+    color: white !important;
+}
+
+/* --- FOOTER --- */
 footer {
     padding: 30px 80px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.7);
     font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- RESPONSIVITAS --- */
+@media (max-width: 768px) {
+    header, footer { padding: 20px; }
+    nav { display: none; } 
+    
+    .button-group {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    
+    .btn-login {
+        width: 100% !important;
+        max-width: 280px !important;
+    }
 }
