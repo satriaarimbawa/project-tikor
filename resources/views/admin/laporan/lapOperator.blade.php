@@ -36,8 +36,7 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
                     <h2 class="text-lg font-bold mb-4 text-black">Ringkasan Harian</h2>
                     <div class="grid grid-cols-2 gap-4">
-                        <div
-                            class="flex items-center p-4 rounded-xl border border-blue-100 shadow-sm flex-1 bg-gradient-to-r from-white via-blue-100 to-white">
+                        <div class="flex items-center p-4 rounded-xl border border-blue-100 shadow-sm flex-1 bg-gradient-to-r from-white via-blue-100 to-white">
                             <div class="bg-[#4169E1] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:bus" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -46,8 +45,7 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['bus']) }}</p>
                             </div>
                         </div>
-                        <div
-                            class="flex items-center p-4 rounded-xl border border-orange-100 shadow-sm flex-1 bg-gradient-to-r from-white via-orange-100 to-white">
+                        <div class="flex items-center p-4 rounded-xl border border-orange-100 shadow-sm flex-1 bg-gradient-to-r from-white via-orange-100 to-white">
                             <div class="bg-[#FCA24C] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:motorbike" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -56,8 +54,7 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['motor']) }}</p>
                             </div>
                         </div>
-                        <div
-                            class="flex items-center p-4 rounded-xl border border-yellow-100 shadow-sm flex-1 bg-gradient-to-r from-white via-yellow-100 to-white">
+                        <div class="flex items-center p-4 rounded-xl border border-yellow-100 shadow-sm flex-1 bg-gradient-to-r from-white via-yellow-100 to-white">
                             <div class="bg-[#F0C13D] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:bus-side" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -66,8 +63,7 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['minibus']) }}</p>
                             </div>
                         </div>
-                        <div
-                            class="flex items-center p-4 rounded-xl border border-purple-100 shadow-sm flex-1 bg-gradient-to-r from-white via-purple-100 to-white">
+                        <div class="flex items-center p-4 rounded-xl border border-purple-100 shadow-sm flex-1 bg-gradient-to-r from-white via-purple-100 to-white">
                             <div class="bg-[#A020F0] p-3 rounded-lg mr-4">
                                 <iconify-icon icon="mdi:truck" class="text-white text-3xl"></iconify-icon>
                             </div>
@@ -76,8 +72,7 @@
                                 <p class="text-xl font-bold">{{ number_format($dataRingkasan['truk']) }}</p>
                             </div>
                         </div>
-                        <div
-                            class="col-span-2 flex items-center justify-between px-8 py-4 bg-[#E5E7EB] rounded-xl mt-2">
+                        <div class="col-span-2 flex items-center justify-between px-8 py-4 bg-[#E5E7EB] rounded-xl mt-2">
                             <p class="text-sm font-bold text-gray-700 uppercase">Total Kedatangan</p>
                             <p class="text-4xl font-black text-gray-700">{{ number_format($totalKedatangan) }}</p>
                         </div>
@@ -150,11 +145,11 @@
                         </canvas>
                     </div>
 
-                    <div class="w-1/3 space-y-2">
-                        @foreach(['motor', 'mobil', 'minibus', 'truk'] as $v)
+                    <div class="w-1/3 space-y-2 overflow-y-auto max-h-64 pr-2">
+                        @foreach($dataRingkasan as $k => $v)
                         <div class="bg-gray-50 p-2 rounded text-center border border-gray-100">
-                            <p class="text-[10px] text-gray-500 uppercase">Total {{ ucfirst($v) }}</p>
-                            <p class="font-bold text-lg text-blue-500">{{ number_format($dataRingkasan[$v] ?? 0) }}</p>
+                            <p class="text-[10px] text-gray-500 uppercase truncate">Total {{ $objekNames[$k] ?? $k }}</p>
+                            <p class="font-bold text-lg text-blue-500">{{ number_format($v) }}</p>
                         </div>
                         @endforeach
                     </div>

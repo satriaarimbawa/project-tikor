@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Summary - Dashboard</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
@@ -31,7 +32,7 @@
 
         <form action="{{ route('laporan.lokasi.filter') }}" method="POST" class="flex justify-between items-center mb-8">
             @csrf
-            <button type="button" class="flex items-center gap-2 bg-[#4A6FA5] hover:bg-blue-800 text-white px-5 py-2 rounded-lg font-semibold shadow-md transition text-sm">
+            <button type="submit" formaction="{{ route('laporan.lokasi.download') }}" formmethod="GET" class="flex items-center gap-2 bg-[#4A6FA5] hover:bg-blue-800 text-white px-5 py-2 rounded-lg font-semibold shadow-md transition text-sm">
                 <iconify-icon icon="lucide:printer" class="text-lg"></iconify-icon> Unduh PDF
             </button>
 
@@ -57,31 +58,50 @@
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
             <h2 class="text-lg font-bold mb-6 text-slate-800">Ringkasan Harian</h2>
-            <div class="grid grid-cols-5 gap-6">
-                <div class="p-4 rounded-xl shadow-md flex items-center gap-4 border border-gray-100" style="background: linear-gradient(90deg, rgba(16, 86, 216, 0.4) 50%, rgba(255, 255, 255, 0.4) 100%);">
-                    <div class="w-12 h-12 rounded-lg bg-[#406ABA]/80 flex items-center justify-center shadow-md">
-                        <img src="{{ asset('assets/Bus.png') }}" class="w-6 h-6 object-contain">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                @php
+                    $colors = [
+                        ['rgba(16, 86, 216, 0.4)', '#406ABA'],
+                        ['rgba(233, 164, 38, 0.4)', '#E9A426'],
+                        ['rgba(237, 233, 37, 0.4)', '#EDE925'],
+                        ['rgba(149, 62, 225, 0.4)', '#953EE1'],
+                        ['rgba(16, 185, 129, 0.4)', '#10B981'],
+                        ['rgba(244, 63, 94, 0.4)', '#F43F5E'],
+                        ['rgba(107, 114, 128, 0.4)', '#6B7280']
+                    ];
+                    $icons = [
+                        'motor' => 'Motor.png',
+                        'bus' => 'Bus.png',
+                        'minibus' => 'Mini Bus.png',
+                        'mobil' => 'Mini Bus.png',
+                        'truk' => 'Truk.png',
+                        'traktor' => 'Truk.png',
+                        'pickup' => 'Truk.png'
+                    ];
+                @endphp
+
+                @foreach($totals as $key => $val)
+                    @php 
+                        $c = $colors[$loop->index % count($colors)]; 
+                        $iconFile = 'Bus.png'; // Default
+                        foreach($icons as $iconKey => $file) {
+                            if(strpos($key, $iconKey) !== false) {
+                                $iconFile = $file;
+                                break;
+                            }
+                        }
+                    @endphp
+                    <div class="p-4 rounded-xl shadow-md flex items-center gap-4 border border-gray-100" style="background: linear-gradient(90deg, {{ $c[0] }} 50%, rgba(255, 255, 255, 0.4) 100%);">
+                        <div class="w-12 h-12 rounded-lg flex items-center justify-center shadow-md flex-shrink-0" style="background-color: {{ $c[1] }};">
+                            <img src="{{ asset('assets/' . $iconFile) }}" class="w-6 h-6 object-contain">
+                        </div>
+                        <div class="overflow-hidden">
+                            <p class="text-[10px] text-gray-700 font-semibold uppercase truncate">{{ $objekNames[$key] ?? $key }}</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ $val }}</p>
+                        </div>
                     </div>
-                    <div><p class="text-[10px] text-gray-700 font-semibold uppercase">Bus</p><p class="text-2xl font-bold text-gray-900">{{ $totals['bus'] }}</p></div>
-                </div>
-                <div class="p-4 rounded-xl shadow-md flex items-center gap-4 border border-gray-100" style="background: linear-gradient(90deg, rgba(233, 164, 38, 0.4) 50%, rgba(255, 255, 255, 0.4) 100%);">
-                    <div class="w-12 h-12 rounded-lg bg-[#E9A426]/80 flex items-center justify-center shadow-md">
-                        <img src="{{ asset('assets/Motor.png') }}" class="w-6 h-6 object-contain">
-                    </div>
-                    <div><p class="text-[10px] text-gray-700 font-semibold uppercase">Motor</p><p class="text-2xl font-bold text-gray-900">{{ $totals['motor'] }}</p></div>
-                </div>
-                <div class="p-4 rounded-xl shadow-md flex items-center gap-4 border border-gray-100" style="background: linear-gradient(90deg, rgba(237, 233, 37, 0.4) 50%, rgba(255, 255, 255, 0.4) 100%);">
-                    <div class="w-12 h-12 rounded-lg bg-[#EDE925]/80 flex items-center justify-center shadow-md">
-                        <img src="{{ asset('assets/Mini Bus.png') }}" class="w-6 h-6 object-contain">
-                    </div>
-                    <div><p class="text-[10px] text-gray-700 font-semibold uppercase">Mini Bus</p><p class="text-2xl font-bold text-gray-900">{{ $totals['minibus'] }}</p></div>
-                </div>
-                <div class="p-4 rounded-xl shadow-md flex items-center gap-4 border border-gray-100" style="background: linear-gradient(90deg, rgba(149, 62, 225, 0.4) 50%, rgba(255, 255, 255, 0.4) 100%);">
-                    <div class="w-12 h-12 rounded-lg bg-[#953EE1]/80 flex items-center justify-center shadow-md">
-                        <img src="{{ asset('assets/Truk.png') }}" class="w-6 h-6 object-contain">
-                    </div>
-                    <div><p class="text-[10px] text-gray-700 font-semibold uppercase">Truk</p><p class="text-2xl font-bold text-gray-900">{{ $totals['truk'] }}</p></div>
-                </div>
+                @endforeach
+
                 <div class="flex flex-col justify-center items-center rounded-xl border border-slate-200 p-4 shadow-sm" style="background-color: rgba(217, 217, 217, 0.6);">
                     <p class="text-[9px] font-bold text-slate-600 uppercase text-center leading-tight">Total Kedatangan</p>
                     <p class="text-3xl font-black text-slate-800">{{ $totalVolume }}</p>
@@ -90,11 +110,11 @@
         </div>
 
         <div class="grid grid-cols-12 gap-6 mb-6 text-slate-800">
-            <div class="col-span-8 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <div class="col-span-12 lg:col-span-8 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <h2 class="text-lg font-bold mb-10">Ringkasan Kinerja Keuangan</h2>
-                <div class="flex items-center gap-10"> 
-                    <div class="flex-1 h-64"><canvas id="financialChart"></canvas></div>
-                    <div class="w-52 space-y-4">
+                <div class="flex flex-col md:flex-row items-center gap-10"> 
+                    <div class="w-full h-64"><canvas id="financialChart"></canvas></div>
+                    <div class="w-full md:w-52 space-y-4">
                         <div class="p-4 rounded-xl border border-slate-200" style="background-color: rgba(217, 217, 217, 0.6);">
                             <p class="text-[9px] font-bold text-slate-500 uppercase">Total Realisasi</p>
                             <p class="text-lg font-black text-slate-800">Rp. {{ number_format($totalPenerimaan, 0, ',', '.') }}</p>
@@ -102,9 +122,11 @@
                     </div>
                 </div>
             </div>
-            <div class="col-span-4 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <div class="col-span-12 lg:col-span-4 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <h2 class="text-lg font-bold mb-6">Volume Kendaraan</h2>
-                <div class="h-40 mb-6"><canvas id="volumeChart"></canvas></div>
+                <div class="h-64 mb-6">
+                    <canvas id="volumeChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -168,13 +190,22 @@
             new Chart(ctxVol, {
                 type: 'bar',
                 data: {
-                    labels: ['Motor', 'Mini Bus', 'Bus', 'Truk'],
+                    labels: {!! json_encode($volumeChartLabels) !!},
                     datasets: [{
-                        data: [{{ $totals['motor'] }}, {{ $totals['minibus'] }}, {{ $totals['bus'] }}, {{ $totals['truk'] }}],
-                        backgroundColor: ['#E9A426', '#EDE925', '#406ABA', '#953EE1']
+                        data: {!! json_encode($volumeChartValues) !!},
+                        backgroundColor: ['#E9A426', '#EDE925', '#406ABA', '#953EE1', '#10B981', '#F43F5E', '#6B7280']
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false } 
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
             });
         });
     </script>

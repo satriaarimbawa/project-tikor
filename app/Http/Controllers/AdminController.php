@@ -22,80 +22,80 @@ class AdminController extends Controller
 
     public function index()
     {
+        Carbon::setLocale('id');
         $waktuSekarang = Carbon::now('Asia/Makassar');
         $hariIni = $waktuSekarang->toDateString();
 
+        // 1. Ambil Master Tarif & Inisialisasi Kunci Valid
         $tarifRaw = $this->database->getReference('objek_tarif')->getValue() ?? [];
         $tarifMap = [];
-        $stats = [];
-        $chartData = [];
         $objekNames = [];
+        $validKeys = [];
 
         foreach ($tarifRaw as $item) {
             $namaOriginal = $item['nama'] ?? 'Lainnya';
+            // Normalisasi kunci: lowercase dan hapus spasi
             $key = strtolower(str_replace(' ', '', $namaOriginal));
             $tarifMap[$key] = (int)($item['harga'] ?? 0);
-            $stats[$key] = 0;
-            $chartData[$key] = [];
             $objekNames[$key] = $namaOriginal;
-        }
-        
-        if (empty($stats)) {
-            $stats = ['lainnya' => 0];
-            $chartData = ['lainnya' => []];
-            $objekNames = ['lainnya' => 'Lainnya'];
+            $validKeys[] = $key;
         }
 
-        // 1. Ambil SEMUA data dari survei_harian (Struktur Berjenjang)
+        // 2. Ambil Semua Data Survei
         $surveiHarianRaw = $this->database->getReference('survei_harian')->getValue() ?? [];
         
         $totalPendapatan = 0;
         $detailPendapatan = [];
-        $groupedSurvei = []; // Untuk grafik mingguan
+        $groupedSurvei = []; // Untuk chart & stats [tanggal][kunci]
 
+        // 3. Proses Data dengan Struktur: survei_harian -> id_lokasi -> tanggal -> jam -> id_penugasan
         foreach ($surveiHarianRaw as $idLokasi => $dataTanggal) {
             if (!is_array($dataTanggal)) continue;
+
             foreach ($dataTanggal as $tgl => $dataJam) {
-                // Inisialisasi Grouped Survei untuk Tanggal Ini
+                if (!is_array($dataJam)) continue;
+                
                 if (!isset($groupedSurvei[$tgl])) {
-                    $groupedSurvei[$tgl] = [];
-                    foreach ($stats as $k => $v) $groupedSurvei[$tgl][$k] = 0;
+                    foreach ($validKeys as $vk) $groupedSurvei[$tgl][$vk] = 0;
                 }
 
-                // Loop Jam (00-23)
-                if (is_array($dataJam)) {
-                    foreach ($dataJam as $hour => $dataPenugasan) {
-                        // Loop Penugasan dalam jam tersebut
-                        if (is_array($dataPenugasan)) {
-                            foreach ($dataPenugasan as $idPenugasan => $item) {
-                                if (is_array($item)) {
-                                    foreach ($stats as $jenis => $v) {
-                                        $jumlahUnit = (int)($item[$jenis] ?? 0);
-                                        if ($jumlahUnit > 0) {
-                                            // Akumulasi untuk Grafik Mingguan
-                                            $groupedSurvei[$tgl][$jenis] += $jumlahUnit;
+                foreach ($dataJam as $jam => $dataPenugasan) {
+                    if (!is_array($dataPenugasan)) continue;
 
-                                            // Akumulasi untuk Hari Ini (Statistik Utama & Tabel)
-                                            if ($tgl == $hariIni) {
-                                                $stats[$jenis] += $jumlahUnit;
-                                                $harga = $tarifMap[$jenis] ?? 0;
-                                                $pendapatanItem = $jumlahUnit * $harga;
-                                                $totalPendapatan += $pendapatanItem;
+                    // Support baik struktur langsung (ada user_id) maupun berjenjang (id_penugasan)
+                    $itemsToProcess = [];
+                    if (isset($dataPenugasan['user_id'])) {
+                        $itemsToProcess[] = $dataPenugasan;
+                    } else {
+                        foreach ($dataPenugasan as $item) {
+                            if (is_array($item)) $itemsToProcess[] = $item;
+                        }
+                    }
 
-                                                $keyDetail = $idLokasi . '_' . $jenis;
-                                                if (!isset($detailPendapatan[$keyDetail])) {
-                                                    $detailPendapatan[$keyDetail] = [
-                                                        'objek' => $objekNames[$jenis] ?? ucfirst($jenis),
-                                                        'id_lokasi' => $idLokasi,
-                                                        'jumlah' => 0,
-                                                        'nominal' => 0
-                                                    ];
-                                                }
-                                                $detailPendapatan[$keyDetail]['jumlah'] += $jumlahUnit;
-                                                $detailPendapatan[$keyDetail]['nominal'] += $pendapatanItem;
-                                            }
-                                        }
+                    foreach ($itemsToProcess as $item) {
+                        foreach ($validKeys as $key) {
+                            $vol = (int)($item[$key] ?? 0);
+                            if ($vol > 0) {
+                                // Akumulasi untuk statistik (berdasarkan tanggal)
+                                $groupedSurvei[$tgl][$key] += $vol;
+
+                                // Akumulasi untuk hari ini (pendapatan & detail)
+                                if ($tgl === $hariIni) {
+                                    $harga = $tarifMap[$key] ?? 0;
+                                    $subTotal = $vol * $harga;
+                                    $totalPendapatan += $subTotal;
+
+                                    $keyDetail = $idLokasi . '_' . $key;
+                                    if (!isset($detailPendapatan[$keyDetail])) {
+                                        $detailPendapatan[$keyDetail] = [
+                                            'objek' => $objekNames[$key],
+                                            'id_lokasi' => $idLokasi,
+                                            'jumlah' => 0,
+                                            'nominal' => 0
+                                        ];
                                     }
+                                    $detailPendapatan[$keyDetail]['jumlah'] += $vol;
+                                    $detailPendapatan[$keyDetail]['nominal'] += $subTotal;
                                 }
                             }
                         }
@@ -104,34 +104,40 @@ class AdminController extends Controller
             }
         }
 
+        // 4. Siapkan Statistik Card (Hanya Hari Ini)
+        $stats = [];
+        foreach ($validKeys as $key) {
+            $stats[$key] = $groupedSurvei[$hariIni][$key] ?? 0;
+        }
+
+        // 5. Siapkan Data Chart (6 Hari Terakhir)
+        $labelsMingguan = [];
+        $chartData = [];
+        foreach ($validKeys as $key) $chartData[$key] = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $date = Carbon::now('Asia/Makassar')->subDays($i);
+            $dateStr = $date->toDateString();
+            $labelsMingguan[] = $date->translatedFormat('D'); 
+
+            foreach ($validKeys as $key) {
+                $chartData[$key][] = $groupedSurvei[$dateStr][$key] ?? 0;
+            }
+        }
+
+        // 6. Lengkapi Nama Lokasi untuk Tabel Detail
         $lokasiMaster = $this->database->getReference('lokasi')->getValue() ?? [];
         foreach ($detailPendapatan as &$detail) {
             $idL = $detail['id_lokasi'];
             $detail['nama_lokasi'] = $lokasiMaster[$idL]['nama_lokasi'] ?? ($lokasiMaster[$idL]['alamat'] ?? 'Lokasi Tidak Dikenal');
         }
 
-        $labelsMingguan = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now('Asia/Makassar')->subDays($i);
-            $dateString = $date->toDateString();
-            $labelsMingguan[] = $date->translatedFormat('D'); 
-
-            foreach($stats as $key => $val) {
-                $count = 0;
-                if (isset($groupedSurvei[$dateString][$key])) {
-                    $count = $groupedSurvei[$dateString][$key];
-                }
-                $chartData[$key][] = $count;
-            }
-        }
-
+        // 7. Hitung Notifikasi Unread
         $notifRaw = $this->database->getReference('notifikasi')->getValue() ?? [];
         $unreadCount = 0;
         if (is_array($notifRaw)) {
             foreach ($notifRaw as $notif) {
-                if (($notif['status'] ?? '') == 'unread') {
-                    $unreadCount++;
-                }
+                if (($notif['status'] ?? '') === 'unread') $unreadCount++;
             }
         }
 
@@ -139,7 +145,7 @@ class AdminController extends Controller
             'totalPendapatan' => $totalPendapatan,
             'stats' => $stats,
             'objekNames' => $objekNames,
-            'detailPendapatan' => $detailPendapatan,
+            'detailPendapatan' => array_values($detailPendapatan),
             'labelsMingguan' => $labelsMingguan,
             'chartData' => $chartData,
             'unreadCount' => $unreadCount
@@ -149,7 +155,7 @@ class AdminController extends Controller
     public function getNotifications()
     {
         $notifRaw = $this->database->getReference('notifikasi')->getValue() ?? [];
-        krsort($notifRaw); // Urutkan terbaru di atas
+        krsort($notifRaw);
         return response()->json($notifRaw);
     }
 
