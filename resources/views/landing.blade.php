@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-<<<<<<< HEAD
-=======
 
->>>>>>> f22eaae (feat: Sistem Delegasi Istirahat Eksklusif, Auto-Logout & Perbaikan Dashboard Live)
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
