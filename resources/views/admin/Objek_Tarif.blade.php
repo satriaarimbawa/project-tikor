@@ -8,7 +8,6 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/objek_tarif.css') }}?v={{ time() }}">
     
@@ -23,13 +22,15 @@
             background-color: rgba(37, 61, 107, 0.75) !important;
             backdrop-filter: blur(10px);
         }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
     </style>
 </head>
 <body class="flex">
 
     @include('admin.template.navbar')
 
-    <main class="ml-64 p-10 w-full min-h-screen">
+    <main class="ml-64 p-10 flex-1 min-w-0 overflow-x-hidden min-h-screen">
         <header class="flex justify-between items-center mb-10">
             <h1 class="text-[28px] font-extrabold text-[#2D3748] tracking-tight">Objek & Tarif</h1>
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" alt="Logo Klungkung" class="w-12 h-12 object-contain">
@@ -44,7 +45,7 @@
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3">
                             <i class="fas fa-search text-gray-300 text-[10px]"></i>
                         </span>
-                        <input type="text" placeholder="Search" class="pl-9 pr-4 py-2 bg-[#F7FAFC] border border-gray-100 rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-100 w-44">
+                        <input type="text" id="search-input" placeholder="Search" class="pl-9 pr-4 py-2 bg-[#F7FAFC] border border-gray-100 rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-100 w-44">
                     </div>
                 </div>
 
@@ -59,17 +60,28 @@
                                 <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="table-body">
                             @forelse($data as $index => $item)
                             <tr class="hover:bg-gray-50/50 transition-colors">
                                 <td class="py-4 px-2 border border-gray-100 text-center text-xs font-bold text-gray-400">{{ $index + 1 }}</td>
-                                <td class="py-4 px-4 border border-gray-100 text-[13px] font-bold text-gray-700">{{ $item['nama'] }}</td>
+                                <td class="py-4 px-4 border border-gray-100 text-[13px] font-bold text-gray-700">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-50">
+                                            @if($item['icon_url'])
+                                                <img src="{{ $item['icon_url'] }}" class="w-full h-full object-cover">
+                                            @else
+                                                <iconify-icon icon="lucide:image" class="text-gray-300"></iconify-icon>
+                                            @endif
+                                        </div>
+                                        <span>{{ $item['nama'] }}</span>
+                                    </div>
+                                </td>
                                 <td class="py-4 px-2 border border-gray-100 text-center font-black text-[13px] text-blue-600">Rp. {{ number_format($item['harga'], 0, ',', '.') }}</td>
                                 <td class="py-4 px-2 border border-gray-100 text-center">
                                     <span class="{{ $item['status'] == 'Aktif' ? 'bg-[#EBFFFF] text-[#38B2AC]' : 'bg-gray-100 text-gray-400' }} px-3 py-1 rounded-md text-[9px] font-black uppercase">{{ $item['status'] }}</span>
                                 </td>
                                 <td class="py-4 px-2 border border-gray-100 text-center text-gray-300">
-                                    <button onclick="editData('{{ $item['id'] }}', '{{ $item['nama'] }}', '{{ $item['harga'] }}', '{{ $item['status'] }}', '{{ $item['keterangan'] }}')" class="hover:text-gray-900 mr-2"><i class="fas fa-pencil-alt text-[10px]"></i></button>
+                                    <button onclick="editData('{{ $item['id'] }}', '{{ $item['nama'] }}', '{{ $item['harga'] }}', '{{ $item['status'] }}', '{{ $item['keterangan'] }}', '{{ $item['icon_url'] }}')" class="hover:text-gray-900 mr-2"><i class="fas fa-pencil-alt text-[10px]"></i></button>
                                     <form action="{{ route('objek-tarif.destroy', $item['id']) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
                                         @csrf
                                         @method('DELETE')
@@ -78,7 +90,7 @@
                                 </td>
                             </tr>
                             @empty
-                            <tr>
+                            <tr id="empty-row">
                                 <td colspan="5" class="py-4 text-center text-gray-400 text-xs">Belum ada data objek & tarif.</td>
                             </tr>
                             @endforelse
@@ -87,26 +99,30 @@
                 </div>
             </div>
 
-            <div class="col-span-12 lg:col-span-5 bg-white border border-gray-100 shadow-sm rounded-[30px] p-8 sticky top-5">
+            <div class="col-span-12 lg:col-span-5 bg-white border border-gray-100 shadow-sm rounded-[30px] p-8 sticky top-5 text-center">
                 <div class="flex flex-col items-center mb-8">
                     <p class="text-[10px] font-black text-gray-400 uppercase mb-4">Icon Objek</p>
-                    <div class="w-32 h-32 bg-[#D9D9D9] rounded-[25px] flex items-center justify-center border-2 border-dashed border-[#E2E8F0]">
-                        <img src="{{ asset('assets/motor.png') }}" class="w-20 h-20 object-contain filter invert brightness-0 opacity-80">
+                    <div id="icon-preview-container" class="w-32 h-32 bg-[#F7FAFC] rounded-[25px] flex items-center justify-center border-2 border-dashed border-[#E2E8F0] overflow-hidden">
+                        <img id="icon-preview" src="{{ asset('assets/Motor.png') }}" class="w-20 h-20 object-contain filter invert brightness-0 opacity-10">
                     </div>
-                    <button class="mt-4 text-[10px] font-black text-blue-500 uppercase tracking-widest">Ganti Icon</button>
+                    <button type="button" onclick="document.getElementById('icon-input').click()" class="mt-4 text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-600 transition-colors">Pilih Gambar</button>
+                    <p class="text-[9px] text-gray-400 mt-1 italic">*Format: JPG, PNG, Max 1MB</p>
                 </div>
 
-                <h3 id="form-title" class="text-sm font-black text-gray-800 uppercase mb-6">Form Objek & Tarif</h3>
+                <h3 id="form-title" class="text-sm font-black text-gray-800 uppercase mb-6 text-left">Form Objek & Tarif</h3>
 
                 @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 text-xs" role="alert">
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 text-xs text-left" role="alert">
                     <span class="block sm:inline">{{ session('success') }}</span>
                 </div>
                 @endif
 
-                <form id="objek-form" action="{{ route('objek-tarif.store') }}" method="POST" class="space-y-4">
+                <form id="objek-form" action="{{ route('objek-tarif.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4 text-left">
                     @csrf
                     <div id="method-field"></div>
+                    
+                    <!-- Hidden File Input -->
+                    <input type="file" name="icon" id="icon-input" class="hidden" accept="image/*" onchange="previewImage(this)">
                     
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Nama Objek</label>
@@ -114,7 +130,7 @@
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Tarif (Rp)</label>
-                        <input type="number" name="harga" id="harga" required class="w-full px-5 py-4 bg-[#F7FAFC] border border-transparent rounded-2xl font-black text-blue-600 outline-none focus:border-blue-200">
+                        <input type="text" name="harga" id="harga" required class="w-full px-5 py-4 bg-[#F7FAFC] border border-transparent rounded-2xl font-black text-blue-600 outline-none focus:border-blue-200" onkeyup="this.value = formatRupiah(this.value)">
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Status</label>
@@ -142,16 +158,57 @@
     </main>
 
     <script>
-        function editData(id, nama, harga, status, keterangan) {
+        function formatRupiah(angka) {
+            if (!angka) return '';
+            var number_string = angka.toString().replace(/[^,\d]/g, '').toString(),
+                split = number_string.split(','),
+                sisa = split[0].length % 3,
+                rupiah = split[0].substr(0, sisa),
+                ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+            if (ribuan) {
+                separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
+
+            rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+            return rupiah;
+        }
+
+        function previewImage(input) {
+            const preview = document.getElementById('icon-preview');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('filter', 'invert', 'brightness-0', 'opacity-10');
+                    preview.classList.add('w-full', 'h-full', 'object-cover');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function editData(id, nama, harga, status, keterangan, iconUrl) {
             document.getElementById('form-title').innerText = 'Edit Objek & Tarif';
             document.getElementById('objek-form').action = `/Objek_Tarif/update/${id}`;
             document.getElementById('method-field').innerHTML = '<input type="hidden" name="_method" value="PUT">';
             
             document.getElementById('nama').value = nama;
-            document.getElementById('harga').value = harga;
+            document.getElementById('harga').value = formatRupiah(harga);
             document.getElementById('status').value = status;
             document.getElementById('keterangan').value = keterangan;
             
+            const preview = document.getElementById('icon-preview');
+            if (iconUrl && iconUrl !== 'null' && iconUrl !== '') {
+                preview.src = iconUrl;
+                preview.classList.remove('filter', 'invert', 'brightness-0', 'opacity-10');
+                preview.classList.add('w-full', 'h-full', 'object-cover');
+            } else {
+                preview.src = "{{ asset('assets/Motor.png') }}";
+                preview.classList.add('filter', 'invert', 'brightness-0', 'opacity-10');
+                preview.classList.remove('w-full', 'h-full', 'object-cover');
+            }
+
             document.getElementById('submit-btn').innerText = 'Update Objek';
             document.getElementById('submit-btn').classList.replace('bg-[#24B445]', 'bg-blue-600');
             document.getElementById('submit-btn').classList.replace('hover:bg-[#1f9d3a]', 'hover:bg-blue-700');
@@ -168,7 +225,13 @@
             document.getElementById('harga').value = '';
             document.getElementById('status').value = 'Aktif';
             document.getElementById('keterangan').value = '';
+            document.getElementById('icon-input').value = '';
             
+            const preview = document.getElementById('icon-preview');
+            preview.src = "{{ asset('assets/Motor.png') }}";
+            preview.classList.add('filter', 'invert', 'brightness-0', 'opacity-10');
+            preview.classList.remove('w-full', 'h-full', 'object-cover');
+
             document.getElementById('submit-btn').innerText = 'Simpan Objek';
             document.getElementById('submit-btn').classList.replace('bg-blue-600', 'bg-[#24B445]');
             document.getElementById('submit-btn').classList.replace('hover:bg-blue-700', 'hover:bg-[#1f9d3a]');
@@ -183,6 +246,7 @@
             let hasResults = false;
 
             tableRows.forEach(row => {
+                if (row.id === 'empty-row' || row.id === 'no-results-row') return;
                 const text = row.innerText.toLowerCase();
                 if (text.includes(searchTerm)) {
                     row.style.display = '';
@@ -192,7 +256,6 @@
                 }
             });
 
-            // Handle empty state if needed
             const emptyRow = document.getElementById('no-results-row');
             if (!hasResults && searchTerm !== '') {
                 if (!emptyRow) {

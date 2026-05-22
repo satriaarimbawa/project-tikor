@@ -8,11 +8,10 @@
     <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/daftar-user.css') }}?v={{ time() }}">
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     body {
         font-family: 'Inter', sans-serif;
@@ -39,13 +38,13 @@
 
         <div class="card-figma">
             <div class="flex justify-between items-center mb-6">
-                <div class="relative w-1/3">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                <form action="/daftar-user" method="GET" class="relative w-1/3">
+                    <button type="submit" class="absolute inset-y-0 left-0 flex items-center pl-3">
                         <iconify-icon icon="lucide:search" class="text-white/50 text-xl"></iconify-icon>
-                    </span>
-                    <input type="text" placeholder="Cari data user"
+                    </button>
+                    <input type="text" name="search" value="{{ $searchTerm ?? '' }}" placeholder="Cari data user"
                         class="w-full bg-[#253D6B] text-white text-sm rounded-full py-2.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white/50">
-                </div>
+                </form>
 
                 <a href="{{ route('user.create') }}"
                     class="bg-[#253D6B] hover:bg-[#1a2c4d] text-white text-sm font-bold py-2.5 px-6 rounded-full flex items-center gap-2 transition-all shadow-lg">
@@ -66,9 +65,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($users as $uid => $user)
+                        @forelse($users as $index => $user)
+                        @php $uid = $user['id']; @endphp
                         <tr class="table-row-hover">
-                            <td class="text-center font-medium text-gray-500">{{ $loop->iteration }}</td>
+                            <td class="text-center font-medium text-gray-500">
+                                {{ ($currentPage - 1) * 5 + ($index + 1) }}
+                            </td>
                             <td class="font-bold text-[#253D6B]">{{ $user['username'] ?? 'No Name' }}</td>
                             <td class="text-gray-600">{{ $user['email'] ?? '-' }}</td>
                             <td>
@@ -93,24 +95,31 @@
                                 </form>
                             </td>
                         </tr>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="5" class="py-10 text-center text-gray-500 italic">Data tidak ditemukan.</td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
 
-            <div class="flex justify-center mt-8 gap-4">
-                <button
-                    class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition">
+            <!-- Pagination -->
+            <div class="flex justify-center mt-8 gap-4 items-center">
+                <a href="{{ $currentPage > 1 ? url('/daftar-user?page='.($currentPage - 1).'&search='.$searchTerm) : '#' }}"
+                    class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
                     <iconify-icon icon="lucide:chevron-left" class="text-xl"></iconify-icon>
-                </button>
-                <button
-                    class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition">
+                </a>
+                
+                <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
+
+                <a href="{{ $currentPage < $totalPages ? url('/daftar-user?page='.($currentPage + 1).'&search='.$searchTerm) : '#' }}"
+                    class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
                     <iconify-icon icon="lucide:chevron-right" class="text-xl"></iconify-icon>
-                </button>
+                </a>
             </div>
         </div>
     </main>
-
 
     <script src="{{ asset("js/navbar.js") }}"></script>
 </body>

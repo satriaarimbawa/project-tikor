@@ -153,31 +153,42 @@ function searchLocation() {
     }
 }
 
-function toggleObjek(objek) {
+function toggleObjek(objek, providedId = null) {
     const index = selectedObjects.indexOf(objek);
-    // Buat ID yang sama dengan di Blade: row-nama-objek-kecil
-    const safeId = 'row-' + objek.toLowerCase().replace(/\s+/g, '-');
-    const row = document.getElementById(safeId);
-    if (!row) return;
+    const safeId = providedId || ('row-' + objek.toLowerCase().replace(/\s+/g, '-'));
+    const targetId = providedId ? ('row-' + providedId) : safeId;
+    
+    const row = document.getElementById(targetId);
+    if (!row) {
+        console.warn("Row not found for ID:", targetId);
+        // Tetap proses penambahan ke input jika baris tidak ditemukan (agar data tetap tersimpan)
+    }
 
-    const statusText = row.querySelector('.status-text');
-    const btn = row.querySelector('.action-btn');
-    const icon = btn.querySelector('iconify-icon');
     const displayInput = document.getElementById('displayObjek');
     const hiddenInput = document.getElementById('hiddenObjekInput');
 
     if (index === -1) {
         selectedObjects.push(objek);
-        statusText.innerText = 'Terpilih';
-        statusText.classList.add('text-green-600', 'font-bold');
-        icon.setAttribute('icon', 'lucide:minus-circle');
-        btn.classList.replace('text-green-500', 'text-red-500');
+        if (row) {
+            const statusText = row.querySelector('.status-text');
+            const btn = row.querySelector('.action-btn');
+            const icon = btn.querySelector('iconify-icon');
+            statusText.innerText = 'Terpilih';
+            statusText.classList.add('text-green-600', 'font-bold');
+            icon.setAttribute('icon', 'lucide:minus-circle');
+            btn.classList.replace('text-green-500', 'text-red-500');
+        }
     } else {
         selectedObjects.splice(index, 1);
-        statusText.innerText = '-';
-        statusText.classList.remove('text-green-600', 'font-bold');
-        icon.setAttribute('icon', 'lucide:plus-circle');
-        btn.classList.replace('text-red-500', 'text-green-500');
+        if (row) {
+            const statusText = row.querySelector('.status-text');
+            const btn = row.querySelector('.action-btn');
+            const icon = btn.querySelector('iconify-icon');
+            statusText.innerText = '-';
+            statusText.classList.remove('text-green-600', 'font-bold');
+            icon.setAttribute('icon', 'lucide:plus-circle');
+            btn.classList.replace('text-red-500', 'text-green-500');
+        }
     }
 
     const formattedText = selectedObjects.map(word => word.toUpperCase()).join(', ');
@@ -186,10 +197,13 @@ function toggleObjek(objek) {
 }
 
 function syncFromDropdown(select) {
-    const val = select.value;
-    if (val) {
-        if (!selectedObjects.includes(val)) {
-            toggleObjek(val);
+    const safeId = select.value;
+    const option = select.options[select.selectedIndex];
+    const namaAsli = option.getAttribute('data-nama');
+    
+    if (safeId && namaAsli) {
+        if (!selectedObjects.includes(namaAsli)) {
+            toggleObjek(namaAsli, safeId);
         }
         select.value = ""; 
     }

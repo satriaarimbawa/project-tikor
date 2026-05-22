@@ -14,6 +14,18 @@
                     <span class="text-sm font-medium">Beranda</span>
                 </div>
             </a>
+
+            <a href="/daftar-user" class="relative flex items-center px-6 py-4 {{ request()->is('daftar-user') || request()->is('tambahuser') ? 'text-white' : 'text-white/60' }} group overflow-hidden transition-all hover:text-white">
+                @if(request()->is('daftar-user') || request()->is('tambahuser'))
+                    <div class="absolute inset-0 bg-[#253D6B]/50 border-r-4 border-yellow-400"></div>
+                @endif
+                <div class="relative z-10 flex items-center w-full">
+                    <div class="w-6 flex justify-center mr-4">
+                        <img src="{{ asset('assets/User.png') }}" class="w-5 h-5 object-contain {{ request()->is('daftar-user') || request()->is('tambahuser') ? 'opacity-100' : 'opacity-60' }} group-hover:opacity-100">
+                    </div>
+                    <span class="text-sm font-medium">Daftar User</span>
+                </div>
+            </a>
             
             <a href="/Objek_Tarif" class="relative flex items-center px-6 py-4 {{ request()->is('Objek_Tarif') ? 'text-white' : 'text-white/60' }} hover:text-white group transition-all">
                 @if(request()->is('Objek_Tarif'))
@@ -51,15 +63,15 @@
                 </div>
             </a>
 
-            <a href="/daftar-user" class="relative flex items-center px-6 py-4 {{ request()->is('daftar-user') || request()->is('tambahuser') ? 'text-white' : 'text-white/60' }} group overflow-hidden transition-all hover:text-white">
-                @if(request()->is('daftar-user') || request()->is('tambahuser'))
+            <a href="/log-aktivitas" class="relative flex items-center px-6 py-4 {{ request()->is('log-aktivitas') ? 'text-white' : 'text-white/60' }} group overflow-hidden transition-all hover:text-white">
+                @if(request()->is('log-aktivitas'))
                     <div class="absolute inset-0 bg-[#253D6B]/50 border-r-4 border-yellow-400"></div>
                 @endif
                 <div class="relative z-10 flex items-center w-full">
                     <div class="w-6 flex justify-center mr-4">
-                        <img src="{{ asset('assets/User.png') }}" class="w-5 h-5 object-contain {{ request()->is('daftar-user') || request()->is('tambahuser') ? 'opacity-100' : 'opacity-60' }} group-hover:opacity-100">
+                        <iconify-icon icon="lucide:history" class="text-xl {{ request()->is('log-aktivitas') ? 'opacity-100' : 'opacity-60' }} group-hover:opacity-100"></iconify-icon>
                     </div>
-                    <span class="text-sm font-medium">Daftar User</span>
+                    <span class="text-sm font-medium ml-1">Log Aktivitas</span>
                 </div>
             </a>
 

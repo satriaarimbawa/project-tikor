@@ -26,6 +26,23 @@ class AdminController extends Controller
         $waktuSekarang = Carbon::now('Asia/Makassar');
         $hariIni = $waktuSekarang->toDateString();
 
+        // --- AUTOMATIC CLEANUP: Deactivate expired assignments ---
+        try {
+            $semuaTugas = $this->database->getReference('penugasan')->getValue() ?? [];
+            foreach ($semuaTugas as $keyTugas => $t) {
+                if (($t['status'] ?? 'inaktif') === 'aktif') {
+                    $selesai = Carbon::parse($t['waktu_selesai'], 'Asia/Makassar');
+                    if ($waktuSekarang->gt($selesai)) {
+                        // Jika waktu sekarang sudah MELEWATI waktu selesai, ubah status ke inaktif
+                        $this->database->getReference("penugasan/{$keyTugas}/status")->set('inaktif');
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Abaikan error cleanup agar dashboard tetap tampil jika Firebase bermasalah sebentar
+        }
+        // --- END CLEANUP ---
+
         // 1. Ambil Master Tarif & Inisialisasi Kunci Valid
         $tarifRaw = $this->database->getReference('objek_tarif')->getValue() ?? [];
         $tarifMap = [];
@@ -110,13 +127,16 @@ class AdminController extends Controller
             $stats[$key] = $groupedSurvei[$hariIni][$key] ?? 0;
         }
 
-        // 5. Siapkan Data Chart (6 Hari Terakhir)
+        // 5. Siapkan Data Chart (Minggu s/d Sabtu pekan ini)
         $labelsMingguan = [];
         $chartData = [];
         foreach ($validKeys as $key) $chartData[$key] = [];
 
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now('Asia/Makassar')->subDays($i);
+        // Ambil awal minggu ini (dimulai dari hari Minggu)
+        $startOfWeek = Carbon::now('Asia/Makassar')->startOfWeek(Carbon::SUNDAY);
+
+        for ($i = 0; $i < 7; $i++) {
+            $date = (clone $startOfWeek)->addDays($i);
             $dateStr = $date->toDateString();
             $labelsMingguan[] = $date->translatedFormat('D'); 
 

@@ -5,14 +5,18 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\ActivityLogService;
 
 class OperatorController extends Controller
 {
     protected $database;
+    protected $logService;
 
-    public function __construct(Database $database)
+    public function __construct(Database $database, ActivityLogService $logService)
     {
         $this->database = $database;
+        $this->logService = $logService;
     }
 
     public function index()
@@ -27,7 +31,7 @@ class OperatorController extends Controller
         $nama_lokasi = $dataLokasi ? ($dataLokasi['nama_lokasi'] ?? $dataLokasi['alamat'] ?? 'Lokasi Tidak Dikenal') : 'Lokasi Tidak Aktif';
         
         // 1. Ambil Ringkasan Harian & Riwayat dari struktur berjenjang jam
-        $counts = ['motor' => 0, 'minibus' => 0, 'bus' => 0, 'truk' => 0];
+        $counts = [];
         $totalSemua = 0;
         $riwayat_kendaraan = [];
         
@@ -40,21 +44,21 @@ class OperatorController extends Controller
                 // Loop Penugasan dalam jam tersebut
                 foreach ($dataJam as $idPenugasan => $dataTugas) {
                     // Akumulasi angka dashboard (SEMUA operator di lokasi ini)
-                    foreach ($counts as $key => $val) {
-                        $valTambah = $dataTugas[$key] ?? 0;
-                        $counts[$key] += $valTambah;
-                        $totalSemua += $valTambah;
+                    foreach ($dataTugas as $key => $val) {
+                        if (in_array($key, ['user_id', 'updated_at', 'id_lokasi', 'total_survei'])) continue;
+                        $counts[$key] = ($counts[$key] ?? 0) + (int)$val;
+                        $totalSemua += (int)$val;
                     }
 
                     // Riwayat Aktivitas - Ambil per jam per penugasan milik user ini
                     if (($dataTugas['user_id'] ?? '') == $userId) {
                         $labelJam = $hour . ':00';
-                        // Karena struktur baru tidak ada node 'logs', kita ringkas per jam per jenis
-                        foreach (['motor', 'minibus', 'bus', 'truk'] as $v) {
-                            if (isset($dataTugas[$v]) && $dataTugas[$v] > 0) {
+                        foreach ($dataTugas as $key => $val) {
+                            if (in_array($key, ['user_id', 'updated_at', 'id_lokasi', 'total_survei'])) continue;
+                            if ((int)$val > 0) {
                                 $riwayat_kendaraan[] = [
                                     'jam' => $labelJam,
-                                    'kendaraan' => ucfirst($v) . " ({$dataTugas[$v]} unit)",
+                                    'kendaraan' => ucfirst($key) . " ({$val} unit)",
                                     'lokasi' => $nama_lokasi,
                                 ];
                             }
@@ -118,20 +122,30 @@ class OperatorController extends Controller
         foreach ($tugasRaw as $key => $tugas) {
             $idLokasi = $tugas['id_lokasi'] ?? null;
             $riwayat[] = [
+                'tanggal' => Carbon::parse($tugas['waktu_mulai'])->locale('id')->translatedFormat('d M Y'),
                 'waktu_mulai' => $tugas['waktu_mulai'],
                 'waktu_selesai' => $tugas['waktu_selesai'],
                 'nama_lokasi_display' => $lokasiMaster[$idLokasi]['nama_lokasi'] ?? ($lokasiMaster[$idLokasi]['alamat'] ?? 'Lokasi Tidak Ditemukan'),
                 'objek_survei' => $tugas['objek_survei'] ?? '',
+                'status' => $tugas['status'] ?? 'aktif',
             ];
         }
 
-        $counts = ['motor' => 0, 'minibus' => 0, 'bus' => 0, 'truk' => 0];
+        // Sorting: Aktif di atas, lalu berdasarkan tanggal terbaru
+        usort($riwayat, function($a, $b) {
+            if ($a['status'] === 'aktif' && $b['status'] !== 'aktif') return -1;
+            if ($a['status'] !== 'aktif' && $b['status'] === 'aktif') return 1;
+            return strtotime($b['waktu_mulai']) <=> strtotime($a['waktu_mulai']);
+        });
+
+        $counts = [];
         if ($idLokasiAktif) {
             $dataHariIni = $this->database->getReference("survei_harian/{$idLokasiAktif}/{$today}")->getValue() ?? [];
             foreach ($dataHariIni as $hour => $dataJam) {
                 foreach ($dataJam as $idPenugasan => $dataTugas) {
-                    foreach ($counts as $key => $val) {
-                        $counts[$key] += ($dataTugas[$key] ?? 0);
+                    foreach ($dataTugas as $key => $val) {
+                        if (in_array($key, ['user_id', 'updated_at', 'id_lokasi', 'total_survei'])) continue;
+                        $counts[$key] = ($counts[$key] ?? 0) + (int)$val;
                     }
                 }
             }
@@ -168,28 +182,39 @@ class OperatorController extends Controller
             return redirect('/dashboard-operator-penugasan')->with('error', 'Silakan pilih lokasi penugasan terlebih dahulu.');
         }
 
-        $penugasanRaw = $this->database->getReference('penugasan')
-                            ->orderByChild('id_user')
-                            ->equalTo($userId)
-                            ->getValue() ?? [];
-        
-        $objekSurvei = [];
+        // 1. Ambil Data Penugasan Aktif (Milik Sendiri dan Rekan di Lokasi yang Sama)
+        $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
         $waktuSekarang = Carbon::now('Asia/Makassar');
         $today = $waktuSekarang->toDateString();
-        $tugasAktifSaatIni = null;
+        
+        $objekSaya = [];
+        $objekRekan = []; // [ 'uid' => ['nama' => '..', 'objek' => ['..']] ]
         $idPenugasanAktif = null;
+        $tugasAktifSaatIni = null;
 
-        foreach ($penugasanRaw as $key => $tugas) {
+        // Ambil info semua user untuk mapping nama rekan
+        $usersMap = $this->database->getReference('users')->getValue() ?? [];
+
+        foreach ($semuaPenugasan as $key => $tugas) {
             if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
                 $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
                 $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
                 
                 if ($waktuSekarang->between($mulai, $selesai)) {
                     $rawObjek = $tugas['objek_survei'] ?? '';
-                    $objekSurvei = array_filter(array_map('trim', explode(',', $rawObjek)));
-                    $tugasAktifSaatIni = $tugas;
-                    $idPenugasanAktif = $key;
-                    break;
+                    $objArr = array_filter(array_map('trim', explode(',', $rawObjek)));
+
+                    if (($tugas['id_user'] ?? '') == $userId) {
+                        $objekSaya = $objArr;
+                        $tugasAktifSaatIni = $tugas;
+                        $idPenugasanAktif = $key;
+                    } else {
+                        $uidRekan = $tugas['id_user'] ?? 'unknown';
+                        $objekRekan[$uidRekan] = [
+                            'nama' => $usersMap[$uidRekan]['username'] ?? 'Rekan',
+                            'objek' => $objArr
+                        ];
+                    }
                 }
             }
         }
@@ -199,13 +224,19 @@ class OperatorController extends Controller
         }
 
         $dataLokasi = $this->database->getReference("lokasi/{$idLokasiAktif}")->getValue();
-        $nama_lokasi = $dataLokasi['nama_lokasi'] ?? ($dataLokasi['alamat'] ?? 'Lokasi Tidak Dikenal');
+        $nama_lokasi = $dataLokasi['nama_lokasi'] ?? ($dataLokasi['alamat'] ?? 'Locasi Tidak Dikenal');
 
-        // Agregasi Data Hari Ini dari seluruh jam
+        // Cek apakah sudah lapor hari ini
+        $sudahLapor = isset($tugasAktifSaatIni['laporan_harian'][$today]) && $tugasAktifSaatIni['laporan_harian'][$today] == true;
+
+        // Agregasi Data Hari Ini (Milik Sendiri dan Rekan)
         $dataHariIni = $this->database->getReference("survei_harian/{$idLokasiAktif}/{$today}")->getValue() ?? [];
 
+        // Gabungkan semua objek unik untuk inisialisasi counter
+        $semuaObjekUnik = array_unique(array_merge($objekSaya, ...array_column($objekRekan, 'objek')));
+        
         $dataSurvei = ['total_survei' => 0];
-        foreach ($objekSurvei as $obj) {
+        foreach ($semuaObjekUnik as $obj) {
             $dataSurvei[strtolower(str_replace(' ', '', $obj))] = 0;
         }
 
@@ -223,8 +254,10 @@ class OperatorController extends Controller
         return view('operator.survei', [
             'namaLokasi' => $nama_lokasi,
             'dataSurvei' => $dataSurvei,
-            'objekSurvei' => $objekSurvei,
-            'idPenugasan' => $idPenugasanAktif
+            'objekSaya' => $objekSaya,
+            'objekRekan' => $objekRekan,
+            'idPenugasan' => $idPenugasanAktif,
+            'sudahLapor' => $sudahLapor
         ]);
     }
 
@@ -245,6 +278,12 @@ class OperatorController extends Controller
         $jenis = strtolower(str_replace(' ', '', $request->jenis_kendaraan));
 
         try {
+            // Cek apakah sudah lapor hari ini (Server-side safety)
+            $penugasan = $this->database->getReference("penugasan/{$idPenugasan}")->getValue();
+            if (isset($penugasan['laporan_harian'][$date]) && $penugasan['laporan_harian'][$date] == true) {
+                return response()->json(['success' => false, 'message' => 'Anda sudah melaporkan hasil survei hari ini. Tidak dapat menambah data.'], 403);
+            }
+
             // Path: survei_harian/{id_lokasi}/{date}/{hour}/{id_penugasan}
             $refPath = "survei_harian/{$idLokasiAktif}/{$date}/{$hour}/{$idPenugasan}";
             $refHarian = $this->database->getReference($refPath);
@@ -264,6 +303,42 @@ class OperatorController extends Controller
             $currentData['updated_at'] = $timeFull;
 
             $refHarian->set($currentData);
+
+            $namaLokasi = session('nama_lokasi_aktif');
+            if (!$namaLokasi) {
+                $locData = $this->database->getReference("lokasi/{$idLokasiAktif}")->getValue();
+                $namaLokasi = $locData['nama_lokasi'] ?? 'Area Penugasan';
+            }
+
+            // RECORD LOG UPDATE DATA
+            $this->logService->log(
+                'update',
+                $userId,
+                $namaLokasi,
+                "<strong>{$namaLokasi}</strong>: +1 " . ucfirst($request->jenis_kendaraan) . " berhasil tercatat."
+            );
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function laporSurvei(Request $request)
+    {
+        try {
+            $idPenugasan = $request->id_penugasan;
+            
+            if (!$idPenugasan) {
+                return response()->json(['success' => false, 'message' => 'ID Penugasan tidak ditemukan'], 400);
+            }
+
+            // Catat bahwa operator sudah melapor untuk hari ini
+            $today = Carbon::now('Asia/Makassar')->toDateString();
+            $this->database->getReference("penugasan/{$idPenugasan}/laporan_harian/{$today}")->set(true);
+
+            // JANGAN ubah status menjadi 'inaktif' agar besok masih bisa digunakan (untuk rentang hari)
+            // $this->database->getReference("penugasan/{$idPenugasan}/status")->set('inaktif');
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
@@ -288,5 +363,170 @@ class OperatorController extends Controller
             'user' => $user,
             'nama_lokasi' => $nama_lokasi
         ]);
+    }
+
+    /**
+     * Mengubah status istirahat operator.
+     * Saat istirahat, geofencing diabaikan dan tugas bisa diklaim rekan.
+     */
+    public function toggleIstirahat(Request $request)
+    {
+        $userId = session('user_id');
+        $username = session('username');
+        if (!$userId) return response()->json(['success' => false], 401);
+
+        $userRef = $this->database->getReference("users/{$userId}");
+        $userData = $userRef->getValue();
+        $currentStatus = $userData['status_istirahat'] ?? false;
+        $newStatus = !$currentStatus;
+
+        $updateData = ['status_istirahat' => $newStatus];
+        
+        // Jika kembali bekerja, hapus claimer yang membantu tadi
+        if (!$newStatus) {
+            $updateData['claimer_id'] = null;
+        }
+
+        $userRef->update($updateData);
+
+        // Logging aktivitas ke admin
+        $msg = $newStatus ? "mulai istirahat" : "selesai istirahat";
+        $this->logService->log(
+            'update',
+            $userId,
+            $username,
+            "<strong>{$username}</strong> sedang <strong>{$msg}</strong>."
+        );
+
+        return response()->json([
+            'success' => true,
+            'status_istirahat' => $newStatus,
+            'message' => $newStatus ? 'Status: Istirahat' : 'Status: Aktif Bekerja'
+        ]);
+    }
+
+    /**
+     * Mengambil alih tugas rekan yang sedang istirahat.
+     */
+    public function claimTugas(Request $request)
+    {
+        $myId = session('user_id');
+        $targetId = $request->uid_rekan;
+
+        if (!$myId || !$targetId) return response()->json(['success' => false], 400);
+
+        $userRef = $this->database->getReference("users/{$targetId}");
+        $userData = $userRef->getValue();
+
+        // Validasi: Rekan harus sedang istirahat dan belum ada yang klaim
+        if (($userData['status_istirahat'] ?? false) && empty($userData['claimer_id'])) {
+            $userRef->update(['claimer_id' => $myId]);
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Tugas sudah diklaim atau rekan sudah aktif.']);
+    }
+
+    public function downloadPdf()
+    {
+        $userId = session('user_id');
+        $idLokasiAktif = session('id_lokasi_aktif');
+        $now = Carbon::now('Asia/Makassar');
+        $today = $now->toDateString();
+
+        if (!$idLokasiAktif) {
+            return back()->with('error', 'Silakan pilih lokasi penugasan terlebih dahulu.');
+        }
+
+        // 1. Ambil Data Penugasan Aktif
+        $penugasanRaw = $this->database->getReference('penugasan')
+                            ->orderByChild('id_user')
+                            ->equalTo($userId)
+                            ->getValue() ?? [];
+        
+        $tugasAktif = null;
+        $idPenugasan = null;
+        foreach ($penugasanRaw as $key => $tugas) {
+            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
+                $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
+                $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+                if ($now->between($mulai, $selesai)) {
+                    $tugasAktif = $tugas;
+                    $idPenugasan = $key;
+                    break;
+                }
+            }
+        }
+
+        if (!$tugasAktif) {
+            return back()->with('error', 'Tidak ada penugasan aktif saat ini.');
+        }
+
+        // 2. Ambil Data Lokasi & User
+        $dataLokasi = $this->database->getReference("lokasi/{$idLokasiAktif}")->getValue();
+        $user = $this->database->getReference("users/{$userId}")->getValue();
+        
+        // 3. Ambil Tarif Objek
+        $tarifRaw = $this->database->getReference('objek_tarif')->getValue() ?? [];
+        $tarifMap = [];
+        foreach ($tarifRaw as $t) {
+            $key = strtolower(str_replace(' ', '', $t['nama']));
+            $tarifMap[$key] = [
+                'nama' => $t['nama'],
+                'harga' => (int)($t['harga'] ?? 0)
+            ];
+        }
+
+        // 4. Proses Data Per Jam (Dinamis sesuai jam penugasan)
+        $jamMulai = (int)Carbon::parse($tugasAktif['waktu_mulai'])->format('H');
+        $jamSelesai = (int)Carbon::parse($tugasAktif['waktu_selesai'])->format('H');
+        
+        $objekSurvei = array_filter(array_map('trim', explode(',', $tugasAktif['objek_survei'] ?? '')));
+        $hourlyData = [];
+        $summaryData = [];
+
+        foreach ($objekSurvei as $obj) {
+            $key = strtolower(str_replace(' ', '', $obj));
+            $summaryData[$key] = [
+                'nama' => $obj,
+                'jumlah' => 0,
+                'tarif' => $tarifMap[$key]['harga'] ?? 0,
+                'total' => 0
+            ];
+        }
+
+        // Path: survei_harian/{id_lokasi}/{today}
+        $dataHarian = $this->database->getReference("survei_harian/{$idLokasiAktif}/{$today}")->getValue() ?? [];
+
+        for ($h = $jamMulai; $h <= $jamSelesai; $h++) {
+            $hourKey = str_pad($h, 2, '0', STR_PAD_LEFT);
+            $labelJam = $hourKey . '.00 - ' . str_pad($h + 1, 2, '0', STR_PAD_LEFT) . '.00';
+            
+            // Ambil data milik ID Penugasan ini di jam tersebut
+            $statsJam = $dataHarian[$hourKey][$idPenugasan] ?? [];
+            
+            foreach ($objekSurvei as $obj) {
+                $key = strtolower(str_replace(' ', '', $obj));
+                $count = (int)($statsJam[$key] ?? 0);
+                
+                $hourlyData[$labelJam][$key] = $count;
+                
+                // Akumulasi ke summary
+                $summaryData[$key]['jumlah'] += $count;
+                $summaryData[$key]['total'] += ($count * $summaryData[$key]['tarif']);
+            }
+        }
+
+        $pdf = Pdf::loadView('operator.report_pdf', [
+            'nama_lokasi' => $dataLokasi['nama_lokasi'] ?? ($dataLokasi['alamat'] ?? 'Lokasi Tidak Dikenal'),
+            'tanggal' => $now->translatedFormat('d F Y'),
+            'surveyor' => $user['username'] ?? 'Operator',
+            'hourlyData' => $hourlyData,
+            'summaryData' => $summaryData,
+            'objekSurvei' => $objekSurvei,
+            'totalSeluruh' => collect($summaryData)->sum('total')
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download("Laporan_Uji_Petik_{$today}.pdf");
     }
 }

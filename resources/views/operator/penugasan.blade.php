@@ -59,7 +59,7 @@ $penugasan = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>DASHBOARD || OPERATOR</title>
+    <title>Riwayat Penugasan - Operator</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
@@ -149,26 +149,26 @@ $penugasan = [
                     <tbody>
                         @foreach($riwayat as $item)
                         <tr
-                            class="bg-white shadow-[0_8px_20px_rgb(0,0,0,0.08)] rounded-2xl overflow-hidden transform transition hover:scale-[1.01]">
-                            <td class="p-4 rounded-l-2xl border-y border-l border-slate-100">
-                                <span class="block font-medium text-slate-700">{{ $item['waktu_mulai'] }}</span>
-                                <span class="block text-[10px] text-slate-400">Sampai</span>
-                                <span class="block font-medium text-slate-700">{{ $item['waktu_selesai'] }}</span>
+                            class="bg-white shadow-[0_4px_12px_rgb(0,0,0,0.05)] rounded-2xl overflow-hidden transform transition hover:scale-[1.01]">
+                            <td class="p-3 rounded-l-2xl border-y border-l border-slate-50">
+                                <span class="block font-bold text-slate-700 text-[11px]">{{ $item['tanggal'] }}</span>
+                                <span class="block text-[9px] text-slate-400">{{ \Carbon\Carbon::parse($item['waktu_mulai'])->format('H:i') }} - {{ \Carbon\Carbon::parse($item['waktu_selesai'])->format('H:i') }}</span>
                             </td>
 
-                            <td class="p-4 border-y border-slate-100 align-middle">
-                                <span class="font-bold text-slate-800 truncate max-w-[200px]">{{ $item['nama_lokasi_display'] }}</span>
+                            <td class="p-3 border-y border-slate-50 align-middle">
+                                <span class="block font-bold text-slate-800 text-[11px] truncate max-w-[120px] lg:max-w-none">{{ $item['nama_lokasi_display'] }}</span>
+                                <span class="block text-[9px] text-slate-400 italic truncate max-w-[120px]">{{ $item['objek_survei'] }}</span>
                             </td>
 
-                            <td class="p-4 rounded-r-2xl border-y border-r border-slate-100 text-center align-middle">
-                                @if(now()->between(\Carbon\Carbon::parse($item['waktu_mulai']), \Carbon\Carbon::parse($item['waktu_selesai'])))
+                            <td class="p-3 rounded-r-2xl border-y border-r border-slate-50 text-center align-middle">
+                                @if($item['status'] === 'aktif')
                                 <span
-                                    class="bg-emerald-500 text-white px-4 py-1 rounded-lg text-[10px] font-bold shadow-sm shadow-emerald-200">
+                                    class="bg-emerald-500 text-white px-3 py-1 rounded-full text-[9px] font-bold shadow-sm">
                                     Aktif
                                 </span>
                                 @else
-                                <span class="bg-slate-400 text-white px-4 py-1 rounded-lg text-[10px] font-bold">
-                                    Non Aktif
+                                <span class="bg-slate-300 text-slate-600 px-3 py-1 rounded-full text-[9px] font-bold">
+                                    Selesai
                                 </span>
                                 @endif
                             </td>
@@ -212,9 +212,17 @@ $penugasan = [
         startGeofencing(
             "{{ route('check.location.radius') }}", // URL Route
             "{{ csrf_token() }}",                  // Token Keamanan
-            "{{ url('/') }}"                        // URL Redirect jika logout
+            "{{ route('login') }}"                        // URL Redirect jika logout
         );
     });
+
+    function handleDownload() {
+        window.location.href = "{{ route('operator.download.pdf') }}";
+    }
+
+    function handleFile() {
+        alert("Fitur file penugasan belum aktif");
+    }
     </script>
 </body>
 

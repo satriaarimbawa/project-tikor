@@ -7,18 +7,28 @@ use Kreait\Firebase\Contract\Database;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use App\Services\ActivityLogService;
 
 class LoginController extends Controller
 {
     protected $database;
+    protected $logService;
 
-    public function __construct(Database $database)
+    public function __construct(Database $database, ActivityLogService $logService)
     {
         $this->database = $database;
+        $this->logService = $logService;
     }
 
     public function index()
     {
+        if (session()->has('login_status')) {
+            if (session()->get('role') === 'admin') {
+                return redirect('/dashboard-admin');
+            } elseif (session()->get('role') === 'operator') {
+                return redirect('/dashboard-operator-penugasan');
+            }
+        }
         return view('login.index');
     }
 
@@ -132,7 +142,22 @@ class LoginController extends Controller
             'user_id'      => $uid,
             'isLoggedIn'   => true,
             'id_lokasi_aktif' => $idLokasiTugas,
+            'nama_lokasi_aktif' => $dataTikor['nama_lokasi'] ?? 'Area Penugasan',
         ]);
+
+        // SET ONLINE STATUS
+        $this->database->getReference("users/{$uid}")->update([
+            'is_online' => true,
+            'last_seen' => Carbon::now()->timestamp
+        ]);
+
+        // RECORD LOG LOGIN
+        $this->logService->log(
+            'login',
+            $uid,
+            $user_data['username'],
+            "<strong>{$user_data['username']}</strong> baru saja login."
+        );
 
         session()->save();
 
@@ -145,8 +170,30 @@ class LoginController extends Controller
 
     public function logout()
     {
+        $uid = session()->get('user_id');
+        $username = session()->get('username');
+        $role = session()->get('role');
+
+        if ($uid) {
+            $this->database->getReference("users/{$uid}/is_online")->set(false);
+            
+            // RECORD LOG LOGOUT
+            $this->logService->log(
+                'logout',
+                $uid,
+                $username,
+                "<strong>{$username}</strong> telah logout dari sistem."
+            );
+
+        }
+
         Session::flush();
-        return redirect('/');
+
+        if ($role === 'admin') {
+            return redirect('/');
+        }
+
+        return redirect('/login');
     }
 
     public function checkLocationRadius(Request $request)
@@ -154,26 +201,43 @@ class LoginController extends Controller
         $latUser = (float) $request->input('latitude');
         $longUser = (float) $request->input('longitude');
         $idLokasiAktif = session()->get('id_lokasi_aktif');
+        $uid = session()->get('user_id');
+
+        if (!$uid) return response()->json(['status' => 'error'], 401);
+
+        // --- 1. HEARTBEAT ---
+        // Update last_seen untuk monitoring status aktif di Live Dashboard
+        $this->database->getReference("users/{$uid}/last_seen")->set(Carbon::now()->timestamp);
 
         if (!$idLokasiAktif) return response()->json(['status' => 'ok']);
 
         $dataTikor = $this->database->getReference('lokasi/' . $idLokasiAktif)->getValue();
 
         if ($dataTikor) {
+            // --- 2. CEK STATUS ISTIRAHAT ---
+            // Bypass geofencing jika operator sedang dalam mode istirahat
+            $userRef = $this->database->getReference("users/{$uid}")->getValue();
+            if ($userRef['status_istirahat'] ?? false) {
+                return response()->json(['status' => 'ok', 'message' => 'Mode Istirahat Aktif']);
+            }
+
             $latTarget = $dataTikor['latitude'] ?? 0;
             $lonTarget = $dataTikor['longitude'] ?? 0;
             $radius = $dataTikor['radius'] ?? 100;
 
+            // Hitung Jarak (Haversine Formula)
             $jarak = $this->hitungJarak($latUser, $longUser, $latTarget, $lonTarget);
 
             if ($jarak > $radius) {
-                $uid = session()->get('user_id');
                 $username = session()->get('username');
                 $now = Carbon::now('Asia/Makassar');
                 $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
                 
+                $adaPelanggaran = false;
+                $sudahLaporHariIni = false;
+
+                // --- 3. VALIDASI PELANGGARAN JADWAL ---
                 foreach ($semuaPenugasan as $keyTugas => $tugas) {
-                    // Cek: Milik user ini, di lokasi ini, dan sedang berlangsung (status aktif)
                     if (isset($tugas['id_user']) && $tugas['id_user'] == $uid && 
                         ($tugas['id_lokasi'] ?? '') == $idLokasiAktif && 
                         ($tugas['status'] ?? '') == 'aktif' &&
@@ -183,10 +247,17 @@ class LoginController extends Controller
                         $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
 
                         if ($now->between($mulai, $selesai)) {
-                            // HANYA penugasan spesifik ini yang diinaktifkan
+                            // Cek Laporan: Jika sudah lapor, tidak dianggap melanggar
+                            $today = $now->toDateString();
+                            if (isset($tugas['laporan_harian'][$today]) && $tugas['laporan_harian'][$today] == true) {
+                                $sudahLaporHariIni = true;
+                                continue;
+                            }
+
+                            $adaPelanggaran = true;
                             $this->database->getReference('penugasan/' . $keyTugas . '/status')->set('inaktif');
                             
-                            // Kirim Notifikasi ke Admin
+                            // Kirim Notifikasi Pelanggaran ke Admin
                             $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
                             $this->database->getReference('notifikasi')->push([
                                 'judul' => 'Pelanggaran Geofencing',
@@ -196,15 +267,36 @@ class LoginController extends Controller
                                 'waktu' => $now->toDateTimeString(),
                                 'status' => 'unread'
                             ]);
+
+                            $this->logService->log(
+                                'violation',
+                                $uid,
+                                $username,
+                                "Sistem mengeluarkan <strong>{$username}</strong> karena keluar radius di <strong>{$namaLokasi}</strong>."
+                            );
                         }
                     }
                 }
 
-                session()->flush();
-                return response()->json([
-                    'status' => 'logout',
-                    'message' => 'Anda keluar dari radius area penugasan! Kejadian ini telah dilaporkan ke Admin.'
-                ]);
+                // --- 4. EKSEKUSI LOGOUT OTOMATIS ---
+                if ($adaPelanggaran) {
+                    session()->flush();
+                    $this->database->getReference("users/{$uid}/is_online")->set(false);
+                    return response()->json([
+                        'status' => 'logout',
+                        'message' => 'Anda keluar dari radius area penugasan! Kejadian ini telah dilaporkan ke Admin.'
+                    ]);
+                }
+
+                // --- 5. GRACEFUL LOGOUT (PULANG KERJA) ---
+                if ($sudahLaporHariIni) {
+                    $this->database->getReference("users/{$uid}/is_online")->set(false);
+                    session()->flush();
+                    return response()->json([
+                        'status' => 'logout',
+                        'message' => 'Terima kasih atas kerja kerasnya! Anda telah otomatis logout karena meninggalkan area setelah melaporkan hasil survei.'
+                    ]);
+                }
             }
             return response()->json(['status' => 'ok', 'distance' => round($jarak) . 'm']);
         }

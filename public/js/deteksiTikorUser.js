@@ -3,7 +3,23 @@
 function startGeofencing(checkUrl, csrfToken, loginUrl, interval = 60000) {
     console.log("Geofencing started...");
 
+    function checkTime() {
+        const now = new Date();
+        const hours = now.getHours();
+        
+        // Cek jika jam sudah menunjukkan pukul 22:00 (10 Malam) atau lebih
+        if (hours >= 23) {
+            alert("Waktu operasional berakhir (Batas Pukul 22:00). Sesi Anda akan diakhiri.");
+            window.location.href = "/logout";
+            return true;
+        }
+        return false;
+    }
+
     function performCheck() {
+        // Cek waktu operasional sebelum cek lokasi
+        if (checkTime()) return;
+
         if (!navigator.geolocation) {
             console.error("Geolocation is not supported by this browser.");
             return;

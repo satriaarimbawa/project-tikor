@@ -16,10 +16,48 @@ class DaftarUserController extends Controller
         $this->database = $database;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $users = $this->database->getReference('users')->getValue() ?? [];
-        return view('admin.register.daftar-user', compact('users'));
+        $usersRaw = $this->database->getReference('users')->getValue() ?? [];
+        
+        // Urutkan dari yang terbaru
+        $usersRaw = array_reverse($usersRaw, true);
+        
+        $searchTerm = strtolower($request->input('search', ''));
+        
+        $dataFinal = [];
+        foreach ($usersRaw as $uid => $user) {
+            $username = $user['username'] ?? 'No Name';
+            $email = $user['email'] ?? '-';
+            $role = $user['role_user'] ?? 'No Role';
+
+            // Filter Pencarian
+            if ($searchTerm !== '') {
+                $match = str_contains(strtolower($username), $searchTerm) || 
+                         str_contains(strtolower($email), $searchTerm) ||
+                         str_contains(strtolower($role), $searchTerm);
+                
+                if (!$match) continue;
+            }
+
+            $dataFinal[] = array_merge($user, ['id' => $uid]);
+        }
+
+        // Pagination Manual (5 data per halaman)
+        $perPage = 5;
+        $currentPage = (int) $request->input('page', 1);
+        $totalData = count($dataFinal);
+        $totalPages = ceil($totalData / $perPage);
+        $offset = ($currentPage - 1) * $perPage;
+        
+        $dataPaginated = array_slice($dataFinal, $offset, $perPage);
+
+        return view('admin.register.daftar-user', [
+            'users' => $dataPaginated,
+            'currentPage' => $currentPage,
+            'totalPages' => $totalPages,
+            'searchTerm' => $searchTerm
+        ]);
     }
 
     public function create()
@@ -36,11 +74,26 @@ class DaftarUserController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
+        // CEK DUPLIKASI DATA
+        $usersRaw = $this->database->getReference('users')->getValue() ?? [];
+        $newUsername = strtolower($request->username);
+        $newEmail = strtolower($request->email);
+
+        foreach ($usersRaw as $user) {
+            if (strtolower($user['username'] ?? '') === $newUsername) {
+                return back()->withErrors(['username' => 'Username ini sudah digunakan.'])->withInput();
+            }
+            if (strtolower($user['email'] ?? '') === $newEmail) {
+                return back()->withErrors(['email' => 'Email ini sudah terdaftar.'])->withInput();
+            }
+        }
+
         FirebaseUser::create([
             'username' => $request->username,
             'email' => $request->email,
             'role_user' => $request->role_user,
             'password' => Hash::make($request->password),
+            'is_online' => false
         ]);
 
         return redirect('/daftar-user')->with('success', 'User berhasil ditambahkan!');
@@ -62,6 +115,22 @@ class DaftarUserController extends Controller
             'email' => 'required|email|max:255',
             'role_user' => 'required|string',
         ]);
+
+        // CEK DUPLIKASI DATA (Kecuali user itu sendiri)
+        $usersRaw = $this->database->getReference('users')->getValue() ?? [];
+        $newUsername = strtolower($request->username);
+        $newEmail = strtolower($request->email);
+
+        foreach ($usersRaw as $uid => $user) {
+            if ($uid === $id) continue; // Lewati jika ID sama dengan yang sedang di-edit
+
+            if (strtolower($user['username'] ?? '') === $newUsername) {
+                return back()->withErrors(['username' => 'Username ini sudah digunakan oleh user lain.'])->withInput();
+            }
+            if (strtolower($user['email'] ?? '') === $newEmail) {
+                return back()->withErrors(['email' => 'Email ini sudah terdaftar oleh user lain.'])->withInput();
+            }
+        }
 
         $data = [
             'username' => $request->username,

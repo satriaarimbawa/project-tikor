@@ -16,7 +16,7 @@
 
     @include('admin.template.navbar')
 
-    <main class="main-content ml-64 p-8 w-full">
+    <main class="main-content ml-64 p-8 flex-1 min-w-0 overflow-x-hidden">
         <header class="flex justify-between items-center mb-8">
             <h1 class="text-gray-800 font-bold text-[30px] tracking-tight">Pendapatan Harian</h1>
     
@@ -70,10 +70,10 @@
                 ]
             ];
             $icons = [
-                'motor' => 'motor.png',
-                'bus' => 'bus.png',
-                'minibus' => 'mini bus.png',
-                'truk' => 'truk.png'
+                'motor' => 'Motor.png',
+                'bus' => 'Bus.png',
+                'minibus' => 'Mini Bus.png',
+                'truk' => 'Truk.png'
             ];
         @endphp
 

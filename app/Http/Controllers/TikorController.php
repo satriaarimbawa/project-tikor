@@ -19,6 +19,10 @@ class TikorController extends Controller
     {
         // 1. Ambil semua data lokasi dan penugasan
         $daftarLokasi = $this->database->getReference('lokasi')->getValue() ?? [];
+        
+        // Urutkan dari yang terbaru
+        $daftarLokasi = array_reverse($daftarLokasi, true);
+        
         $daftarPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
         
         // Gunakan timestamp untuk perbandingan yang lebih akurat
@@ -82,7 +86,7 @@ class TikorController extends Controller
             'koordinat'     => $request->input('koordinat'),
             'latitude'      => (float) $latitude,
             'longitude'     => (float) $longitude,
-            'radius'        => 50, 
+            'radius'        => 100, 
             'target_harian' => $request->input('target_harian'),
             'created_at'    => Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s')
         ];

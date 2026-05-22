@@ -136,12 +136,22 @@ class LaporanLokasiController extends Controller
 
     public function downloadPdf(Request $request)
     {
+        $lokasiIdSelected = $request->input('lokasi_id');
         $startDate = $request->input('start_date', Carbon::now('Asia/Makassar')->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now('Asia/Makassar')->endOfMonth()->format('Y-m-d'));
+
+        if (!$lokasiIdSelected) {
+            return back()->with('error', 'Pilih lokasi terlebih dahulu.');
+        }
 
         // 1. Tarik Data Firebase
         $lokasiRef = $this->database->getReference('lokasi')->getValue() ?? [];
         $tarifRef = $this->database->getReference('objek_tarif')->getValue() ?? [];
+
+        // Pastikan lokasi ada
+        if (!isset($lokasiRef[$lokasiIdSelected])) {
+            return back()->with('error', 'Lokasi tidak ditemukan.');
+        }
 
         // Mapping Objek Tarif
         $mapTarif = [];
@@ -161,25 +171,21 @@ class LaporanLokasiController extends Controller
         $dataHarian = [];
         $gabungan = [];
 
-        // Inisialisasi struktur harian kosong
+        // Inisialisasi struktur harian kosong hanya untuk LOKASI YANG DIPILIH
         for($d = $start->copy(); $d->lte($end); $d->addDay()) {
             $dateStr = $d->format('Y-m-d');
             $dates[] = $dateStr;
             
-            // Struktur per lokasi
-            foreach ($lokasiRef as $locId => $loc) {
-                $dataHarian[$dateStr][$locId] = [
-                    'hasil_uji_petik' => 0,
-                    'volume' => [],
-                    'penerimaan' => []
-                ];
-                foreach ($mapTarif as $key => $harga) {
-                    $dataHarian[$dateStr][$locId]['volume'][$key] = 0;
-                    $dataHarian[$dateStr][$locId]['penerimaan'][$key] = 0;
-                }
+            $dataHarian[$dateStr][$lokasiIdSelected] = [
+                'hasil_uji_petik' => 0,
+                'volume' => [],
+                'penerimaan' => []
+            ];
+            foreach ($mapTarif as $key => $harga) {
+                $dataHarian[$dateStr][$lokasiIdSelected]['volume'][$key] = 0;
+                $dataHarian[$dateStr][$lokasiIdSelected]['penerimaan'][$key] = 0;
             }
 
-            // Struktur gabungan
             $gabungan[$dateStr] = [
                 'hasil_uji_petik' => 0,
                 'volume' => [],
@@ -191,30 +197,26 @@ class LaporanLokasiController extends Controller
             }
         }
 
-        // Isi Data dari survei_harian
-        foreach ($lokasiRef as $locId => $loc) {
-            $dataLokasiRaw = $this->database->getReference("survei_harian/{$locId}")->getValue() ?? [];
-            foreach ($dataLokasiRaw as $tgl => $dataJam) {
-                if (isset($dataHarian[$tgl][$locId])) {
-                    if (is_array($dataJam)) {
-                        foreach ($dataJam as $hour => $dataPenugasan) {
-                            if (is_array($dataPenugasan)) {
-                                foreach ($dataPenugasan as $idPenugasan => $item) {
-                                    foreach ($mapTarif as $jenisKey => $harga) {
-                                        $vol = (int)($item[$jenisKey] ?? 0);
-                                        if ($vol > 0) {
-                                            $penerimaan = $vol * $harga;
-                                            
-                                            // Akumulasi per lokasi
-                                            $dataHarian[$tgl][$locId]['volume'][$jenisKey] += $vol;
-                                            $dataHarian[$tgl][$locId]['penerimaan'][$jenisKey] += $penerimaan;
-                                            $dataHarian[$tgl][$locId]['hasil_uji_petik'] += $penerimaan;
-                                            
-                                            // Akumulasi gabungan
-                                            $gabungan[$tgl]['volume'][$jenisKey] += $vol;
-                                            $gabungan[$tgl]['penerimaan'][$jenisKey] += $penerimaan;
-                                            $gabungan[$tgl]['hasil_uji_petik'] += $penerimaan;
-                                        }
+        // Isi Data hanya dari lokasi yang dipilih
+        $dataLokasiRaw = $this->database->getReference("survei_harian/{$lokasiIdSelected}")->getValue() ?? [];
+        foreach ($dataLokasiRaw as $tgl => $dataJam) {
+            if (isset($dataHarian[$tgl][$lokasiIdSelected])) {
+                if (is_array($dataJam)) {
+                    foreach ($dataJam as $hour => $dataPenugasan) {
+                        if (is_array($dataPenugasan)) {
+                            foreach ($dataPenugasan as $idPenugasan => $item) {
+                                foreach ($mapTarif as $jenisKey => $harga) {
+                                    $vol = (int)($item[$jenisKey] ?? 0);
+                                    if ($vol > 0) {
+                                        $penerimaan = $vol * $harga;
+                                        
+                                        $dataHarian[$tgl][$lokasiIdSelected]['volume'][$jenisKey] += $vol;
+                                        $dataHarian[$tgl][$lokasiIdSelected]['penerimaan'][$jenisKey] += $penerimaan;
+                                        $dataHarian[$tgl][$lokasiIdSelected]['hasil_uji_petik'] += $penerimaan;
+                                        
+                                        $gabungan[$tgl]['volume'][$jenisKey] += $vol;
+                                        $gabungan[$tgl]['penerimaan'][$jenisKey] += $penerimaan;
+                                        $gabungan[$tgl]['hasil_uji_petik'] += $penerimaan;
                                     }
                                 }
                             }
@@ -224,15 +226,20 @@ class LaporanLokasiController extends Controller
             }
         }
 
+        // Hanya kirim lokasi yang dipilih ke view PDF
+        $lokasiRefFiltered = [$lokasiIdSelected => $lokasiRef[$lokasiIdSelected]];
+
         $pdf = Pdf::loadView('admin.laporan.pdf_uji_petik', [
             'dates' => $dates,
-            'lokasiRef' => $lokasiRef,
+            'lokasiRef' => $lokasiRefFiltered,
             'objekNames' => $objekNames,
             'mapTarif' => $mapTarif,
             'dataHarian' => $dataHarian,
             'gabungan' => $gabungan
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('Laporan_Uji_Petik_'.Carbon::now()->format('Ymd_His').'.pdf');
+        $namaFile = 'Laporan_Uji_Petik_' . str_replace(' ', '_', $lokasiRef[$lokasiIdSelected]['nama_lokasi'] ?? 'Lokasi') . '_' . $startDate . '.pdf';
+
+        return $pdf->download($namaFile);
     }
 }

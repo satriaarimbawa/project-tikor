@@ -36,42 +36,31 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
                     <h2 class="text-lg font-bold mb-4 text-black">Ringkasan Harian</h2>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="flex items-center p-4 rounded-xl border border-blue-100 shadow-sm flex-1 bg-gradient-to-r from-white via-blue-100 to-white">
-                            <div class="bg-[#4169E1] p-3 rounded-lg mr-4">
-                                <iconify-icon icon="mdi:bus" class="text-white text-3xl"></iconify-icon>
+                        @php
+                            $iconMap = [
+                                'motor' => ['icon' => 'mdi:motorbike', 'color' => '#FCA24C', 'bg' => 'from-white via-orange-100 to-white'],
+                                'mobil' => ['icon' => 'mdi:car', 'color' => '#4169E1', 'bg' => 'from-white via-blue-100 to-white'],
+                                'bus' => ['icon' => 'mdi:bus', 'color' => '#4169E1', 'bg' => 'from-white via-blue-100 to-white'],
+                                'minibus' => ['icon' => 'mdi:bus-side', 'color' => '#F0C13D', 'bg' => 'from-white via-yellow-100 to-white'],
+                                'truk' => ['icon' => 'mdi:truck', 'color' => '#A020F0', 'bg' => 'from-white via-purple-100 to-white'],
+                            ];
+                        @endphp
+
+                        @foreach($dataRingkasan as $key => $total)
+                        @php 
+                            $style = $iconMap[$key] ?? ['icon' => 'mdi:file-document-edit-outline', 'color' => '#6B7280', 'bg' => 'from-white via-gray-100 to-white'];
+                        @endphp
+                        <div class="flex items-center p-4 rounded-xl border border-gray-100 shadow-sm bg-gradient-to-r {{ $style['bg'] }}">
+                            <div class="p-3 rounded-lg mr-4" style="background-color: {{ $style['color'] }}">
+                                <iconify-icon icon="{{ $style['icon'] }}" class="text-white text-3xl"></iconify-icon>
                             </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Bus</p>
-                                <p class="text-xl font-bold">{{ number_format($dataRingkasan['bus']) }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-4 rounded-xl border border-orange-100 shadow-sm flex-1 bg-gradient-to-r from-white via-orange-100 to-white">
-                            <div class="bg-[#FCA24C] p-3 rounded-lg mr-4">
-                                <iconify-icon icon="mdi:motorbike" class="text-white text-3xl"></iconify-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Motor</p>
-                                <p class="text-xl font-bold">{{ number_format($dataRingkasan['motor']) }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-4 rounded-xl border border-yellow-100 shadow-sm flex-1 bg-gradient-to-r from-white via-yellow-100 to-white">
-                            <div class="bg-[#F0C13D] p-3 rounded-lg mr-4">
-                                <iconify-icon icon="mdi:bus-side" class="text-white text-3xl"></iconify-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Mini Bus</p>
-                                <p class="text-xl font-bold">{{ number_format($dataRingkasan['minibus']) }}</p>
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-500 truncate">{{ $objekNames[$key] ?? ucfirst($key) }}</p>
+                                <p class="text-xl font-bold">{{ number_format($total) }}</p>
                             </div>
                         </div>
-                        <div class="flex items-center p-4 rounded-xl border border-purple-100 shadow-sm flex-1 bg-gradient-to-r from-white via-purple-100 to-white">
-                            <div class="bg-[#A020F0] p-3 rounded-lg mr-4">
-                                <iconify-icon icon="mdi:truck" class="text-white text-3xl"></iconify-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Truk</p>
-                                <p class="text-xl font-bold">{{ number_format($dataRingkasan['truk']) }}</p>
-                            </div>
-                        </div>
+                        @endforeach
+
                         <div class="col-span-2 flex items-center justify-between px-8 py-4 bg-[#E5E7EB] rounded-xl mt-2">
                             <p class="text-sm font-bold text-gray-700 uppercase">Total Kedatangan</p>
                             <p class="text-4xl font-black text-gray-700">{{ number_format($totalKedatangan) }}</p>
@@ -119,7 +108,7 @@
                     </div>
                 </div>
 
-                <button type="button"
+                <button type="submit" formaction="{{ route('laporan.operator.download') }}"
                     class="w-full bg-[#3B82F6] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg">
                     <iconify-icon icon="mdi:printer"></iconify-icon> Unduh PDF
                 </button>

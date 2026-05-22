@@ -18,14 +18,37 @@ class PenugasanController extends Controller
     public function index(Request $request)
     {
         $tugas = $this->database->getReference('penugasan')->getValue() ?? [];
+
+        // Urutkan dari yang terbaru
+        $tugas = array_reverse($tugas, true);
+
         $users = $this->database->getReference('users')->getValue() ?? [];
         $lokasiMaster = $this->database->getReference('lokasi')->getValue() ?? [];
+        
+        $searchTerm = strtolower($request->input('search', ''));
  
         $dataFinal = [];
 
         foreach ($tugas as $idPenugasan => $data) {
             $uidUser = $data['id_user'] ?? null;
             $uidLokasi = $data['id_lokasi'] ?? null;
+
+            $namaOperator = $users[$uidUser]['username'] ?? 'User Tidak Ditemukan';
+            $namaLokasi = $lokasiMaster[$uidLokasi]['nama_lokasi'] ?? ($lokasiMaster[$uidLokasi]['alamat'] ?? 'Lokasi Tidak Ditemukan');
+            $objekSurvei = $data['objek_survei'] ?? '-';
+            
+            // Ambil status asli dari DB, jika kosong default ke 'aktif'
+            $rawStatus = isset($data['status']) ? strtolower($data['status']) : 'aktif';
+
+            // Filter Pencarian (Server-side)
+            if ($searchTerm !== '') {
+                $match = str_contains(strtolower($namaOperator), $searchTerm) || 
+                         str_contains(strtolower($namaLokasi), $searchTerm) || 
+                         str_contains(strtolower($objekSurvei), $searchTerm) ||
+                         str_contains($rawStatus, $searchTerm);
+                
+                if (!$match) continue;
+            }
 
             $rawMulai = $data['waktu_mulai'] ?? now()->toDateTimeString();
             $rawSelesai = $data['waktu_selesai'] ?? now()->toDateTimeString();
@@ -35,20 +58,25 @@ class PenugasanController extends Controller
             
             $dataFinal[] = [
                 'id' => $idPenugasan,
-                'nama_operator' => $users[$uidUser]['username'] ?? 'User Tidak Ditemukan',
-                'nama_lokasi'   => $lokasiMaster[$uidLokasi]['nama_lokasi'] ?? ($lokasiMaster[$uidLokasi]['alamat'] ?? 'Lokasi Tidak Ditemukan'),
+                'nama_operator' => $namaOperator,
+                'nama_lokasi'   => $namaLokasi,
                 'waktu_mulai'   => $rawMulai,
                 'file_spt'      => $data['file_spt'] ?? '-',
-                'objek_survei'  => $data['objek_survei'] ?? '-',
+                'objek_survei'  => $objekSurvei,
                 'tanggal_rentang' => $tglMulai . ' s/d ' . $tglSelesai,
                 'jam_rentang' => Carbon::parse($rawMulai)->format('H:i') . ' - ' . Carbon::parse($rawSelesai)->format('H:i') . ' WITA',
-                'status'        => $data['status'] ?? 'aktif',
+                'status'        => $rawStatus,
                 'created_at_raw' => $data['created_at'] ?? '2000-01-01 00:00:00'
             ];
         }
 
-        // 1. Sorting: Terbaru di atas (DESC)
+        // 1. Sorting Multi-Level: Aktif di atas, lalu Created At Terbaru (DESC)
         usort($dataFinal, function($a, $b) {
+            // Prioritas status 'aktif'
+            if ($a['status'] === 'aktif' && $b['status'] !== 'aktif') return -1;
+            if ($a['status'] !== 'aktif' && $b['status'] === 'aktif') return 1;
+            
+            // Jika status sama, urutkan berdasarkan created_at terbaru
             return strtotime($b['created_at_raw']) <=> strtotime($a['created_at_raw']);
         });
 
@@ -64,7 +92,8 @@ class PenugasanController extends Controller
         return view('admin.penugasan.index', [
             'dataPenugasan' => $dataPaginated,
             'currentPage' => $currentPage,
-            'totalPages' => $totalPages
+            'totalPages' => $totalPages,
+            'searchTerm' => $searchTerm
         ]);
     }
 
@@ -88,12 +117,14 @@ class PenugasanController extends Controller
             'id_lokasi' => 'required',
             'waktu_mulai' => 'required',
             'waktu_selesai' => 'required',
+            'objek_terpilih' => 'required',
             'surat_spt' => 'required|file|mimes:pdf,jpg,png|max:2048',
         ], [
             'id_user.required' => 'Silakan pilih operator.',
             'id_lokasi.required' => 'Silakan pilih lokasi.',
             'waktu_mulai.required' => 'Waktu mulai wajib diisi.',
             'waktu_selesai.required' => 'Waktu selesai wajib diisi.',
+            'objek_terpilih.required' => 'Silakan pilih minimal satu objek survei.',
             'surat_spt.required' => 'File SPT wajib diunggah.',
             'surat_spt.mimes' => 'Format file SPT harus PDF, JPG, atau PNG.',
             'surat_spt.max' => 'Ukuran file SPT maksimal adalah 2MB.',
@@ -103,8 +134,14 @@ class PenugasanController extends Controller
             $file = $request->file('surat_spt');
             $namaFile = time() . '_' . $file->getClientOriginalName();
             
+            // Pastikan folder upload ada, jika tidak ada buat otomatis
+            $destinationPath = public_path('uploads/spt');
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
             // Simpan ke folder lokal public/uploads/spt
-            $file->move(public_path('uploads/spt'), $namaFile);
+            $file->move($destinationPath, $namaFile);
 
             $dataPenugasan = [
                 'id_user'       => $request->id_user,
@@ -122,7 +159,7 @@ class PenugasanController extends Controller
 
             return redirect()->to('/dashboard-penugasan')->with('success', 'Penugasan berhasil dibuat!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
     }
 

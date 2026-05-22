@@ -7,7 +7,6 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Penugasan</title>
 
-
     <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
@@ -32,15 +31,13 @@
         <div class="bg-white rounded-xl shadow-lg p-8 min-h-[600px] relative">
 
             <div class="flex justify-between items-center mb-6">
-                <div class="relative group">
-                    <a href="/dashboard-penugasan/create">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                            <iconify-icon icon="lucide:search" class="text-white text-xl"></iconify-icon>
-                        </span>
-                    </a>
-                    <input type="text" id="searchInputPenugasan" placeholder="Cari data penugasan"
+                <form action="/dashboard-penugasan" method="GET" class="relative group">
+                    <button type="submit" class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <iconify-icon icon="lucide:search" class="text-white text-xl"></iconify-icon>
+                    </button>
+                    <input type="text" name="search" id="searchInputPenugasan" value="{{ $searchTerm ?? '' }}" placeholder="Cari data penugasan"
                         class="bg-[#253D6B] text-white text-sm rounded-full pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-white/70 shadow-md">
-                </div>
+                </form>
 
                 <a href="/dashboard-penugasan/create"
                     class="bg-[#253D6B] hover:bg-[#1a2e52] text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md transition-all active:scale-95 inline-flex">
@@ -50,7 +47,7 @@
             </div>
 
             <div class="overflow-hidden border border-gray-300 rounded-sm">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse" id="penugasanTable">
                     <thead>
                         <tr class="bg-[#FDE047] border-b border-gray-300">
                             <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800 w-12 text-center">
@@ -58,40 +55,38 @@
                             <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Username</th>
                             <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Nama lokasi</th>
                             <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Waktu</th>
-                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">SPT</th>
-                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Status</th>
+                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800 text-center">SPT</th>
+                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800 text-center">Status</th>
                             <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Objek</th>
                             <th class="py-3 px-4 font-semibold text-gray-800 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="bg-[#FFFBEB]">
-
-                        @foreach ($dataPenugasan as $penugasan)
-                        <tr class="border-b border-gray-300">
+                        @forelse ($dataPenugasan as $penugasan)
+                        <tr class="border-b border-gray-300 data-row">
                             <td class="py-3 px-4 border-r border-gray-300 text-center text-sm">{{ $loop->iteration }}</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['nama_operator'] }}</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['nama_lokasi'] }}</td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm search-target">{{ $penugasan['nama_operator'] }}</td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm search-target">{{ $penugasan['nama_lokasi'] }}</td>
                             <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['tanggal_rentang'] }}
                                 <br>{{ $penugasan['jam_rentang'] }}</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm text-center">
                                 @if($penugasan['file_spt'] !== '-')
-                                <a href="{{ asset('uploads/spt/' . $penugasan['file_spt']) }}" 
-                                   target="_blank"
-                                   class="text-blue-600 hover:underline font-bold">
-                                   Lihat / Download SPT
-                                </a>
+                                <button onclick="previewSPT('{{ asset('uploads/spt/' . $penugasan['file_spt']) }}', '{{ $penugasan['file_spt'] }}')" 
+                                   class="inline-flex items-center justify-center w-10 h-10 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 hover:text-blue-800 transition-all duration-200 shadow-sm" title="Preview SPT">
+                                   <iconify-icon icon="lucide:eye" class="text-xl"></iconify-icon>
+                                </button>
                                 @else
                                 <span class="text-gray-400">Tidak ada file</span>
                                 @endif
                             </td>
                             <td class="py-3 px-4 border-r border-gray-300 text-sm text-center">
-                                @if(($penugasan['status'] ?? 'aktif') === 'aktif')
-                                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-green-200">Aktif</span>
+                                @if(strtolower($penugasan['status'] ?? 'aktif') === 'aktif')
+                                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-green-200 search-target">Aktif</span>
                                 @else
-                                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-red-200">Inaktif</span>
+                                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-red-200 search-target">Inaktif</span>
                                 @endif
                             </td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm italic">{{ $penugasan['objek_survei'] }}</td>
+                            <td class="py-3 px-4 border-r border-gray-300 text-sm italic search-target">{{ $penugasan['objek_survei'] }}</td>
                             <td class="py-3 px-4">
                                 <div class="flex justify-center gap-2">
                                     @if(($penugasan['status'] ?? 'aktif') === 'inaktif')
@@ -115,44 +110,27 @@
                                 </div>
                             </td>
                         </tr>
-                        @endforeach
-
-
-                        {{-- @for ($i = 2; $i <= 10; $i++) <tr class="border-b border-gray-300">
-                            <td class="py-3 px-4 border-r border-gray-300 text-center h-10"></td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">
-                            </td>
-                            <td class="py-3 px-4 border-r border-gray-300"></td>
-                            <td class="py-3 px-4 border-r border-gray-300"></td>
-                            <td class="py-3 px-4 border-r border-gray-300"></td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">
-                            </td>
-                            <td class="py-3 px-4 border-r border-gray-300"></td>
-                            <td class="py-3 px-4 flex justify-center gap-2">
-                                <button
-                                    class="bg-yellow-400 p-1.5 rounded hover:bg-yellow-500 flex items-center justify-center">
-                                    <iconify-icon icon="lucide:edit-3" class="text-white text-lg"></iconify-icon>
-                                </button>
-                                <button
-                                    class="bg-red-500 p-1.5 rounded hover:bg-red-600 flex items-center justify-center">
-                                    <iconify-icon icon="lucide:trash-2" class="text-white text-lg"></iconify-icon>
-                                </button>
-                            </td>
-                            </tr>
-                            @endfor --}}
+                        @empty
+                        <tr>
+                            <td colspan="8" class="py-10 text-center text-gray-500 italic">Tidak ada data penugasan.</td>
+                        </tr>
+                        @endforelse
+                        <tr id="noResultsRow" class="hidden">
+                            <td colspan="8" class="py-10 text-center text-gray-500 italic">Data tidak ditemukan.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
             <div class="flex justify-center items-center gap-4 mt-8">
-                <a href="{{ $currentPage > 1 ? url('/dashboard-penugasan?page='.($currentPage - 1)) : '#' }}" 
+                <a href="{{ $currentPage > 1 ? url('/dashboard-penugasan?page='.($currentPage - 1).'&search='.$searchTerm) : '#' }}" 
                     class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
                     <iconify-icon icon="lucide:chevron-left" class="text-white text-xl"></iconify-icon>
                 </a>
                 
                 <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
 
-                <a href="{{ $currentPage < $totalPages ? url('/dashboard-penugasan?page='.($currentPage + 1)) : '#' }}" 
+                <a href="{{ $currentPage < $totalPages ? url('/dashboard-penugasan?page='.($currentPage + 1).'&search='.$searchTerm) : '#' }}" 
                     class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
                     <iconify-icon icon="lucide:chevron-right" class="text-white text-xl"></iconify-icon>
                 </a>
@@ -160,31 +138,70 @@
         </div>
     </main>
 
+    <!-- Modal Preview SPT -->
+    <div id="sptModal" class="fixed inset-0 z-[100] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div onclick="closeSPTModal()" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b">
+                        <h3 class="text-lg font-bold text-gray-900">Preview Surat Tugas / SPT</h3>
+                        <button onclick="closeSPTModal()" class="text-gray-400 hover:text-gray-600">
+                            <iconify-icon icon="lucide:x" class="text-2xl"></iconify-icon>
+                        </button>
+                    </div>
+                    <div id="previewContainer" class="w-full h-[60vh] flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden border">
+                        <!-- Content via JS -->
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-4 sm:px-6 flex flex-col sm:flex-row-reverse gap-3">
+                    <a id="downloadBtn" href="#" download class="w-full inline-flex justify-center rounded-full px-6 py-2 bg-[#253D6B] text-white font-bold sm:ml-3 sm:w-auto sm:text-sm">
+                        Download SPT
+                    </a>
+                    <button type="button" onclick="closeSPTModal()" class="w-full inline-flex justify-center rounded-full px-6 py-2 bg-white text-gray-700 border sm:w-auto sm:text-sm">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ asset('js/navbar.js') }}"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('searchInputPenugasan');
-            const tableRows = document.querySelectorAll('tbody tr:not(.no-data)');
-
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
-
-                    tableRows.forEach(row => {
-                        // Cek Username (td index 1) atau Nama Lokasi (td index 2)
-                        const username = row.querySelectorAll('td')[1]?.textContent.toLowerCase() || '';
-                        const lokasi = row.querySelectorAll('td')[2]?.textContent.toLowerCase() || '';
-                        
-                        if (username.includes(searchTerm) || lokasi.includes(searchTerm)) {
-                            row.style.display = "";
-                        } else {
-                            row.style.display = "none";
-                        }
-                    });
-                });
+        function previewSPT(fileUrl, fileName) {
+            const modal = document.getElementById('sptModal');
+            const container = document.getElementById('previewContainer');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const fileExt = fileName.split('.').pop().toLowerCase();
+            downloadBtn.href = fileUrl;
+            container.innerHTML = '';
+            
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
+                const img = document.createElement('img');
+                img.src = fileUrl;
+                img.className = 'max-w-full max-h-full object-contain';
+                container.appendChild(img);
+            } else if (fileExt === 'pdf') {
+                const iframe = document.createElement('iframe');
+                iframe.src = fileUrl + '#toolbar=0';
+                iframe.className = 'w-full h-full border-none';
+                container.appendChild(iframe);
+            } else {
+                container.innerHTML = '<p class="p-10 text-gray-500 text-center">Preview tidak tersedia untuk format ini.</p>';
             }
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSPTModal() {
+            document.getElementById('sptModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pencarian sekarang ditangani oleh server (Server-side Search)
         });
     </script>
 </body>
-
 </html>

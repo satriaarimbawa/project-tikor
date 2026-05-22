@@ -85,7 +85,7 @@
                                 @foreach($users as $id_user => $user)
                                 @if(isset($user['role_user']) && $user['role_user'] == 'operator')
                                 <option value="{{ $id_user }}"
-                                    {{ (isset($penugasan) && $penugasan['id_user'] == $id_user) ? 'selected' : '' }}>
+                                    {{ (old('id_user', $penugasan['id_user'] ?? '') == $id_user) ? 'selected' : '' }}>
                                     {{ $user['username'] }}</option>
                                 @endif
                                 @endforeach
@@ -101,7 +101,7 @@
                                 @if(!empty($lokasitikor) && is_array($lokasitikor))
                                 @foreach($lokasitikor as $id_lokasi => $lokasi)
                                 <option value="{{ $id_lokasi }}"
-                                    {{ (isset($penugasan) && $penugasan['id_lokasi'] == $id_lokasi) ? 'selected' : '' }}>
+                                    {{ (old('id_lokasi', $penugasan['id_lokasi'] ?? '') == $id_lokasi) ? 'selected' : '' }}>
                                     {{ $lokasi['nama_lokasi'] ?? $lokasi['alamat'] ?? 'Lokasi Tanpa Nama' }}
                                 </option>
                                 @endforeach
@@ -114,26 +114,20 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
                                 <input type="text" name="waktu_mulai" id="waktu_mulai" required
                                     class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white cursor-pointer"
-                                    placeholder="Pilih Tanggal & Waktu" value="{{ $penugasan['waktu_mulai'] ?? '' }}">
+                                    placeholder="Pilih Tanggal & Waktu" value="{{ old('waktu_mulai', $penugasan['waktu_mulai'] ?? '') }}">
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="text-gray-500 text-sm">S/D</span>
                                 <input type="text" name="waktu_selesai" id="waktu_selesai" required
                                     class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white cursor-pointer"
-                                    placeholder="Pilih Tanggal & Waktu" value="{{ $penugasan['waktu_selesai'] ?? '' }}">
+                                    placeholder="Pilih Tanggal & Waktu" value="{{ old('waktu_selesai', $penugasan['waktu_selesai'] ?? '') }}">
                             </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Target</label>
-                            <input type="text" name="target"
-                                class="w-full border border-gray-300 rounded-md p-2 h-10 outline-none"
-                                placeholder="Masukkan Jumlah Target...">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan Lokasi</label>
                             <textarea name="keterangan"
                                 class="w-full border border-gray-300 rounded-md p-2 h-24 outline-none"
-                                placeholder="Masukkan detail lokasi...">{{ $penugasan['keterangan'] ?? '' }}</textarea>
+                                placeholder="Masukkan detail lokasi...">{{ old('keterangan', $penugasan['keterangan'] ?? '') }}</textarea>
                         </div>
 
                         <div>
@@ -143,15 +137,19 @@
                                     <input type="text" id="displayObjek" readonly
                                         class="w-full border border-gray-300 rounded-t-md p-2 bg-gray-50 outline-none text-sm font-semibold text-navy-900 border-b-0"
                                         placeholder="Pilih objek di bawah atau lewat tabel..."
-                                        value="{{ $penugasan['objek_survei'] ?? '' }}">
+                                        value="{{ old('objek_terpilih', $penugasan['objek_survei'] ?? '') }}">
 
                                     <select id="dropdownObjek" onchange="syncFromDropdown(this)"
                                         class="w-full border border-gray-300 rounded-b-md p-2 appearance-none outline-none text-sm cursor-pointer bg-white hover:bg-gray-50 transition-colors">
                                         <option value="">+ Tambah Objek Survei...</option>
-                                        <option value="motor">Motor</option>
-                                        <option value="mobil">Mobil</option>
-                                        <option value="truk">Truk</option>
-                                        <option value="mini">Mini Bus</option>
+                                        @if(!empty($objekTarif) && is_array($objekTarif))
+                                            @foreach($objekTarif as $id_objek => $objek)
+                                                @if(isset($objek['status']) && $objek['status'] == 'Aktif')
+                                                    @php $safeValue = strtolower(str_replace(' ', '-', $objek['nama'])); @endphp
+                                                    <option value="{{ $safeValue }}" data-nama="{{ $objek['nama'] }}">{{ $objek['nama'] }}</option>
+                                                @endif
+                                            @endforeach
+                                        @endif
                                     </select>
 
                                     <div class="absolute right-3 bottom-3 pointer-events-none text-gray-400">
@@ -161,7 +159,7 @@
                             </div>
 
                             <input type="hidden" name="objek_terpilih" id="hiddenObjekInput"
-                                value="{{ $penugasan['objek_survei'] ?? '' }}">
+                                value="{{ old('objek_terpilih', $penugasan['objek_survei'] ?? '') }}">
                         </div>
 
                         <div>
@@ -212,43 +210,46 @@
                         </div>
 
                         <div class="border border-gray-200 rounded-lg overflow-hidden text-sm">
-                            <table class="w-full text-left">
-                                <thead class="bg-gray-50 border-b">
-                                    <tr>
-                                        <th class="p-3">No</th>
-                                        <th class="p-3">Nama Objek</th>
-                                        <th class="p-3">Status</th>
-                                        <th class="p-3 text-center">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php $no = 1; @endphp
-                                    @if(!empty($objekTarif) && is_array($objekTarif))
-                                    @foreach($objekTarif as $id_objek => $objek)
-                                    @if(isset($objek['status']) && $objek['status'] == 'Aktif')
-                                    <tr class="border-b"
-                                        id="row-{{ strtolower(str_replace(' ', '-', $objek['nama'])) }}">
-                                        <td class="p-3 text-center">{{ $no++ }}</td>
-                                        <td class="p-3 font-bold">{{ $objek['nama'] }}</td>
-                                        <td class="p-3 status-text">-</td>
-                                        <td class="p-3 text-center">
-                                            <button type="button" onclick="toggleObjek('{{ $objek['nama'] }}')"
-                                                class="action-btn text-green-500">
-                                                <iconify-icon icon="lucide:plus-circle" class="text-2xl">
-                                                </iconify-icon>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    @endif
-                                    @endforeach
-                                    @else
-                                    <tr>
-                                        <td colspan="4" class="p-3 text-center text-gray-400 italic">Tidak ada data
-                                            objek tarif aktif</td>
-                                    </tr>
-                                    @endif
-                                </tbody>
-                            </table>
+                            <div class="max-h-60 overflow-y-auto custom-scrollbar">
+                                <table class="w-full text-left">
+                                    <thead class="bg-gray-50 border-b sticky top-0 z-10">
+                                        <tr>
+                                            <th class="p-3">No</th>
+                                            <th class="p-3">Nama Objek</th>
+                                            <th class="p-3">Status</th>
+                                            <th class="p-3 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php $no = 1; @endphp
+                                        @if(!empty($objekTarif) && is_array($objekTarif))
+                                        @foreach($objekTarif as $id_objek => $objek)
+                                        @if(isset($objek['status']) && $objek['status'] == 'Aktif')
+                                        @php $safeId = strtolower(str_replace(' ', '-', $objek['nama'])); @endphp
+                                        <tr class="border-b"
+                                            id="row-{{ $safeId }}">
+                                            <td class="p-3 text-center">{{ $no++ }}</td>
+                                            <td class="p-3 font-bold">{{ $objek['nama'] }}</td>
+                                            <td class="p-3 status-text">-</td>
+                                            <td class="p-3 text-center">
+                                                <button type="button" onclick="toggleObjek('{{ $objek['nama'] }}', '{{ $safeId }}')"
+                                                    class="action-btn text-green-500">
+                                                    <iconify-icon icon="lucide:plus-circle" class="text-2xl">
+                                                    </iconify-icon>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        @endif
+                                        @endforeach
+                                        @else
+                                        <tr>
+                                            <td colspan="4" class="p-3 text-center text-gray-400 italic">Tidak ada data
+                                                objek tarif aktif</td>
+                                        </tr>
+                                        @endif
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -259,19 +260,29 @@
     <script>
     window.LokasiTerdaftar = @json($lokasitikor);
 
-    // Inisialisasi Objek Survei Terpilih (Mode Edit)
+    // Inisialisasi Objek Survei Terpilih (Mode Edit atau Gagal Validasi)
     document.addEventListener('DOMContentLoaded', function() {
-        const savedObjects = "{{ $penugasan['objek_survei'] ?? '' }}";
+        const savedObjects = "{{ old('objek_terpilih', $penugasan['objek_survei'] ?? '') }}";
         if (savedObjects) {
-            const objectList = savedObjects.split(',').map(s => s.trim().toLowerCase());
+            const objectList = savedObjects.split(',').map(s => s.trim());
             objectList.forEach(obj => {
                 if (obj) {
                     // Beri sedikit delay agar script PenugasanUser.js siap
                     setTimeout(() => {
-                        if (typeof toggleObjek === 'function') {
-                            toggleObjek(obj);
-                        }
-                    }, 100);
+                        // Cari baris tabel yang memiliki nama objek tersebut (case sensitive sesuai label database)
+                        const rows = document.querySelectorAll('tbody tr');
+                        rows.forEach(row => {
+                            const nameCell = row.querySelector('td.font-bold');
+                            if (nameCell && nameCell.innerText.trim() === obj.trim()) {
+                                const btn = row.querySelector('button');
+                                const statusCell = row.querySelector('.status-text');
+                                // Hanya klik jika statusnya belum terpilih
+                                if (statusCell && statusCell.innerText.trim() === '-' && btn) {
+                                    btn.click();
+                                }
+                            }
+                        });
+                    }, 400); // Delay sedikit lebih lama untuk memastikan script JS lain sudah load
                 }
             });
         }

@@ -18,7 +18,7 @@
 <body class="flex">
     @include('admin.template.navbar')
 
-    <main class="flex-1 ml-64 p-8">
+    <main class="flex-1 ml-64 p-8 min-w-0 overflow-x-hidden">
         <div class="flex justify-between items-start mb-6">
             <h1 class="text-xl font-bold text-slate-800 tracking-tight">Laporan Summary Hasil Uji Petik - Berdasarkan Lokasi</h1>
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-10 h-12 object-contain" alt="Logo">
@@ -30,9 +30,9 @@
         </div>
         @endif
 
-        <form action="{{ route('laporan.lokasi.filter') }}" method="POST" class="flex justify-between items-center mb-8">
+        <form id="filterForm" action="{{ route('laporan.lokasi.filter') }}" method="POST" class="flex justify-between items-center mb-8">
             @csrf
-            <button type="submit" formaction="{{ route('laporan.lokasi.download') }}" formmethod="GET" class="flex items-center gap-2 bg-[#4A6FA5] hover:bg-blue-800 text-white px-5 py-2 rounded-lg font-semibold shadow-md transition text-sm">
+            <button type="button" onclick="downloadFilteredPdf()" class="flex items-center gap-2 bg-[#4A6FA5] hover:bg-blue-800 text-white px-5 py-2 rounded-lg font-semibold shadow-md transition text-sm">
                 <iconify-icon icon="lucide:printer" class="text-lg"></iconify-icon> Unduh PDF
             </button>
 
@@ -168,6 +168,24 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        function downloadFilteredPdf() {
+            const form = document.getElementById('filterForm');
+            const baseUrl = "{{ route('laporan.lokasi.download') }}";
+            
+            // Ambil data manual karena FormData butuh elemen input
+            const lokasiId = form.querySelector('select[name="lokasi_id"]').value;
+            const startDate = form.querySelector('input[name="start_date"]').value;
+            const endDate = form.querySelector('input[name="end_date"]').value;
+
+            if (!lokasiId) {
+                alert("Silakan pilih lokasi terlebih dahulu sebelum mengunduh PDF.");
+                return;
+            }
+
+            const finalUrl = `${baseUrl}?lokasi_id=${lokasiId}&start_date=${startDate}&end_date=${endDate}`;
+            window.location.href = finalUrl;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const ctxFin = document.getElementById('financialChart').getContext('2d');
             new Chart(ctxFin, {
