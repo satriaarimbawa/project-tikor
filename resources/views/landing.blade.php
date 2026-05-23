@@ -153,7 +153,7 @@
                 <div class="col-lg-4 col-md-6" data-aos="fade-right" data-aos-delay="100">
                     <div class="profile-card">
                         <div class="img-area">
-                            <img src="https://ui-avatars.com/api/?name=I+Gede+Wahyu&background=003366&color=fff&size=400" alt="Team">
+                            <img src="{{ asset('assets/team/satria.jpg') }}" onerror="this.src='https://ui-avatars.com/api/?name=Satria+Arimbawa&background=003366&color=fff&size=400'" alt="Satria Arimbawa">
                         </div>
                         <div class="main-text">
                             <h4>Satria Arimbawa</h4>
@@ -170,7 +170,7 @@
                 <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
                     <div class="profile-card">
                         <div class="img-area">
-                            <img src="https://ui-avatars.com/api/?name=Ni+Wayan+Sinta&background=003366&color=fff&size=400" alt="Team">
+                            <img src="https://ui-avatars.com/api/?name=Tu+Ayu&background=003366&color=fff&size=400" alt="Tu Ayu">
                         </div>
                         <div class="main-text">
                             <h4>Tu Ayu</h4>
@@ -187,7 +187,7 @@
                 <div class="col-lg-4 col-md-6" data-aos="fade-left" data-aos-delay="300">
                     <div class="profile-card">
                         <div class="img-area">
-                            <img src="https://ui-avatars.com/api/?name=Kadek+Arta&background=003366&color=fff&size=400" alt="Team">
+                            <img src="{{ asset('assets/team/karisma.jpg') }}" onerror="this.src='https://ui-avatars.com/api/?name=Karisma+Andayani&background=003366&color=fff&size=400'" alt="Karisma Andayani">
                         </div>
                         <div class="main-text">
                             <h4>Karisma andayani</h4>
