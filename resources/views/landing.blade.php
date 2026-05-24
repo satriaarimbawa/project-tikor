@@ -170,7 +170,7 @@
                 <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
                     <div class="profile-card">
                         <div class="img-area">
-                            <img src="https://ui-avatars.com/api/?name=Tu+Ayu&background=003366&color=fff&size=400" alt="Tu Ayu">
+                            <img src="{{ asset('assets/team/putu-ayu.jpeg') }}" alt="Tu Ayu">
                         </div>
                         <div class="main-text">
                             <h4>Tu Ayu</h4>
