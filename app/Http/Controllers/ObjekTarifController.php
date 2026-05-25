@@ -16,7 +16,7 @@ class ObjekTarifController extends Controller
         $this->storageService = $storageService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $firebaseData = ObjekTarif::all() ?? [];
         
@@ -33,7 +33,21 @@ class ObjekTarifController extends Controller
             ];
         }
 
-        return view('admin.Objek_Tarif', compact('data'));
+        // Pagination Manual
+        $perPage = (int) $request->input('perPage', 5);
+        $currentPage = (int) $request->input('page', 1);
+        $totalData = count($data);
+        $totalPages = ceil($totalData / $perPage);
+        $offset = ($currentPage - 1) * $perPage;
+        
+        $dataPaginated = array_slice($data, $offset, $perPage);
+
+        return view('admin.Objek_Tarif', [
+            'data' => $dataPaginated,
+            'currentPage' => $currentPage,
+            'totalPages' => $totalPages,
+            'perPage' => $perPage
+        ]);
     }
 
     public function store(Request $request)

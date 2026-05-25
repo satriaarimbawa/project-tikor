@@ -16,10 +16,11 @@
 
     @include('admin.template.navbar')
 
-    <main class="main-content ml-64 p-8 flex-1 min-w-0 overflow-x-hidden">
+    <main class="main-content lg:ml-64 p-4 md:p-8 flex-1 min-w-0 overflow-x-hidden">
         @yield('content')
     </main>
 
+    <script src="{{ asset('js/navbar.js') }}"></script>
     @yield('extra_js')
 </body>
 </html>

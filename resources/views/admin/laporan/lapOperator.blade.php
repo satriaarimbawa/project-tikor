@@ -25,17 +25,17 @@
     $selisih = $keuangan['target'] - $keuangan['realisasi'];
     @endphp
 
-    <main class="main-content ml-64 p-8 w-full font-sans">
+    <main class="main-content lg:ml-64 p-4 md:p-8 w-full font-sans">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-gray-800">Laporan Hasil Uji Petik - Operator</h1>
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-12 h-12 object-contain" alt="Logo">
         </div>
 
         <form action="{{ url()->current() }}" method="GET" class="grid grid-cols-12 gap-6 mb-6">
-            <div class="col-span-8">
+            <div class="col-span-12 xl:col-span-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
                     <h2 class="text-lg font-bold mb-4 text-black">Ringkasan Harian</h2>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @php
                             $iconMap = [
                                 'motor' => ['icon' => 'mdi:motorbike', 'color' => '#FCA24C', 'bg' => 'from-white via-orange-100 to-white'],
@@ -69,7 +69,7 @@
                 </div>
             </div>
 
-            <div class="col-span-4 space-y-4">
+            <div class="col-span-12 xl:col-span-4 space-y-4">
                 <select name="lokasi_id" onchange="this.form.submit()"
                     class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm">
                     <option value="">Pilih Lokasi</option>
@@ -116,7 +116,7 @@
         </form>
 
         <div class="grid grid-cols-12 gap-6 mb-6">
-            <div class="col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="col-span-12 xl:col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <h3 class="font-bold mb-4 text-gray-800">Grafik Berdasarkan Waktu Kedatangan</h3>
                 <div class="h-64 w-full">
                     <canvas id="lineChart" data-labels="{{ json_encode($grafikWaktu['labels']) }}"
@@ -125,16 +125,16 @@
                 </div>
             </div>
 
-            <div class="col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="col-span-12 xl:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <h3 class="font-bold mb-4 text-gray-800">Volume Kendaraan</h3>
-                <div class="flex gap-4 items-start">
-                    <div class="h-64 w-2/3 relative">
+                <div class="flex flex-col sm:flex-row gap-4 items-start">
+                    <div class="h-64 w-full sm:w-2/3 relative">
                         <canvas id="barChart" data-labels="{{ json_encode($grafikVolume['labels']) }}"
                             data-values="{{ json_encode($grafikVolume['data']) }}">
                         </canvas>
                     </div>
 
-                    <div class="w-1/3 space-y-2 overflow-y-auto max-h-64 pr-2">
+                    <div class="w-full sm:w-1/3 space-y-2 overflow-y-auto max-h-64 pr-2">
                         @foreach($dataRingkasan as $k => $v)
                         <div class="bg-gray-50 p-2 rounded text-center border border-gray-100">
                             <p class="text-[10px] text-gray-500 uppercase truncate">Total {{ $objekNames[$k] ?? $k }}</p>

@@ -32,7 +32,7 @@
 
 @include('admin.template.navbar')
 
-    <main class="flex-1 ml-64 p-12 min-h-screen" style="background: linear-gradient(180deg, #E7EFF6 0%, #FFFFFF 100%);">
+    <main class="flex-1 lg:ml-64 p-4 md:p-12 min-h-screen" style="background: linear-gradient(180deg, #E7EFF6 0%, #FFFFFF 100%);">
         
         @if(session('success'))
             <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl">
@@ -61,15 +61,26 @@
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-12 h-auto" alt="Logo Klungkung">
         </div>
 
-        <div class="flex gap-10 items-start">
+        <div class="flex flex-col xl:flex-row gap-10 items-start">
             
-            <div class="flex-[3] bg-white rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.03)] p-10 border border-gray-50/50">
+            <div class="w-full xl:flex-[3] bg-white rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.03)] p-10 border border-gray-50/50">
                 <h2 class="text-xl font-bold text-[#1e293b] mb-8 uppercase tracking-widest">Daftar Lokasi</h2>
 
-                <div class="relative mb-8">
-                    <input type="text" id="searchInput" placeholder="Search" class="w-full pl-12 pr-4 py-3.5 bg-[#FBFBFB] border border-gray-200 rounded-2xl focus:ring-1 focus:ring-blue-200 outline-none text-sm transition-all font-medium placeholder:text-gray-300">
-                    <iconify-icon icon="lucide:search" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-xl"></iconify-icon>
-                </div>
+                <form action="{{ url()->current() }}" method="GET" class="flex flex-col sm:flex-row gap-4 mb-8">
+                    <div class="relative flex-1">
+                        <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Search" class="w-full pl-12 pr-4 py-3.5 bg-[#FBFBFB] border border-gray-200 rounded-2xl focus:ring-1 focus:ring-blue-200 outline-none text-sm transition-all font-medium placeholder:text-gray-300">
+                        <iconify-icon icon="lucide:search" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-xl"></iconify-icon>
+                    </div>
+
+                    <div class="flex items-center gap-2 px-4 py-2 bg-[#FBFBFB] border border-gray-200 rounded-2xl">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">Show:</span>
+                        <select name="perPage" onchange="this.form.submit()" class="bg-transparent border-none text-xs font-bold outline-none cursor-pointer appearance-none px-2">
+                            <option value="5" {{ $perPage == 5 ? 'selected' : '' }}>5</option>
+                            <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
+                            <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>25</option>
+                        </select>
+                    </div>
+                </form>
 
                 <div class="overflow-x-auto mt-6">
                     <table class="w-full border-separate border-spacing-y-2">
@@ -84,11 +95,13 @@
                             </tr>
                         </thead>
                         <tbody class="text-[12px] font-bold text-[#1E293B]">
-                            @php $no = 1; @endphp
                             @if($daftarLokasi)
-                                @foreach($daftarLokasi as $key => $lokasi)
+                                @foreach($daftarLokasi as $index => $lokasi)
+                                @php $key = $lokasi['id']; @endphp
                                 <tr class="bg-white hover:bg-gray-50 transition-colors shadow-sm">
-                                    <td class="py-4 px-4 text-center border-y border-l border-gray-100 rounded-l-xl">{{ $no++ }}</td>
+                                    <td class="py-4 px-4 text-center border-y border-l border-gray-100 rounded-l-xl">
+                                        {{ ($currentPage - 1) * $perPage + ($index + 1) }}
+                                    </td>
                                     <td class="py-4 px-4 border-y border-gray-100">{{ $lokasi['nama_lokasi'] ?? '-' }}</td>
                                     <td class="py-4 px-4 border-y border-gray-100 text-gray-400 font-medium italic">
                                         {{ $lokasi['koordinat'] ?? 'Belum diset' }}
@@ -125,9 +138,24 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination -->
+                <div class="mt-8 flex justify-center items-center gap-4">
+                    <a href="{{ $currentPage > 1 ? url()->current().'?page='.($currentPage - 1).'&perPage='.$perPage.'&search='.request('search') : '#' }}" 
+                        class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all text-white {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
+                        <iconify-icon icon="lucide:chevron-left" class="text-xl"></iconify-icon>
+                    </a>
+                    
+                    <span class="text-sm font-bold text-gray-400">Page {{ $currentPage }} of {{ $totalPages }}</span>
+
+                    <a href="{{ $currentPage < $totalPages ? url()->current().'?page='.($currentPage + 1).'&perPage='.$perPage.'&search='.request('search') : '#' }}" 
+                        class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all text-white {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
+                        <iconify-icon icon="lucide:chevron-right" class="text-xl"></iconify-icon>
+                    </a>
+                </div>
             </div>
 
-            <div class="flex-[2] bg-white rounded-[2rem] shadow-[0_30px_90px_rgba(0,0,0,0.15)] border border-gray-50/50 overflow-hidden flex flex-col">
+            <div class="w-full xl:flex-[2] bg-white rounded-[2rem] shadow-[0_30px_90px_rgba(0,0,0,0.15)] border border-gray-50/50 overflow-hidden flex flex-col">
                 <div class="h-64 bg-[#F8FAFC] m-4 rounded-[1.5rem] overflow-hidden border border-gray-100 relative">
 
                     <div id="map" class="absolute inset-0 flex flex-col items-center justify-center">

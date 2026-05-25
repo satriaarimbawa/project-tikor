@@ -55,10 +55,10 @@
     </header>
 
     <!-- MAIN GRID -->
-    <div class="flex-1 grid grid-cols-12 gap-4 min-h-0">
+    <div class="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-y-auto custom-scrollbar pr-1 lg:overflow-visible">
         
         <!-- KIRI: TOTAL & OBJEK -->
-        <div class="col-span-3 flex flex-col gap-4">
+        <div class="col-span-12 lg:col-span-4 xl:col-span-3 flex flex-col gap-4">
             <div class="glass-card p-6 rounded-3xl flex-1 flex flex-col items-center text-center relative overflow-hidden">
                 <div class="mt-6">
                     <p class="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Total Kendaraan Hari Ini</p>
@@ -91,7 +91,7 @@
         </div>
 
         <!-- TENGAH: DIAGRAM & CARD LOKASI -->
-        <div class="col-span-6 flex flex-col gap-4">
+        <div class="col-span-12 lg:col-span-8 xl:col-span-6 flex flex-col gap-4">
             <div class="glass-card p-6 rounded-3xl flex-1 min-h-0 flex flex-col">
                 <h3 class="text-yellow-400 text-sm font-bold uppercase tracking-wider mb-6">Distribusi Kendaraan Per Lokasi</h3>
                 <div class="flex-1 relative w-full">
@@ -112,7 +112,7 @@
         </div>
 
         <!-- KANAN: STATUS & LOG -->
-        <div class="col-span-3 flex flex-col gap-4 min-h-0">
+        <div class="col-span-12 xl:col-span-3 flex flex-col gap-4 min-h-0">
             <!-- PERSONIL AKTIF -->
             <div class="glass-card p-5 rounded-3xl flex-[4.5] flex flex-col overflow-hidden">
                 <div class="flex justify-between items-center mb-4 shrink-0">

@@ -30,24 +30,35 @@
 
     @include('admin.template.navbar')
 
-    <main class="main-content">
+    <main class="main-content lg:ml-64 p-4 md:p-10 flex-1">
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-3xl font-extrabold text-[#253D6B] tracking-tight">Daftar User</h1>
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-12 h-16 object-contain" alt="Logo Klungkung">
         </div>
 
         <div class="card-figma">
-            <div class="flex justify-between items-center mb-6">
-                <form action="/daftar-user" method="GET" class="relative w-1/3">
-                    <button type="submit" class="absolute inset-y-0 left-0 flex items-center pl-3">
-                        <iconify-icon icon="lucide:search" class="text-white/50 text-xl"></iconify-icon>
-                    </button>
-                    <input type="text" name="search" value="{{ $searchTerm ?? '' }}" placeholder="Cari data user"
-                        class="w-full bg-[#253D6B] text-white text-sm rounded-full py-2.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white/50">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+                <form action="/daftar-user" method="GET" class="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-1">
+                    <div class="relative flex-1 max-w-sm">
+                        <button type="submit" class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <iconify-icon icon="lucide:search" class="text-white/50 text-xl"></iconify-icon>
+                        </button>
+                        <input type="text" name="search" value="{{ $searchTerm ?? '' }}" placeholder="Cari data user"
+                            class="w-full bg-[#253D6B] text-white text-sm rounded-full py-2.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white/50">
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-[#253D6B] uppercase whitespace-nowrap">Tampilkan:</span>
+                        <select name="perPage" onchange="this.form.submit()" class="bg-[#253D6B] text-white text-xs rounded-full py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer appearance-none text-center min-w-[80px]">
+                            <option value="5" {{ $perPage == 5 ? 'selected' : '' }}>5</option>
+                            <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
+                            <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>25</option>
+                        </select>
+                    </div>
                 </form>
 
                 <a href="{{ route('user.create') }}"
-                    class="bg-[#253D6B] hover:bg-[#1a2c4d] text-white text-sm font-bold py-2.5 px-6 rounded-full flex items-center gap-2 transition-all shadow-lg">
+                    class="bg-[#253D6B] hover:bg-[#1a2c4d] text-white text-sm font-bold py-2.5 px-6 rounded-full flex items-center gap-2 transition-all shadow-lg whitespace-nowrap">
                     <iconify-icon icon="lucide:plus-circle" class="text-xl"></iconify-icon>
                     Tambah Data
                 </a>
@@ -69,7 +80,7 @@
                         @php $uid = $user['id']; @endphp
                         <tr class="table-row-hover">
                             <td class="text-center font-medium text-gray-500">
-                                {{ ($currentPage - 1) * 5 + ($index + 1) }}
+                                {{ ($currentPage - 1) * $perPage + ($index + 1) }}
                             </td>
                             <td class="font-bold text-[#253D6B]">{{ $user['username'] ?? 'No Name' }}</td>
                             <td class="text-gray-600">{{ $user['email'] ?? '-' }}</td>
@@ -106,14 +117,14 @@
 
             <!-- Pagination -->
             <div class="flex justify-center mt-8 gap-4 items-center">
-                <a href="{{ $currentPage > 1 ? url('/daftar-user?page='.($currentPage - 1).'&search='.$searchTerm) : '#' }}"
+                <a href="{{ $currentPage > 1 ? url('/daftar-user?page='.($currentPage - 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}"
                     class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
                     <iconify-icon icon="lucide:chevron-left" class="text-xl"></iconify-icon>
                 </a>
                 
                 <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
 
-                <a href="{{ $currentPage < $totalPages ? url('/daftar-user?page='.($currentPage + 1).'&search='.$searchTerm) : '#' }}"
+                <a href="{{ $currentPage < $totalPages ? url('/daftar-user?page='.($currentPage + 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}"
                     class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
                     <iconify-icon icon="lucide:chevron-right" class="text-xl"></iconify-icon>
                 </a>

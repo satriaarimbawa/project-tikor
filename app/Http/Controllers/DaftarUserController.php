@@ -43,8 +43,8 @@ class DaftarUserController extends Controller
             $dataFinal[] = array_merge($user, ['id' => $uid]);
         }
 
-        // Pagination Manual (5 data per halaman)
-        $perPage = 5;
+        // Pagination Manual
+        $perPage = (int) $request->input('perPage', 5);
         $currentPage = (int) $request->input('page', 1);
         $totalData = count($dataFinal);
         $totalPages = ceil($totalData / $perPage);
@@ -56,7 +56,8 @@ class DaftarUserController extends Controller
             'users' => $dataPaginated,
             'currentPage' => $currentPage,
             'totalPages' => $totalPages,
-            'searchTerm' => $searchTerm
+            'searchTerm' => $searchTerm,
+            'perPage' => $perPage
         ]);
     }
 

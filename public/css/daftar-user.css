@@ -139,10 +139,16 @@ body {
 
 /* --- MAIN CONTENT AREA --- */
 .main-content {
-    margin-left: 256px; /* Sesuai dengan lebar sidebar w-64 */
     padding: 40px;
-    width: calc(100% - 256px);
+    width: 100%;
     min-height: 100vh;
+}
+
+@media (min-width: 1024px) {
+    .main-content {
+        margin-left: 256px;
+        width: calc(100% - 256px);
+    }
 }
 
 .card-figma {
@@ -338,18 +344,4 @@ tr.table-row-hover:hover td {
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 10px rgba(217, 157, 129, 0.3);
-}
-
-/* --- RESPONSIVE ADJUSTMENT --- */
-@media (max-width: 768px) {
-    .sidebar-navy {
-        width: 80px;
-    }
-    .sidebar-navy span, .sidebar-navy p, .sidebar-navy .sub-menu {
-        display: none;
-    }
-    .main-content {
-        margin-left: 80px;
-        padding: 1rem;
-    }
 }

@@ -58,11 +58,23 @@ class ActivityLogController extends Controller
             return strtotime($b['timestamp']) <=> strtotime($a['timestamp']);
         });
 
+        // Pagination Manual
+        $perPage = (int) $request->input('perPage', 10);
+        $currentPage = (int) $request->input('page', 1);
+        $totalData = count($filteredLogs);
+        $totalPages = ceil($totalData / $perPage);
+        $offset = ($currentPage - 1) * $perPage;
+        
+        $dataPaginated = array_slice($filteredLogs, $offset, $perPage);
+
         return view('admin.activity_log', [
-            'logs' => $filteredLogs,
+            'logs' => $dataPaginated,
             'firebaseConfig' => config('firebase.projects.app'),
             'searchTerm' => $searchTerm,
-            'searchDate' => $searchDate
+            'searchDate' => $searchDate,
+            'perPage' => $perPage,
+            'currentPage' => $currentPage,
+            'totalPages' => $totalPages
         ]);
     }
 }

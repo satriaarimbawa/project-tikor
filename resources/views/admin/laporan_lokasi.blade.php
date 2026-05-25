@@ -18,7 +18,7 @@
 <body class="flex">
     @include('admin.template.navbar')
 
-    <main class="flex-1 ml-64 p-8 min-w-0 overflow-x-hidden">
+    <main class="flex-1 lg:ml-64 p-4 md:p-8 min-w-0 overflow-x-hidden">
         <div class="flex justify-between items-start mb-6">
             <h1 class="text-xl font-bold text-slate-800 tracking-tight">Laporan Summary Hasil Uji Petik - Berdasarkan Lokasi</h1>
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-10 h-12 object-contain" alt="Logo">
@@ -110,7 +110,7 @@
         </div>
 
         <div class="grid grid-cols-12 gap-6 mb-6 text-slate-800">
-            <div class="col-span-12 lg:col-span-8 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <div class="col-span-12 xl:col-span-8 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <h2 class="text-lg font-bold mb-10">Ringkasan Kinerja Keuangan</h2>
                 <div class="flex flex-col md:flex-row items-center gap-10"> 
                     <div class="w-full h-64"><canvas id="financialChart"></canvas></div>
@@ -122,7 +122,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-span-12 lg:col-span-4 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <div class="col-span-12 xl:col-span-4 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <h2 class="text-lg font-bold mb-6">Volume Kendaraan</h2>
                 <div class="h-64 mb-6">
                     <canvas id="volumeChart"></canvas>

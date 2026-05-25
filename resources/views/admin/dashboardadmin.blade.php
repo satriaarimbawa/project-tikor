@@ -16,7 +16,7 @@
 
     @include('admin.template.navbar')
 
-    <main class="main-content ml-64 p-8 flex-1 min-w-0 overflow-x-hidden">
+    <main class="main-content lg:ml-64 p-4 md:p-8 flex-1 min-w-0 overflow-x-hidden">
         <header class="flex justify-between items-center mb-8">
             <h1 class="text-gray-800 font-bold text-[30px] tracking-tight">Pendapatan Harian</h1>
     
@@ -77,7 +77,7 @@
             ];
         @endphp
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
             @foreach($stats as $key => $count)
                 @php 
                     $index = $loop->index % count($colors['bg']);
@@ -102,7 +102,7 @@
                 STATUS MONITORING MINGGUAN (HARIAN)
             </h3>
 
-            <div class="flex flex-col md:flex-row gap-8">
+            <div class="flex flex-col xl:flex-row gap-8">
                 <div class="flex-1 h-[350px] relative">
                     <canvas id="weeklyMonitoringChart"></canvas>
                 </div>

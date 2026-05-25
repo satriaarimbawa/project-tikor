@@ -15,13 +15,13 @@ class TikorController extends Controller
         $this->database = $database;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         // 1. Ambil semua data lokasi dan penugasan
-        $daftarLokasi = $this->database->getReference('lokasi')->getValue() ?? [];
+        $daftarLokasiRaw = $this->database->getReference('lokasi')->getValue() ?? [];
         
         // Urutkan dari yang terbaru
-        $daftarLokasi = array_reverse($daftarLokasi, true);
+        $daftarLokasiRaw = array_reverse($daftarLokasiRaw, true);
         
         $daftarPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
         
@@ -51,16 +51,26 @@ class TikorController extends Controller
         $lokasiAktifIds = array_unique($lokasiAktifIds);
 
         // 3. Tambahkan atribut status 'Aktif'/'Inaktif' secara dinamis
-        foreach ($daftarLokasi as $key => &$lokasi) {
-            // Pastikan ID lokasi dibandingkan sebagai string
+        $dataFinal = [];
+        foreach ($daftarLokasiRaw as $key => $lokasi) {
             $lokasi['status_dinamis'] = in_array((string)$key, $lokasiAktifIds) ? 'Aktif' : 'Inaktif';
+            $dataFinal[] = array_merge($lokasi, ['id' => $key]);
         }
 
-        // @dd($lokasiAktifIds);
-        // @dd($daftarLokasi);
+        // Pagination Manual
+        $perPage = (int) $request->input('perPage', 5);
+        $currentPage = (int) $request->input('page', 1);
+        $totalData = count($dataFinal);
+        $totalPages = ceil($totalData / $perPage);
+        $offset = ($currentPage - 1) * $perPage;
+        
+        $dataPaginated = array_slice($dataFinal, $offset, $perPage);
 
         return view('admin.tikor.penetapanlokasi', [
-            'daftarLokasi' => $daftarLokasi
+            'daftarLokasi' => $dataPaginated,
+            'currentPage' => $currentPage,
+            'totalPages' => $totalPages,
+            'perPage' => $perPage
         ]);
     }
 

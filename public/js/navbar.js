@@ -31,6 +31,46 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
     });
+
+    // Mobile Sidebar Toggle Logic
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+
+    if (mobileBtn && sidebar && overlay) {
+        const toggleSidebar = (show) => {
+            if (show) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+                document.body.style.overflow = 'auto';
+            }
+        };
+
+        mobileBtn.addEventListener('click', () => {
+            const isClosed = sidebar.classList.contains('-translate-x-full');
+            toggleSidebar(isClosed);
+        });
+
+        overlay.addEventListener('click', () => toggleSidebar(false));
+
+        // Close sidebar when navigating (especially on single page apps or when clicking same-page links)
+        const sidebarLinks = sidebar.querySelectorAll('nav a');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 1024) { // only on mobile/tablet
+                    toggleSidebar(false);
+                }
+            });
+        });
+    }
 });
 
 function toggleSubMenu() {

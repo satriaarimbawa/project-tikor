@@ -80,8 +80,8 @@ class PenugasanController extends Controller
             return strtotime($b['created_at_raw']) <=> strtotime($a['created_at_raw']);
         });
 
-        // 2. Pagination Manual (5 data per halaman)
-        $perPage = 5;
+        // 2. Pagination Manual
+        $perPage = (int) $request->input('perPage', 5);
         $currentPage = (int) $request->input('page', 1);
         $totalData = count($dataFinal);
         $totalPages = ceil($totalData / $perPage);
@@ -93,7 +93,8 @@ class PenugasanController extends Controller
             'dataPenugasan' => $dataPaginated,
             'currentPage' => $currentPage,
             'totalPages' => $totalPages,
-            'searchTerm' => $searchTerm
+            'searchTerm' => $searchTerm,
+            'perPage' => $perPage
         ]);
     }
 

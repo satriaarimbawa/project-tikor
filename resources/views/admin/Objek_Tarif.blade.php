@@ -30,7 +30,7 @@
 
     @include('admin.template.navbar')
 
-    <main class="ml-64 p-10 flex-1 min-w-0 overflow-x-hidden min-h-screen">
+    <main class="lg:ml-64 p-4 md:p-10 flex-1 min-w-0 overflow-x-hidden min-h-screen">
         <header class="flex justify-between items-center mb-10">
             <h1 class="text-[28px] font-extrabold text-[#2D3748] tracking-tight">Objek & Tarif</h1>
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" alt="Logo Klungkung" class="w-12 h-12 object-contain">
@@ -38,15 +38,27 @@
 
         <div class="grid grid-cols-12 gap-8 items-start">
             
-            <div class="col-span-12 lg:col-span-7 bg-white border border-gray-100 shadow-sm rounded-[30px] p-8">
-                <div class="flex justify-between items-center mb-8">
+            <div class="col-span-12 xl:col-span-7 bg-white border border-gray-100 shadow-sm rounded-[30px] p-8">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
                     <h2 class="text-xl font-black text-gray-800 uppercase tracking-tighter">Daftar Objek & Tarif</h2>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                            <i class="fas fa-search text-gray-300 text-[10px]"></i>
-                        </span>
-                        <input type="text" id="search-input" placeholder="Search" class="pl-9 pr-4 py-2 bg-[#F7FAFC] border border-gray-100 rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-100 w-44">
-                    </div>
+                    
+                    <form action="{{ url()->current() }}" method="GET" class="flex items-center gap-4">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-search text-gray-300 text-[10px]"></i>
+                            </span>
+                            <input type="text" name="search" id="search-input" value="{{ request('search') }}" placeholder="Search" class="pl-9 pr-4 py-2 bg-[#F7FAFC] border border-gray-100 rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-100 w-44">
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-black text-gray-400 uppercase whitespace-nowrap">Show:</span>
+                            <select name="perPage" onchange="this.form.submit()" class="bg-[#F7FAFC] border border-gray-100 rounded-lg py-1.5 px-2 text-[10px] font-bold outline-none focus:ring-1 focus:ring-blue-100 cursor-pointer">
+                                <option value="5" {{ $perPage == 5 ? 'selected' : '' }}>5</option>
+                                <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
+                                <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>25</option>
+                            </select>
+                        </div>
+                    </form>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -63,7 +75,9 @@
                         <tbody id="table-body">
                             @forelse($data as $index => $item)
                             <tr class="hover:bg-gray-50/50 transition-colors">
-                                <td class="py-4 px-2 border border-gray-100 text-center text-xs font-bold text-gray-400">{{ $index + 1 }}</td>
+                                <td class="py-4 px-2 border border-gray-100 text-center text-xs font-bold text-gray-400">
+                                    {{ ($currentPage - 1) * $perPage + ($index + 1) }}
+                                </td>
                                 <td class="py-4 px-4 border border-gray-100 text-[13px] font-bold text-gray-700">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-50">
@@ -97,9 +111,24 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination -->
+                <div class="mt-6 flex justify-center items-center gap-4">
+                    <a href="{{ $currentPage > 1 ? url()->current().'?page='.($currentPage - 1).'&perPage='.$perPage.'&search='.request('search') : '#' }}" 
+                        class="w-8 h-8 flex items-center justify-center bg-[#253D6B] rounded-lg shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
+                        <iconify-icon icon="lucide:chevron-left" class="text-sm"></iconify-icon>
+                    </a>
+                    
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">Page {{ $currentPage }} of {{ $totalPages }}</span>
+
+                    <a href="{{ $currentPage < $totalPages ? url()->current().'?page='.($currentPage + 1).'&perPage='.$perPage.'&search='.request('search') : '#' }}" 
+                        class="w-8 h-8 flex items-center justify-center bg-[#253D6B] rounded-lg shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
+                        <iconify-icon icon="lucide:chevron-right" class="text-sm"></iconify-icon>
+                    </a>
+                </div>
             </div>
 
-            <div class="col-span-12 lg:col-span-5 bg-white border border-gray-100 shadow-sm rounded-[30px] p-8 sticky top-5 text-center">
+            <div class="col-span-12 xl:col-span-5 bg-white border border-gray-100 shadow-sm rounded-[30px] p-8 sticky top-5 text-center">
                 <div class="flex flex-col items-center mb-8">
                     <p class="text-[10px] font-black text-gray-400 uppercase mb-4">Icon Objek</p>
                     <div id="icon-preview-container" class="w-32 h-32 bg-[#F7FAFC] rounded-[25px] flex items-center justify-center border-2 border-dashed border-[#E2E8F0] overflow-hidden">

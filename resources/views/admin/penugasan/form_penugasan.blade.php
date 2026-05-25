@@ -34,7 +34,7 @@
 
     @include('admin.template.navbar')
 
-    <main class="main-content ml-64 p-8 w-full">
+    <main class="main-content lg:ml-64 p-4 md:p-8 w-full">
         <header class="flex justify-end items-center mb-8">
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-10 h-10 object-contain" alt="Logo Klungkung">
         </header>

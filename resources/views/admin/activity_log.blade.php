@@ -34,6 +34,16 @@
                         class="w-full md:w-auto bg-white/10 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all [color-scheme:dark]">
                 </div>
 
+                <div class="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-xl border border-white/10">
+                    <span class="text-[10px] font-bold text-white/50 uppercase whitespace-nowrap">Tampilkan:</span>
+                    <select name="perPage" onchange="this.form.submit()" class="bg-transparent text-white text-sm focus:outline-none cursor-pointer appearance-none px-2 py-1.5 min-w-[60px] text-center">
+                        <option value="10" {{ $perPage == 10 ? 'selected' : '' }} class="bg-[#253D6B]">10</option>
+                        <option value="25" {{ $perPage == 25 ? 'selected' : '' }} class="bg-[#253D6B]">25</option>
+                        <option value="50" {{ $perPage == 50 ? 'selected' : '' }} class="bg-[#253D6B]">50</option>
+                        <option value="100" {{ $perPage == 100 ? 'selected' : '' }} class="bg-[#253D6B]">100</option>
+                    </select>
+                </div>
+
                 <div class="flex gap-2">
                     <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-[#253D6B] font-bold px-6 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm">
                         <iconify-icon icon="lucide:filter"></iconify-icon>
@@ -113,6 +123,21 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="p-6 border-t border-gray-50 flex justify-center items-center gap-4">
+            <a href="{{ $currentPage > 1 ? url()->current().'?page='.($currentPage - 1).'&search='.$searchTerm.'&date='.$searchDate.'&perPage='.$perPage : '#' }}" 
+                class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-xl shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
+                <iconify-icon icon="lucide:chevron-left" class="text-xl"></iconify-icon>
+            </a>
+            
+            <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
+
+            <a href="{{ $currentPage < $totalPages ? url()->current().'?page='.($currentPage + 1).'&search='.$searchTerm.'&date='.$searchDate.'&perPage='.$perPage : '#' }}" 
+                class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-xl shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
+                <iconify-icon icon="lucide:chevron-right" class="text-xl"></iconify-icon>
+            </a>
         </div>
     </div>
 </div>

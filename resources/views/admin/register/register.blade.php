@@ -26,7 +26,7 @@
 
     @include('admin.template.navbar')
 
-    <main class="flex-1 ml-64 p-8 flex justify-center items-start pt-20">
+    <main class="flex-1 lg:ml-64 p-8 flex justify-center items-start pt-20">
     
     <div class="fixed top-6 right-8">
         <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-12 h-12 object-contain" alt="Logo">
