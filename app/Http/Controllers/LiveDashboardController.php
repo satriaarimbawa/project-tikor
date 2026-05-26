@@ -129,7 +129,7 @@ class LiveDashboardController extends Controller
             }
 
             $operators[$uid] = [
-                'username' => $u['username'],
+                'username' => $u['username'] ?? 'User',
                 'is_online' => $u['is_online'] ?? false,
                 'role' => $role,
                 'location' => $locationName

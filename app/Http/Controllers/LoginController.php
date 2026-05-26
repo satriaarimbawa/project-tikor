@@ -60,8 +60,8 @@ class LoginController extends Controller
     {
         session()->put([
             'login_status' => true,
-            'username'     => $user_data['username'],
-            'role'         => $user_data['role_user'],
+            'username'     => $user_data['username'] ?? 'User',
+            'role'         => $user_data['role_user'] ?? 'user',
             'user_id'      => $uid,
             'isLoggedIn'   => true,
             'id_lokasi_aktif' => $idLokasiTugas,
@@ -209,8 +209,8 @@ class LoginController extends Controller
         $this->logService->log(
             'login',
             $uid,
-            $user_data['username'],
-            "<strong>{$user_data['username']}</strong> baru saja login."
+            $user_data['username'] ?? 'User',
+            "<strong>" . ($user_data['username'] ?? 'User') . "</strong> baru saja login."
         );
 
         session()->save();
