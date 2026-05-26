@@ -11,6 +11,15 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     @vite(['resources/css/app.css', 'resources/css/login.css'])
+    
+    <!-- PWA Settings -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}?v={{ time() }}">
+    <meta name="theme-color" content="#253D6B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Uji Petik">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo_dishub.png') }}">
+
     <style>
         .guide-overlay {
             position: fixed;
@@ -176,6 +185,17 @@
     </script>
     <script>
         window.suppressSessionAlerts = true; // Matikan modal otomatis khusus halaman ini
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(reg => {
+                    console.log('Service Worker registered successfully');
+                }).catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+            });
+        }
     </script>
     @include('template.shared_scripts')
 </body>

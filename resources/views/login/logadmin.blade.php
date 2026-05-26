@@ -7,6 +7,14 @@
     <title>Login Admin - Dishub Klungkung</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <link rel="stylesheet" href="{{ asset('css/loginadmin.css') }}">
+    
+    <!-- PWA Settings -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}?v={{ time() }}">
+    <meta name="theme-color" content="#253D6B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Uji Petik">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo_dishub.png') }}">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
@@ -94,6 +102,17 @@
         const x = document.getElementById("passwordField");
         x.type = x.type === "password" ? "text" : "password";
     }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(reg => {
+                    console.log('Admin Service Worker registered');
+                }).catch(err => {
+                    console.log('Admin Service Worker registration failed:', err);
+                });
+            });
+        }
     </script>
     <script>
         window.suppressSessionAlerts = true; // Matikan modal otomatis khusus halaman ini
