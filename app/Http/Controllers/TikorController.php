@@ -91,13 +91,16 @@ class TikorController extends Controller
         $latitude = trim($coords[0]);
         $longitude = trim($coords[1]);
 
+        // Bersihkan format uang (titik) menjadi angka murni
+        $targetHarianClean = (int) preg_replace('/[^0-9]/', '', $request->input('target_harian'));
+
         $dataLokasi = [
             'nama_lokasi'   => $request->input('nama_lokasi'),
             'koordinat'     => $request->input('koordinat'),
             'latitude'      => (float) $latitude,
             'longitude'     => (float) $longitude,
             'radius'        => 100, 
-            'target_harian' => $request->input('target_harian'),
+            'target_harian' => $targetHarianClean,
             'created_at'    => Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s')
         ];
 

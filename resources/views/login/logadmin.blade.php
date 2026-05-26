@@ -36,6 +36,14 @@
                 <div class="header-form text-center">
                     <h2>Selamat Datang</h2>
                     <p class="welcome-p">Silakan masuk ke akun petugas anda</p>
+                    @if(session('error'))
+                        <div class="mt-10 mb-6 py-3 px-6 bg-red-50 border border-red-200 rounded-xl inline-block mx-auto animate-pulse">
+                            <p class="text-red-600 !text-red-600 text-[11px] font-black uppercase tracking-wider flex items-center gap-2" style="color: #dc2626 !important;">
+                                <i class="fas fa-exclamation-circle" style="color: #dc2626 !important;"></i>
+                                {{ session('error') }}
+                            </p>
+                        </div>
+                    @endif
                 </div>
 
                 <form action="/cek_login" method="POST">
@@ -43,7 +51,7 @@
 
                     <div class="input-group">
                         <label>Username</label>
-                        <div class="input-container">
+                        <div class="input-container {{ session('error') ? 'error' : '' }}">
                             <i class="fas fa-user icon"></i>
                             <input type="text" name="username" placeholder="Masukan Username" required>
                         </div>
@@ -51,7 +59,7 @@
 
                     <div class="input-group">
                         <label>Password</label>
-                        <div class="input-container">
+                        <div class="input-container {{ session('error') ? 'error' : '' }}">
                             <i class="fas fa-lock icon"></i>
                             <input type="password" name="password" id="passwordField" placeholder="Masukan Password"
                                 required>
@@ -61,7 +69,7 @@
 
                     <div class="form-options">
                         <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox"> Remember me
+                            <input type="checkbox" name="remember"> Remember me
                         </label>
                         <a href="{{ route('password.request') }}" class="lupa-sandi">Lupa Kata Sandi?</a>
                     </div>
@@ -87,6 +95,10 @@
         x.type = x.type === "password" ? "text" : "password";
     }
     </script>
+    <script>
+        window.suppressSessionAlerts = true; // Matikan modal otomatis khusus halaman ini
+    </script>
+    @include('template.shared_scripts')
 </body>
 
 </html>

@@ -80,12 +80,8 @@
                                 </td>
                                 <td class="py-4 px-4 border border-gray-100 text-[13px] font-bold text-gray-700">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-50">
-                                            @if($item['icon_url'])
-                                                <img src="{{ $item['icon_url'] }}" class="w-full h-full object-cover">
-                                            @else
-                                                <iconify-icon icon="lucide:image" class="text-gray-300"></iconify-icon>
-                                            @endif
+                                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-50 p-1">
+                                            <img src="{{ $item['icon_url'] }}" class="w-full h-full object-contain">
                                         </div>
                                         <span>{{ $item['nama'] }}</span>
                                     </div>
@@ -96,7 +92,7 @@
                                 </td>
                                 <td class="py-4 px-2 border border-gray-100 text-center text-gray-300">
                                     <button onclick="editData('{{ $item['id'] }}', '{{ $item['nama'] }}', '{{ $item['harga'] }}', '{{ $item['status'] }}', '{{ $item['keterangan'] }}', '{{ $item['icon_url'] }}')" class="hover:text-gray-900 mr-2"><i class="fas fa-pencil-alt text-[10px]"></i></button>
-                                    <form action="{{ route('objek-tarif.destroy', $item['id']) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
+                                    <form action="{{ route('objek-tarif.destroy', $item['id']) }}" method="POST" class="inline" onsubmit="confirmDelete(event, this, 'Apakah Anda yakin ingin menghapus data ini?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="hover:text-red-500"><i class="fas fa-trash-alt text-[10px]"></i></button>
@@ -139,12 +135,6 @@
                 </div>
 
                 <h3 id="form-title" class="text-sm font-black text-gray-800 uppercase mb-6 text-left">Form Objek & Tarif</h3>
-
-                @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 text-xs text-left" role="alert">
-                    <span class="block sm:inline">{{ session('success') }}</span>
-                </div>
-                @endif
 
                 <form id="objek-form" action="{{ route('objek-tarif.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4 text-left">
                     @csrf
@@ -302,5 +292,101 @@
         });
     </script>
     <script src="{{ asset('js/navbar.js') }}"></script>
+
+    <!-- Modal Success -->
+    <div id="successModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-md">
+        <div class="bg-white w-full max-w-sm rounded-[35px] shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0 duration-300" id="successModalContent">
+            <div class="relative p-8 text-center">
+                <!-- Decorative Background -->
+                <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-green-400 to-emerald-500 opacity-10 rounded-b-[50px]"></div>
+                
+                <!-- Icon Area -->
+                <div class="relative mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                    <iconify-icon icon="lucide:check-circle" class="text-5xl text-green-600 animate-bounce"></iconify-icon>
+                </div>
+
+                <!-- Text Area -->
+                <h3 class="text-2xl font-black text-[#253D6B] mb-2 tracking-tight">Berhasil!</h3>
+                <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                    {{ session('success') }}
+                </p>
+
+                <!-- Button Area -->
+                <button onclick="hideSuccessModal()" class="w-full bg-[#253D6B] hover:bg-[#1a2e52] text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                    Oke, Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Duplicate -->
+    <div id="duplicateModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-md">
+        <div class="bg-white w-full max-w-sm rounded-[35px] shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0 duration-300" id="duplicateModalContent">
+            <div class="relative p-8 text-center">
+                <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-red-400 to-orange-500 opacity-10 rounded-b-[50px]"></div>
+                <div class="relative mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                    <iconify-icon icon="lucide:alert-circle" class="text-5xl text-red-600 animate-pulse"></iconify-icon>
+                </div>
+                <h3 class="text-2xl font-black text-[#253D6B] mb-2 tracking-tight">Peringatan!</h3>
+                <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                    {{ session('duplicate') }}
+                </p>
+                <button onclick="hideDuplicateModal()" class="w-full bg-[#253D6B] hover:bg-[#1a2e52] text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                    Saya Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                showSuccessModal();
+            @endif
+            @if(session('duplicate'))
+                showDuplicateModal();
+            @endif
+        });
+
+        function showSuccessModal() {
+            const modal = document.getElementById('successModal');
+            const content = document.getElementById('successModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function hideSuccessModal() {
+            const content = document.getElementById('successModalContent');
+            const modal = document.getElementById('successModal');
+            content.classList.add('scale-95', 'opacity-0');
+            content.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function showDuplicateModal() {
+            const modal = document.getElementById('duplicateModal');
+            const content = document.getElementById('duplicateModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function hideDuplicateModal() {
+            const content = document.getElementById('duplicateModalContent');
+            const modal = document.getElementById('duplicateModal');
+            content.classList.add('scale-95', 'opacity-0');
+            content.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+    </script>
 </body>
 </html>

@@ -49,18 +49,6 @@
 
 <body>
 
-    @if(session('error'))
-    <div style="color: white; background-color: #ff4d4d; padding: 10px; margin-bottom: 15px; border-radius: 5px; position: fixed; top: 20px; left: 20px; right: 20px; z-index: 10000; text-align: center;">
-        {{ session('error') }}
-    </div>
-    @endif
-
-    @if(session('success'))
-    <div style="color: white; background-color: #28a745; padding: 10px; margin-bottom: 15px; border-radius: 5px; position: fixed; top: 20px; left: 20px; right: 20px; z-index: 10000; text-align: center;">
-        {{ session('success') }}
-    </div>
-    @endif
-
     <div class="container">
         <div class="glass-shape left"></div>
         <div class="glass-shape right"></div>
@@ -68,21 +56,31 @@
         <div class="login-card">
             <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo" class="logo">
 
+            <div class="text-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Selamat Datang</h2>
+                <p class="text-xs text-gray-500">Silakan masuk ke akun petugas anda</p>
+                @if(session('error'))
+                    <div class="mt-8 mb-4 py-2 px-4 bg-red-50 border border-red-200 rounded-lg inline-block animate-pulse">
+                        <p class="text-red-600 !text-red-600 text-[10px] font-black uppercase tracking-tight flex items-center gap-1.5" style="color: #dc2626 !important;">
+                            <iconify-icon icon="lucide:alert-circle" style="color: #dc2626 !important;"></iconify-icon>
+                            {{ session('error') }}
+                        </p>
+                    </div>
+                @endif
+            </div>
+
             <form action="/cek_login" method="POST" id="loginForm">
                 @csrf
 
                 <input type="hidden" name="latitude" id="latitude">
                 <input type="hidden" name="longitude" id="longitude">
 
-                <input type="text" class="input" id="username" name="username" placeholder="Username" required>
+                <input type="text" class="input {{ session('error') ? 'input-error' : '' }}" id="username" name="username" placeholder="Username" required>
                 <br><br>
-                <input type="password" class="input" id="password" name="password" placeholder="Password" required>
+                <input type="password" class="input {{ session('error') ? 'input-error' : '' }}" id="password" name="password" placeholder="Password" required>
                 <br><br>
 
                 <div class="form-helpers">
-                    <label class="remember-me">
-                        <input type="checkbox"> Remember me
-                    </label>
                     <a href="{{ route('password.request') }}" class="lupa-PASS">Lupa Kata Sandi</a>
                 </div>
 
@@ -176,6 +174,10 @@
         );
     }
     </script>
+    <script>
+        window.suppressSessionAlerts = true; // Matikan modal otomatis khusus halaman ini
+    </script>
+    @include('template.shared_scripts')
 </body>
 
 </html>

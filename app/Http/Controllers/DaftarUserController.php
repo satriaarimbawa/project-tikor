@@ -3,6 +3,7 @@
 namespace App\Http\Controllers; 
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Password;
 use Kreait\Firebase\Contract\Database;
 use Illuminate\Support\Facades\Hash;
 use App\Models\FirebaseUser;
@@ -72,7 +73,7 @@ class DaftarUserController extends Controller
             'username' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'role_user' => 'required|string',
-            'password' => 'required|string|min:6',
+            'password' => ['required', 'string', Password::min(6)->numbers()->symbols(), 'regex:/[A-Z]/'],
         ]);
 
         // CEK DUPLIKASI DATA
@@ -82,10 +83,14 @@ class DaftarUserController extends Controller
 
         foreach ($usersRaw as $user) {
             if (strtolower($user['username'] ?? '') === $newUsername) {
-                return back()->withErrors(['username' => 'Username ini sudah digunakan.'])->withInput();
+                return back()->withErrors(['username' => 'Username ini sudah digunakan.'])
+                             ->with('duplicate_user', 'Username "' . $request->username . '" sudah digunakan oleh user lain.')
+                             ->withInput();
             }
             if (strtolower($user['email'] ?? '') === $newEmail) {
-                return back()->withErrors(['email' => 'Email ini sudah terdaftar.'])->withInput();
+                return back()->withErrors(['email' => 'Email ini sudah terdaftar.'])
+                             ->with('duplicate_user', 'Email "' . $request->email . '" sudah terdaftar di sistem.')
+                             ->withInput();
             }
         }
 
@@ -126,10 +131,14 @@ class DaftarUserController extends Controller
             if ($uid === $id) continue; // Lewati jika ID sama dengan yang sedang di-edit
 
             if (strtolower($user['username'] ?? '') === $newUsername) {
-                return back()->withErrors(['username' => 'Username ini sudah digunakan oleh user lain.'])->withInput();
+                return back()->withErrors(['username' => 'Username ini sudah digunakan oleh user lain.'])
+                             ->with('duplicate_user', 'Username "' . $request->username . '" sudah digunakan oleh user lain.')
+                             ->withInput();
             }
             if (strtolower($user['email'] ?? '') === $newEmail) {
-                return back()->withErrors(['email' => 'Email ini sudah terdaftar oleh user lain.'])->withInput();
+                return back()->withErrors(['email' => 'Email ini sudah terdaftar oleh user lain.'])
+                             ->with('duplicate_user', 'Email "' . $request->email . '" sudah terdaftar oleh user lain.')
+                             ->withInput();
             }
         }
 
@@ -140,7 +149,7 @@ class DaftarUserController extends Controller
         ];
 
         if ($request->filled('password')) {
-            $request->validate(['password' => 'string|min:6']);
+            $request->validate(['password' => ['string', Password::min(6)->numbers()->symbols(), 'regex:/[A-Z]/']]);
             $data['password'] = Hash::make($request->password);
         }
 

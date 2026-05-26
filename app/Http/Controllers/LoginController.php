@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cookie;
 use Carbon\Carbon;
 use App\Services\ActivityLogService;
 
@@ -22,14 +23,45 @@ class LoginController extends Controller
 
     public function index()
     {
+        // Cek jika sudah ada session
         if (session()->has('login_status')) {
-            if (session()->get('role') === 'admin') {
-                return redirect('/dashboard-admin');
-            } elseif (session()->get('role') === 'operator') {
-                return redirect('/dashboard-operator-penugasan');
+            return $this->redirectBasedOnRole(session()->get('role'));
+        }
+
+        // Cek Cookie Remember Me
+        $rememberId = Cookie::get('remember_user_id');
+        if ($rememberId) {
+            $user = $this->database->getReference('users/' . $rememberId)->getValue();
+            if ($user) {
+                $this->setSession($rememberId, $user);
+                return $this->redirectBasedOnRole($user['role_user']);
             }
         }
+
         return view('login.index');
+    }
+
+    private function setSession($uid, $user_data, $idLokasiTugas = null, $namaLokasiTugas = 'Area Penugasan')
+    {
+        session()->put([
+            'login_status' => true,
+            'username'     => $user_data['username'],
+            'role'         => $user_data['role_user'],
+            'user_id'      => $uid,
+            'isLoggedIn'   => true,
+            'id_lokasi_aktif' => $idLokasiTugas,
+            'nama_lokasi_aktif' => $namaLokasiTugas,
+        ]);
+    }
+
+    private function redirectBasedOnRole($role)
+    {
+        if ($role === 'admin') {
+            return redirect('/dashboard-admin');
+        } elseif ($role === 'operator') {
+            return redirect('/dashboard-operator-penugasan');
+        }
+        return redirect('/login');
     }
 
     private function hitungJarak($lat1, $lon1, $lat2, $lon2)
@@ -55,14 +87,14 @@ class LoginController extends Controller
             ->getValue();
 
         if (!$users) {
-            return redirect()->back()->with('error', 'Username tidak ditemukan!');
+            return redirect()->back()->with('error', 'Username atau password salah!');
         }
 
         $uid = array_key_first($users);
         $user_data = $users[$uid];
 
         if (!Hash::check($password, $user_data['password'])) {
-            return redirect()->back()->with('error', 'Password salah!');
+            return redirect()->back()->with('error', 'Username atau password salah!');
         }
 
         $idLokasiTugas = null;
@@ -135,15 +167,7 @@ class LoginController extends Controller
             }
         }
 
-        session()->put([
-            'login_status' => true,
-            'username'     => $user_data['username'],
-            'role'         => $user_data['role_user'],
-            'user_id'      => $uid,
-            'isLoggedIn'   => true,
-            'id_lokasi_aktif' => $idLokasiTugas,
-            'nama_lokasi_aktif' => $dataTikor['nama_lokasi'] ?? 'Area Penugasan',
-        ]);
+        $this->setSession($uid, $user_data, $idLokasiTugas, $dataTikor['nama_lokasi'] ?? 'Area Penugasan');
 
         // SET ONLINE STATUS
         $this->database->getReference("users/{$uid}")->update([
@@ -160,6 +184,12 @@ class LoginController extends Controller
         );
 
         session()->save();
+
+        // Handle Remember Me (Hanya untuk Admin)
+        if ($request->has('remember') && $user_data['role_user'] === 'admin') {
+            // Simpan cookie selama 30 hari (43200 menit)
+            Cookie::queue('remember_user_id', $uid, 43200);
+        }
 
         if ($user_data['role_user'] == 'admin') {
             return redirect()->to('dashboard-admin')->with('success', 'Selamat datang Admin!');
@@ -188,6 +218,7 @@ class LoginController extends Controller
         }
 
         Session::flush();
+        Cookie::queue(Cookie::forget('remember_user_id'));
 
         if ($role === 'admin') {
             return redirect('/');

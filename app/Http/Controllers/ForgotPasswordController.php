@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Password;
 use Kreait\Firebase\Contract\Database;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -92,7 +93,7 @@ class ForgotPasswordController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'password' => 'required|string|min:6|confirmed'
+            'password' => ['required', 'string', 'confirmed', Password::min(6)->numbers()->symbols(), 'regex:/[A-Z]/']
         ]);
 
         $email = session('reset_email');

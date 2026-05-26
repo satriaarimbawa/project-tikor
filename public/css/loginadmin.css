@@ -190,3 +190,13 @@ input[type="password"] {
     justify-content: center;
     gap: 5px;
 }
+
+.input-container.error {
+    border-color: #ff4d4d !important;
+    background-color: #fff5f5 !important;
+}
+
+.input-container.error i, 
+.input-container.error input::placeholder {
+    color: #ff4d4d !important;
+}

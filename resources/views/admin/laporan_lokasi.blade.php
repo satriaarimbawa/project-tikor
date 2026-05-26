@@ -178,7 +178,7 @@
             const endDate = form.querySelector('input[name="end_date"]').value;
 
             if (!lokasiId) {
-                alert("Silakan pilih lokasi terlebih dahulu sebelum mengunduh PDF.");
+                showAlert("Lokasi Belum Dipilih", "Silakan pilih lokasi terlebih dahulu sebelum mengunduh PDF.", "warning");
                 return;
             }
 
@@ -228,5 +228,6 @@
         });
     </script>
     <script src="{{ asset('js/navbar.js') }}"></script>
+    @include('template.shared_scripts')
 </body>
 </html>

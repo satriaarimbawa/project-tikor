@@ -45,8 +45,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Jika pin diklik, otomatis pilih di dropdown
             marker.on('click', function() {
-                const selectLokasi = document.getElementsByName('id_lokasi')[0];
-                selectLokasi.value = id;
+                const selectLokasi = document.getElementById('select-lokasi');
+                if (window.tsLokasi) {
+                    window.tsLokasi.addItem(id);
+                } else if (selectLokasi) {
+                    selectLokasi.value = id;
+                }
                 document.getElementById('mapSearch').value = namaLokasi;
                 map.setView(posisi, 16);
             });
@@ -54,29 +58,169 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Event saat dropdown lokasi berubah
-    document.getElementsByName('id_lokasi')[0].addEventListener('change', function() {
-        const id = this.value;
-        if (lokasiTerdaftar[id]) {
-            const d = lokasiTerdaftar[id];
-            const lat = d.latitude || (d.koordinat ? parseFloat(d.koordinat.split(',')[0]) : 0);
-            const lng = d.longitude || (d.koordinat ? parseFloat(d.koordinat.split(',')[1]) : 0);
-            const namaLokasi = d.nama_lokasi || d.alamat || 'Lokasi';
-            
-            map.setView([lat, lng], 16);
-            document.getElementById('mapSearch').value = namaLokasi;
-        }
-    });
-
-    const fileInput = document.getElementById('fileSpt');
-    if(fileInput) {
-        fileInput.addEventListener('change', function() {
-            const fileName = this.files[0] ? this.files[0].name : "Pilih file...";
-            const textSpan = this.parentElement.querySelector('span');
-            if (textSpan) {
-                textSpan.innerText = fileName;
-                textSpan.classList.add('text-navy-900');
+    const selectLokasiEl = document.getElementById('select-lokasi');
+    if (selectLokasiEl) {
+        selectLokasiEl.addEventListener('change', function() {
+            const id = this.value;
+            if (lokasiTerdaftar[id]) {
+                const d = lokasiTerdaftar[id];
+                const lat = d.latitude || (d.koordinat ? parseFloat(d.koordinat.split(',')[0]) : 0);
+                const lng = d.longitude || (d.koordinat ? parseFloat(d.koordinat.split(',')[1]) : 0);
+                const namaLokasi = d.nama_lokasi || d.alamat || 'Lokasi';
+                
+                map.setView([lat, lng], 16);
+                document.getElementById('mapSearch').value = namaLokasi;
             }
         });
+    }
+
+    const fileInput = document.getElementById('fileSpt');
+    const uploadBox = document.getElementById('uploadBox');
+    const fileError = document.getElementById('fileError');
+    const fileHint = document.getElementById('fileHint');
+    const uploadIcon = document.getElementById('uploadIcon');
+    const removeFileBtn = document.getElementById('removeFileBtn');
+
+    if(fileInput && uploadBox) {
+        console.log("SPT Upload System Initialized");
+        
+        // Klik pada box memicu input file
+        uploadBox.addEventListener('click', (e) => {
+            // Jangan buka file explorer jika yang diklik adalah tombol hapus
+            if (removeFileBtn && removeFileBtn.contains(e.target)) {
+                return;
+            }
+            console.log("Upload box clicked");
+            fileInput.click();
+        });
+
+        // Tombol Hapus File
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Cegah uploadBox terpicu
+                fileInput.value = ""; // Reset input
+                resetUploadBox();
+            });
+        }
+
+        function resetUploadBox() {
+            uploadBox.className = "border-2 border-dashed border-gray-300 rounded-xl p-10 flex flex-col justify-center items-center bg-gray-50 transition-all cursor-pointer min-h-[150px] gap-3 relative";
+            const textSpan = uploadBox.querySelector('span');
+            if (textSpan) {
+                textSpan.innerText = "Tarik dan lepas file SPT di sini atau klik untuk memilih";
+                textSpan.className = "text-gray-400 text-sm font-medium text-center";
+            }
+            if (uploadIcon) {
+                uploadIcon.className = "text-gray-400 text-5xl";
+                uploadIcon.setAttribute('icon', 'lucide:upload-cloud');
+            }
+            if (fileError) fileError.classList.add('hidden');
+            if (fileHint) fileHint.classList.remove('hidden');
+            if (removeFileBtn) removeFileBtn.classList.add('hidden');
+        }
+
+        // Mencegah behavior default browser secara global (penting agar file tidak terbuka di tab baru)
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            document.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+            
+            uploadBox.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        // Efek visual saat drag masuk area box
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, () => {
+                uploadBox.classList.remove('border-gray-300', 'bg-gray-50');
+                uploadBox.classList.add('border-blue-500', 'bg-blue-100', 'ring-4', 'ring-blue-50');
+            }, false);
+        });
+
+        // Efek visual saat drag keluar area box
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, () => {
+                uploadBox.classList.remove('border-blue-500', 'bg-blue-100', 'ring-4', 'ring-blue-50');
+                if (!fileInput.files.length) {
+                    uploadBox.classList.add('border-gray-300', 'bg-gray-50');
+                }
+            }, false);
+        });
+
+        // Menangani file yang dilepaskan (drop)
+        uploadBox.addEventListener('drop', (e) => {
+            console.log("File dropped into box");
+            const droppedFiles = e.dataTransfer.files;
+            if (droppedFiles.length > 0) {
+                console.log("Dropped file detected:", droppedFiles[0].name);
+                // Masukkan file ke input asli menggunakan DataTransfer API agar tersinkronisasi sempurna
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(droppedFiles[0]);
+                fileInput.files = dataTransfer.files;
+                
+                // Trigger event change manual agar handleFile berjalan
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        }, false);
+
+        // Menangani pemilihan file (baik lewat klik maupun drop)
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                handleFile(this.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            const textSpan = uploadBox.querySelector('span');
+            if (!textSpan) return;
+            
+            const fileName = file.name;
+            const fileSize = file.size / 1024 / 1024; // Convert ke MB
+            const fileExt = fileName.split('.').pop().toLowerCase();
+            const allowedExts = ['pdf', 'jpg', 'jpeg', 'png'];
+            
+            let errorMsg = "";
+            if (!allowedExts.includes(fileExt)) {
+                errorMsg = "Format file tidak didukung! Gunakan PDF, JPG, atau PNG.";
+            } else if (fileSize > 2) {
+                errorMsg = "Ukuran file terlalu besar! Maksimal 2MB.";
+            }
+
+            if (errorMsg) {
+                // Tampilan Gagal (Merah)
+                uploadBox.className = "border-2 border-dashed border-red-500 rounded-xl p-10 flex flex-col justify-center items-center bg-red-50 transition-all cursor-pointer min-h-[150px] gap-3 relative";
+                textSpan.innerText = fileName;
+                textSpan.className = "text-red-600 text-sm font-bold text-center";
+                if (uploadIcon) {
+                    uploadIcon.className = "text-red-500 text-5xl";
+                    uploadIcon.setAttribute('icon', 'lucide:alert-triangle');
+                }
+                
+                if (fileError) {
+                    fileError.innerText = "❌ " + errorMsg;
+                    fileError.classList.remove('hidden');
+                }
+                if (fileHint) fileHint.classList.add('hidden');
+                if (removeFileBtn) removeFileBtn.classList.remove('hidden');
+                fileInput.value = ""; // Reset input jika salah
+            } else {
+                // Tampilan Berhasil (Hijau)
+                uploadBox.className = "border-2 border-dashed border-green-500 rounded-xl p-10 flex flex-col justify-center items-center bg-green-50 transition-all cursor-pointer min-h-[150px] gap-3 relative";
+                textSpan.innerText = "File Siap di-Upload: " + fileName;
+                textSpan.className = "text-green-700 text-sm font-bold text-center";
+                if (uploadIcon) {
+                    uploadIcon.className = "text-green-600 text-5xl";
+                    uploadIcon.setAttribute('icon', 'lucide:file-check');
+                }
+
+                if (fileError) fileError.classList.add('hidden');
+                if (fileHint) fileHint.classList.remove('hidden');
+                if (removeFileBtn) removeFileBtn.classList.remove('hidden');
+            }
+        }
     }
 
     // --- FITUR GPS (LOCATE ME) ---

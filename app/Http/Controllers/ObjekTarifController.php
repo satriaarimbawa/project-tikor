@@ -22,7 +22,10 @@ class ObjekTarifController extends Controller
         
         $data = [];
         foreach ($firebaseData as $id => $item) {
-            $iconUrl = isset($item['icon_path']) ? $this->storageService->getPublicUrl($item['icon_path']) : null;
+            $iconUrl = (isset($item['icon_path']) && $item['icon_path']) 
+                ? $this->storageService->getPublicUrl($item['icon_path']) 
+                : asset('assets/logo_dishub.png');
+                
             $data[] = [
                 'id' => $id,
                 'nama' => $item['nama'] ?? '-',
@@ -78,6 +81,17 @@ class ObjekTarifController extends Controller
             'created_at' => now()->toDateTimeString(),
         ];
 
+        // Cek duplikasi nama
+        $existingData = ObjekTarif::all() ?? [];
+        $newNama = strtolower($request->nama);
+        foreach ($existingData as $item) {
+            if (strtolower($item['nama'] ?? '') === $newNama) {
+                return redirect()->back()
+                    ->with('duplicate', 'Objek dengan nama "' . $request->nama . '" sudah ada dalam database.')
+                    ->withInput();
+            }
+        }
+
         ObjekTarif::create($data);
 
         return redirect()->back()->with('success', 'Data berhasil disimpan ke Firebase!');
@@ -112,6 +126,18 @@ class ObjekTarifController extends Controller
             'icon_path' => $iconPath,
             'updated_at' => now()->toDateTimeString(),
         ];
+
+        // Cek duplikasi nama (kecuali data yang sedang diedit)
+        $existingData = ObjekTarif::all() ?? [];
+        $newNama = strtolower($request->nama);
+        foreach ($existingData as $itemId => $item) {
+            if ($itemId === $id) continue;
+            if (strtolower($item['nama'] ?? '') === $newNama) {
+                return redirect()->back()
+                    ->with('duplicate', 'Nama objek "' . $request->nama . '" sudah digunakan oleh data lain.')
+                    ->withInput();
+            }
+        }
 
         ObjekTarif::update($id, $data);
 

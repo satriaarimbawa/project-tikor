@@ -164,6 +164,7 @@
         window.location.href = "{{ route('operator.download.pdf') }}";
     }
     </script>
+    @include('template.shared_scripts')
 </body>
 
 </html>

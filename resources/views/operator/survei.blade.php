@@ -204,21 +204,60 @@
             });
         });
 
+        // Real-time Survey Count Sync
+        const idLokasi = "{{ session('id_lokasi_aktif') }}";
+        const today = "{{ \Carbon\Carbon::now('Asia/Makassar')->toDateString() }}";
+        const surveyRef = db.ref(`survei_harian/${idLokasi}/${today}`);
+
+        surveyRef.on('value', snapshot => {
+            const dataHariIni = snapshot.val();
+            if (!dataHariIni) return;
+
+            // Ambil semua key objek survei yang ada di halaman
+            const counts = {};
+            let totalSemua = 0;
+
+            // Inisialisasi awal agar 0 jika tidak ada data
+            document.querySelectorAll('[id^="count-"]').forEach(el => {
+                const key = el.id.replace('count-', '');
+                counts[key] = 0;
+            });
+
+            // Agregasi semua data dari semua operator/jam di lokasi ini
+            Object.values(dataHariIni).forEach(dataJam => {
+                Object.values(dataJam).forEach(dataTugas => {
+                    Object.keys(counts).forEach(key => {
+                        const val = parseInt(dataTugas[key]) || 0;
+                        counts[key] += val;
+                        totalSemua += val;
+                    });
+                });
+            });
+
+            // Update ke UI secara dinamis
+            Object.keys(counts).forEach(key => {
+                const el = document.getElementById(`count-${key}`);
+                if (el) el.innerText = counts[key];
+            });
+
+            const totalEl = document.getElementById('total-survei');
+            if (totalEl) totalEl.innerText = totalSemua;
+        });
+
         function klaimTugas(uidRekan) {
-            if (confirm("Ambil alih tugas rekan selama ia istirahat?")) {
-                fetch("{{ route('operator.claim-tugas') }}", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
-                    body: JSON.stringify({ uid_rekan: uidRekan })
-                }).then(r => r.json()).then(data => { if (!data.success) alert(data.message); });
-            }
+            confirmAction("Ambil Alih Tugas", "Ambil alih tugas rekan selama ia istirahat?", 'question').then((result) => {
+                if (result.isConfirmed) {
+                    fetch("{{ route('operator.claim-tugas') }}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
+                        body: JSON.stringify({ uid_rekan: uidRekan })
+                    }).then(r => r.json()).then(data => { if (!data.success) showAlert("Gagal", data.message, "error"); });
+                }
+            });
         }
 
         function hitungKendaraan(jenis) {
-            let elKendaran = document.getElementById('count-' + jenis);
-            let elTotal = document.getElementById('total-survei');
-            if (elKendaran) elKendaran.innerText = parseInt(elKendaran.innerText) + 1;
-            if (elTotal) elTotal.innerText = parseInt(elTotal.innerText) + 1;
+            // Hapus update angka lokal, biarkan Firebase Listener yang melakukan update
             fetch("{{ route('simpan.hitung.kendaraan') }}", {
                 method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
                 body: JSON.stringify({ jenis_kendaraan: jenis, id_penugasan: "{{ $idPenugasan }}" })
@@ -226,19 +265,35 @@
         }
 
         function akhirSurvei() {
-            if (confirm('Yakin ingin mengakhiri survei?')) {
-                const btn = document.getElementById('btn-lapor-main');
-                if(btn) btn.disabled = true;
-                fetch("{{ route('lapor.survei') }}", {
-                    method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
-                    body: JSON.stringify({ id_penugasan: "{{ $idPenugasan }}" })
-                }).then(r => r.json()).then(d => { if (d.success) window.location.href = "/dashboard-operator-penugasan"; });
-            }
+            confirmAction("Akhiri Survei", "Yakin ingin mengakhiri survei?", 'warning').then((result) => {
+                if (result.isConfirmed) {
+                    const btn = document.getElementById('btn-lapor-main');
+                    if(btn) btn.disabled = true;
+                    fetch("{{ route('lapor.survei') }}", {
+                        method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
+                        body: JSON.stringify({ id_penugasan: "{{ $idPenugasan }}" })
+                    }).then(r => r.json()).then(d => { 
+                        if (d.success) {
+                            Swal.fire({
+                                title: 'Laporan Berhasil!',
+                                text: 'Terima kasih atas kerja keras Anda hari ini. Hati-hati di jalan!',
+                                icon: 'success',
+                                confirmButtonColor: '#253D6B',
+                                confirmButtonText: 'Kembali ke Penugasan',
+                                allowOutsideClick: false
+                            }).then(() => {
+                                window.location.href = "/dashboard-operator-penugasan";
+                            });
+                        }
+                    });
+                }
+            });
         }
 
         document.addEventListener("DOMContentLoaded", () => {
             startGeofencing("{{ route('check.location.radius') }}", "{{ csrf_token() }}", "{{ url('/') }}");
         });
     </script>
+    @include('template.shared_scripts')
 </body>
 </html>

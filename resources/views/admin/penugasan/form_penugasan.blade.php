@@ -16,6 +16,10 @@
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+
+    <!-- Tom Select CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    
     <style>
     .flatpickr-calendar {
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
@@ -26,6 +30,17 @@
     .flatpickr-day.selected {
         background: #253D6B !important;
         border-color: #253D6B !important;
+    }
+
+    /* Custom Tom Select Styling to match theme */
+    .ts-control {
+        border-radius: 0.375rem !important;
+        padding: 0.5rem !important;
+        border-color: #d1d5db !important;
+    }
+    .ts-control:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important;
     }
     </style>
 </head>
@@ -78,7 +93,7 @@
                     <div class="space-y-5">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Username</label>
-                            <select name="id_user" required
+                            <select name="id_user" id="select-user" required
                                 class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
                                 <option value="">-- Pilih Operator --</option>
                                 @if(!empty($users) && is_array($users))
@@ -95,7 +110,7 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lokasi</label>
-                            <select name="id_lokasi" required
+                            <select name="id_lokasi" id="select-lokasi" required
                                 class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
                                 <option value="">-- Pilih Lokasi --</option>
                                 @if(!empty($lokasitikor) && is_array($lokasitikor))
@@ -109,18 +124,24 @@
                             </select>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4 items-end">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
-                                <input type="text" name="waktu_mulai" id="waktu_mulai" required
-                                    class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white cursor-pointer"
-                                    placeholder="Pilih Tanggal & Waktu" value="{{ old('waktu_mulai', $penugasan['waktu_mulai'] ?? '') }}">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal & Waktu Mulai</label>
+                                <div class="relative group">
+                                    <input type="text" name="waktu_mulai" id="waktu_mulai" required
+                                        class="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2.5 text-sm bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                        placeholder="Pilih Mulai..." value="{{ old('waktu_mulai', $penugasan['waktu_mulai'] ?? '') }}">
+                                    <iconify-icon icon="lucide:calendar-clock" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors text-lg"></iconify-icon>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-gray-500 text-sm">S/D</span>
-                                <input type="text" name="waktu_selesai" id="waktu_selesai" required
-                                    class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white cursor-pointer"
-                                    placeholder="Pilih Tanggal & Waktu" value="{{ old('waktu_selesai', $penugasan['waktu_selesai'] ?? '') }}">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal & Waktu Selesai</label>
+                                <div class="relative group">
+                                    <input type="text" name="waktu_selesai" id="waktu_selesai" required
+                                        class="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2.5 text-sm bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                        placeholder="Pilih Selesai..." value="{{ old('waktu_selesai', $penugasan['waktu_selesai'] ?? '') }}">
+                                    <iconify-icon icon="lucide:timer" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors text-lg"></iconify-icon>
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -165,17 +186,19 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Upload Surat Tugas / SPT
                                 (PDF/JPG/PNG)</label>
-                            <div
-                                class="border-2 border-dashed border-gray-300 rounded-md p-4 flex justify-between items-center bg-gray-50">
-                                <span
-                                    class="text-gray-400 text-sm italic">{{ isset($penugasan['file_spt']) ? $penugasan['file_spt'] : 'Pilih file...' }}</span>
-                                <input type="file" name="surat_spt" class="hidden" id="fileSpt">
-                                <label for="fileSpt" class="cursor-pointer">
-                                    <iconify-icon icon="lucide:upload" class="text-gray-400 text-xl"></iconify-icon>
-                                </label>
+                            <input type="file" name="surat_spt" class="hidden" id="fileSpt" accept=".pdf,.jpg,.jpeg,.png">
+                            <div id="uploadBox"
+                                class="border-2 border-dashed border-gray-300 rounded-xl p-10 flex flex-col justify-center items-center bg-gray-50 transition-all cursor-pointer min-h-[150px] gap-3 relative">
+                                <button type="button" id="removeFileBtn" class="absolute top-4 right-4 w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200 transition-colors hidden z-20" title="Hapus File">
+                                    <iconify-icon icon="lucide:x" class="text-xl"></iconify-icon>
+                                </button>
+                                <iconify-icon icon="lucide:upload-cloud" id="uploadIcon" class="text-gray-400 text-5xl"></iconify-icon>
+                                <span class="text-gray-400 text-sm font-medium text-center">
+                                    {{ isset($penugasan['file_spt']) ? $penugasan['file_spt'] : 'Tarik dan lepas file SPT di sini atau klik untuk memilih' }}
+                                </span>
                             </div>
-                            <small style="color: gray;">Maksimal ukuran file: 2MB.
-                                {{ isset($penugasan) ? '(Biarkan kosong jika tidak ingin mengganti SPT)' : '' }}</small>
+                            <p id="fileError" class="text-red-500 text-xs mt-2 hidden font-bold italic text-center"></p>
+                            <small id="fileHint" class="block text-center mt-2 text-gray-400">Maksimal ukuran file: 2MB (PDF, JPG, PNG)</small>
                         </div>
 
                         <div class="flex justify-end mt-8">
@@ -289,31 +312,55 @@
     });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Tom Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        flatpickr("#waktu_mulai", {
+        // Inisialisasi Tom Select
+        new TomSelect("#select-user", {
+            create: false,
+            sortField: {
+                field: "text",
+                direction: "asc"
+            },
+            placeholder: "Cari Operator..."
+        });
+
+        const selectLokasi = new TomSelect("#select-lokasi", {
+            create: false,
+            sortField: {
+                field: "text",
+                direction: "asc"
+            },
+            placeholder: "Cari Lokasi..."
+        });
+
+        // Simpan instance ke window agar bisa diakses script lain jika perlu
+        window.tsLokasi = selectLokasi;
+
+        // Inisialisasi Flatpickr
+        const startPicker = flatpickr("#waktu_mulai", {
             enableTime: true,
             dateFormat: "Y-m-d H:i",
             time_24hr: true,
             minDate: "today",
-            locale: {
-                firstDayOfWeek: 1
+            animate: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                endPicker.set('minDate', dateStr);
             }
         });
 
-        flatpickr("#waktu_selesai", {
+        const endPicker = flatpickr("#waktu_selesai", {
             enableTime: true,
             dateFormat: "Y-m-d H:i",
             time_24hr: true,
             minDate: "today",
-            locale: {
-                firstDayOfWeek: 1
-            }
+            animate: true
         });
     });
     </script>
     <script src="{{ asset('js/navbar.js') }}"></script>
-    <script src="{{ asset('js/PenugasanUser.js') }}"></script>
+    <script src="{{ asset('js/PenugasanUser.js') }}?v={{ time() }}"></script>
 
 </body>
 

@@ -177,7 +177,27 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        function confirmDelete(event, form, message = "Apakah Anda yakin ingin menghapus data ini?") {
+            event.preventDefault();
+            Swal.fire({
+                title: 'Konfirmasi Hapus',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#253D6B',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                borderRadius: '20px'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        }
+
         function showDevModal() {
             const modal = document.getElementById('devModal');
             const content = document.getElementById('devModalContent');

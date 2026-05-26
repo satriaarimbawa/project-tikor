@@ -102,6 +102,7 @@ Route::middleware(['admin'])->group(function () {
 
     // Log Aktivitas
     Route::get('/log-aktivitas', [ActivityLogController::class, 'index'])->name('admin.activity-log');
+    Route::get('/log-aktivitas/download', [ActivityLogController::class, 'downloadPdf'])->name('admin.activity-log.download');
 });
 
 

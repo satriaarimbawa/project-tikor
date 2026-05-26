@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ActivityLogController extends Controller
 {
@@ -18,26 +19,29 @@ class ActivityLogController extends Controller
     public function index(Request $request)
     {
         $searchTerm = strtolower($request->input('search', ''));
-        $searchDate = $request->input('date'); // Format YYYY-MM-DD
+        $searchDate = $request->input('date'); 
 
-        // Ambil data log aktivitas dari Firebase
+        // Ambil data log dan data user
         $logsRaw = $this->database->getReference('activity_logs')->getValue() ?? [];
-        
-        // Urutkan dari yang terbaru
-        $logsRaw = array_reverse($logsRaw, true);
+        $usersRaw = $this->database->getReference('users')->getValue() ?? [];
         
         $filteredLogs = [];
         foreach ($logsRaw as $id => $log) {
-            // 1. Filter Tipe
+            // 1. Filter Tipe Log
             if (!in_array($log['type'] ?? '', ['login', 'logout', 'violation'])) continue;
 
-            // 2. Filter Tanggal (jika ada)
+            // 2. Filter Role (Hanya Operator)
+            $userId = $log['user_id'] ?? null;
+            $userRole = $usersRaw[$userId]['role_user'] ?? '';
+            if ($userRole !== 'operator') continue;
+
+            // 3. Filter Tanggal
             if ($searchDate) {
                 $logDate = date('Y-m-d', strtotime($log['timestamp']));
                 if ($logDate !== $searchDate) continue;
             }
 
-            // 3. Filter Pencarian Username/Message (jika ada)
+            // 4. Filter Pencarian
             if ($searchTerm !== '') {
                 $username = strtolower($log['username'] ?? '');
                 $message = strtolower($log['message'] ?? '');
@@ -76,5 +80,48 @@ class ActivityLogController extends Controller
             'currentPage' => $currentPage,
             'totalPages' => $totalPages
         ]);
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $searchDate = $request->input('date', Carbon::now()->format('Y-m-d'));
+        
+        // Ambil data log dan data user
+        $logsRaw = $this->database->getReference('activity_logs')->getValue() ?? [];
+        $usersRaw = $this->database->getReference('users')->getValue() ?? [];
+        
+        $filteredLogs = [];
+        foreach ($logsRaw as $log) {
+            // Filter Tanggal
+            $logDate = date('Y-m-d', strtotime($log['timestamp'] ?? ''));
+            if ($logDate !== $searchDate) continue;
+
+            // Filter Tipe Log
+            if (!in_array($log['type'] ?? '', ['login', 'logout', 'violation'])) continue;
+
+            // Filter Role (Hanya Operator)
+            $userId = $log['user_id'] ?? null;
+            $userRole = $usersRaw[$userId]['role_user'] ?? '';
+            if ($userRole !== 'operator') continue;
+
+            $filteredLogs[] = [
+                'type' => $log['type'],
+                'username' => $log['username'] ?? 'Unknown',
+                'message' => $log['message'] ?? '-',
+                'timestamp' => $log['timestamp'] ?? '-',
+            ];
+        }
+
+        usort($filteredLogs, function($a, $b) {
+            return strtotime($b['timestamp']) <=> strtotime($a['timestamp']);
+        });
+
+        $pdf = Pdf::loadView('admin.pdf.activity_log', [
+            'logs' => $filteredLogs,
+            'date' => Carbon::parse($searchDate)->translatedFormat('d F Y'),
+            'title' => 'Log Aktivitas Operator'
+        ]);
+
+        return $pdf->download('Log_Aktivitas_' . $searchDate . '.pdf');
     }
 }

@@ -43,8 +43,22 @@ function startGeofencing(checkUrl, csrfToken, loginUrl, interval = 60000) {
                 .then(response => response.json())
                 .then(result => {
                     if (result.status === 'logout') {
-                        alert(result.message || "Anda berada di luar radius penugasan. Otomatis Logout.");
-                        window.location.href = loginUrl;
+                        // Gunakan SweetAlert2 jika tersedia, fallback ke alert biasa
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: result.message.includes('Terima kasih') ? 'Selesai Bekerja' : 'Otomatis Logout',
+                                text: result.message || "Anda berada di luar radius penugasan. Otomatis Logout.",
+                                icon: result.message.includes('Terima kasih') ? 'success' : 'warning',
+                                confirmButtonColor: '#253D6B',
+                                confirmButtonText: 'Oke',
+                                allowOutsideClick: false
+                            }).then(() => {
+                                window.location.href = loginUrl;
+                            });
+                        } else {
+                            alert(result.message || "Anda berada di luar radius penugasan. Otomatis Logout.");
+                            window.location.href = loginUrl;
+                        }
                     } else {
                         console.log("Location Check:", result.distance || "In Radius");
                     }

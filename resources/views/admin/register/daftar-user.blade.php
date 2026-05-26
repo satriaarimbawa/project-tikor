@@ -96,7 +96,7 @@
                                     <iconify-icon icon="lucide:edit-3"></iconify-icon>
                                 </a>
                                 <form action="{{ route('user.destroy', $uid) }}" method="POST"
-                                    onsubmit="return confirm('Apakah Anda yakin ingin menghapus user ini?')">
+                                    onsubmit="confirmDelete(event, this, 'Apakah Anda yakin ingin menghapus user ini?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
@@ -133,6 +133,60 @@
     </main>
 
     <script src="{{ asset("js/navbar.js") }}"></script>
+
+    <!-- Modal Success -->
+    <div id="successModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-md">
+        <div class="bg-white w-full max-w-sm rounded-[35px] shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0 duration-300" id="successModalContent">
+            <div class="relative p-8 text-center">
+                <!-- Decorative Background -->
+                <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-green-400 to-emerald-500 opacity-10 rounded-b-[50px]"></div>
+                
+                <!-- Icon Area -->
+                <div class="relative mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                    <iconify-icon icon="lucide:check-circle" class="text-5xl text-green-600 animate-bounce"></iconify-icon>
+                </div>
+
+                <!-- Text Area -->
+                <h3 class="text-2xl font-black text-[#253D6B] mb-2 tracking-tight">Berhasil!</h3>
+                <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                    {{ session('success') }}
+                </p>
+
+                <!-- Button Area -->
+                <button onclick="hideSuccessModal()" class="w-full bg-[#253D6B] hover:bg-[#1a2e52] text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                    Oke, Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                showSuccessModal();
+            @endif
+        });
+
+        function showSuccessModal() {
+            const modal = document.getElementById('successModal');
+            const content = document.getElementById('successModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function hideSuccessModal() {
+            const content = document.getElementById('successModalContent');
+            const modal = document.getElementById('successModal');
+            content.classList.add('scale-95', 'opacity-0');
+            content.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+    </script>
 </body>
 
 </html>

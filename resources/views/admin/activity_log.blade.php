@@ -44,11 +44,17 @@
                     </select>
                 </div>
 
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                     <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-[#253D6B] font-bold px-6 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm">
                         <iconify-icon icon="lucide:filter"></iconify-icon>
                         Filter
                     </button>
+                    
+                    <a href="{{ route('admin.activity-log.download', ['date' => $searchDate ?: date('Y-m-d')]) }}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm shadow-lg shadow-blue-500/20">
+                        <iconify-icon icon="lucide:file-down" class="text-lg"></iconify-icon>
+                        Unduh Log PDF
+                    </a>
+
                     @if($searchTerm || $searchDate)
                         <a href="{{ url()->current() }}" class="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm border border-white/10">
                             Reset

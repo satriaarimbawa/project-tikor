@@ -113,7 +113,7 @@
                                     <a href="{{ url('/dashboard-penugasan/edit/'.$penugasan['id']) }}" class="bg-yellow-400 p-1.5 rounded hover:bg-yellow-500 flex items-center justify-center transition-colors shadow-md">
                                         <iconify-icon icon="lucide:edit-3" class="text-white text-lg"></iconify-icon>
                                     </a>
-                                    <form action="{{ url('/delete-penugasan/'.$penugasan['id']) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus penugasan ini?')">
+                                    <form action="{{ url('/delete-penugasan/'.$penugasan['id']) }}" method="POST" onsubmit="confirmDelete(event, this, 'Yakin ingin menghapus penugasan ini?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="bg-red-500 p-1.5 rounded hover:bg-red-600 flex items-center justify-center transition-colors shadow-md">
@@ -181,7 +181,108 @@
     </div>
 
     <script src="{{ asset('js/navbar.js') }}"></script>
+
+    <!-- Modal Success -->
+    <div id="successModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-md">
+        <div class="bg-white w-full max-w-sm rounded-[35px] shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0 duration-300" id="successModalContent">
+            <div class="relative p-8 text-center">
+                <!-- Decorative Background -->
+                <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-green-400 to-emerald-500 opacity-10 rounded-b-[50px]"></div>
+                
+                <!-- Icon Area -->
+                <div class="relative mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                    <iconify-icon icon="lucide:check-circle" class="text-5xl text-green-600 animate-bounce"></iconify-icon>
+                </div>
+
+                <!-- Text Area -->
+                <h3 class="text-2xl font-black text-[#253D6B] mb-2 tracking-tight">Berhasil!</h3>
+                <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                    {{ session('success') }}
+                </p>
+
+                <!-- Button Area -->
+                <button onclick="hideSuccessModal()" class="w-full bg-[#253D6B] hover:bg-[#1a2e52] text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                    Oke, Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Error/Duplicate -->
+    <div id="errorModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-md">
+        <div class="bg-white w-full max-w-sm rounded-[35px] shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0 duration-300" id="errorModalContent">
+            <div class="relative p-8 text-center">
+                <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-red-400 to-orange-500 opacity-10 rounded-b-[50px]"></div>
+                <div class="relative mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                    <iconify-icon icon="lucide:alert-circle" class="text-5xl text-red-600 animate-pulse"></iconify-icon>
+                </div>
+                <h3 class="text-2xl font-black text-[#253D6B] mb-2 tracking-tight">Peringatan!</h3>
+                <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                    @if(session('error'))
+                        {{ session('error') }}
+                    @elseif($errors->any())
+                        @foreach($errors->all() as $error)
+                            {{ $error }}<br>
+                        @endforeach
+                    @endif
+                </p>
+                <button onclick="hideErrorModal()" class="w-full bg-[#253D6B] hover:bg-[#1a2e52] text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                    Saya Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                showSuccessModal();
+            @endif
+            @if(session('error') || $errors->any())
+                showErrorModal();
+            @endif
+        });
+
+        function showSuccessModal() {
+            const modal = document.getElementById('successModal');
+            const content = document.getElementById('successModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function hideSuccessModal() {
+            const content = document.getElementById('successModalContent');
+            const modal = document.getElementById('successModal');
+            content.classList.add('scale-95', 'opacity-0');
+            content.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function showErrorModal() {
+            const modal = document.getElementById('errorModal');
+            const content = document.getElementById('errorModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function hideErrorModal() {
+            const content = document.getElementById('errorModalContent');
+            const modal = document.getElementById('errorModal');
+            content.classList.add('scale-95', 'opacity-0');
+            content.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
         function previewSPT(fileUrl, fileName) {
             const modal = document.getElementById('sptModal');
             const container = document.getElementById('previewContainer');

@@ -34,28 +34,6 @@
 
     <main class="flex-1 lg:ml-64 p-4 md:p-12 min-h-screen" style="background: linear-gradient(180deg, #E7EFF6 0%, #FFFFFF 100%);">
         
-        @if(session('success'))
-            <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-xl">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        @if ($errors->any())
-            <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-xl">
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
         <div class="flex justify-between items-start mb-10">
             <h1 class="text-[32px] font-bold text-[#1e293b] tracking-tight">Penetapan Lokasi</h1>
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-12 h-auto" alt="Logo Klungkung">
@@ -117,7 +95,7 @@
                                     </td>
                                     <td class="py-4 px-4 text-center border-y border-r border-gray-100 rounded-r-xl">
                                         <div class="flex justify-center gap-2">
-                                            <form action="{{ url('/delete-lokasi-tikor/'.$key) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus?')">
+                                            <form action="{{ url('/delete-lokasi-tikor/'.$key) }}" method="POST" onsubmit="confirmDelete(event, this, 'Yakin ingin menghapus lokasi ini?')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-gray-800 hover:text-red-600 transition">
@@ -187,7 +165,7 @@
                                 <div class="absolute left-5 top-1/2 -translate-y-1/2 flex items-center border-r border-gray-200 pr-3">
                                     <span class="text-sm font-bold text-[#1e293b]">Rp.</span>
                                 </div>
-                                <input type="text" name="target_harian" placeholder="250.000" class="w-full pl-16 pr-5 py-3.5 bg-[#FBFBFB] border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none text-sm font-bold text-[#1e293b] placeholder:text-gray-300 transition-all">
+                                <input type="text" name="target_harian" placeholder="250.000" class="w-full pl-16 pr-5 py-3.5 bg-[#FBFBFB] border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none text-sm font-bold text-[#1e293b] placeholder:text-gray-300 transition-all" onkeyup="this.value = formatRupiah(this.value)">
                             </div>
                         </div>
                         <div class="flex items-start gap-2 pt-2">
@@ -202,6 +180,125 @@
         </main>
 
 <script src="{{ asset('js/navbar.js') }}"></script>
+
+<!-- Modal Success -->
+<div id="successModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-md">
+    <div class="bg-white w-full max-w-sm rounded-[35px] shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0 duration-300" id="successModalContent">
+        <div class="relative p-8 text-center">
+            <!-- Decorative Background -->
+            <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-green-400 to-emerald-500 opacity-10 rounded-b-[50px]"></div>
+            
+            <!-- Icon Area -->
+            <div class="relative mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <iconify-icon icon="lucide:check-circle" class="text-5xl text-green-600 animate-bounce"></iconify-icon>
+            </div>
+
+            <!-- Text Area -->
+            <h3 class="text-2xl font-black text-[#253D6B] mb-2 tracking-tight">Berhasil!</h3>
+            <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                {{ session('success') }}
+            </p>
+
+            <!-- Button Area -->
+            <button onclick="hideSuccessModal()" class="w-full bg-[#253D6B] hover:bg-[#1a2e52] text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                Oke, Mengerti
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Error/Duplicate -->
+<div id="errorModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-md">
+    <div class="bg-white w-full max-w-sm rounded-[35px] shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0 duration-300" id="errorModalContent">
+        <div class="relative p-8 text-center">
+            <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-red-400 to-orange-500 opacity-10 rounded-b-[50px]"></div>
+            <div class="relative mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <iconify-icon icon="lucide:alert-circle" class="text-5xl text-red-600 animate-pulse"></iconify-icon>
+            </div>
+            <h3 class="text-2xl font-black text-[#253D6B] mb-2 tracking-tight">Peringatan!</h3>
+            <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                @if(session('error'))
+                    {{ session('error') }}
+                @elseif($errors->any())
+                    @foreach($errors->all() as $error)
+                        {{ $error }}<br>
+                    @endforeach
+                @endif
+            </p>
+            <button onclick="hideErrorModal()" class="w-full bg-[#253D6B] hover:bg-[#1a2e52] text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function formatRupiah(angka) {
+        if (!angka) return '';
+        var number_string = angka.toString().replace(/[^,\d]/g, '').toString(),
+            split = number_string.split(','),
+            sisa = split[0].length % 3,
+            rupiah = split[0].substr(0, sisa),
+            ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+        if (ribuan) {
+            separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+
+        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+        return rupiah;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        @if(session('success'))
+            showSuccessModal();
+        @endif
+        @if(session('error') || $errors->any())
+            showErrorModal();
+        @endif
+    });
+
+    function showSuccessModal() {
+        const modal = document.getElementById('successModal');
+        const content = document.getElementById('successModalContent');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function hideSuccessModal() {
+        const content = document.getElementById('successModalContent');
+        const modal = document.getElementById('successModal');
+        content.classList.add('scale-95', 'opacity-0');
+        content.classList.remove('scale-100', 'opacity-100');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    function showErrorModal() {
+        const modal = document.getElementById('errorModal');
+        const content = document.getElementById('errorModalContent');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function hideErrorModal() {
+        const content = document.getElementById('errorModalContent');
+        const modal = document.getElementById('errorModal');
+        content.classList.add('scale-95', 'opacity-0');
+        content.classList.remove('scale-100', 'opacity-100');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+</script>
 <script>
     // Mengirim data lokasi dari Firebase ke JavaScript
     window.daftarLokasi = @json($daftarLokasi);
