@@ -46,7 +46,7 @@
                     <p class="welcome-p">Silakan masuk ke akun petugas anda</p>
                 </div>
 
-                <form action="/cek_login" method="POST">
+                <form action="/cek_login" method="POST" id="loginFormAdmin">
                     @csrf
 
                     <div class="input-group">
@@ -74,7 +74,10 @@
                         <a href="{{ route('password.request') }}" class="lupa-sandi">Lupa Kata Sandi?</a>
                     </div>
 
-                    <button type="submit" class="btn-login">Login</button>
+                    <button type="submit" class="btn-login" id="submitBtn">
+                        <span id="btnText">Login</span>
+                        <i class="fas fa-spinner" id="loadingSpinner" style="display: none;"></i>
+                    </button>
                 </form>
             </div>
 
@@ -94,6 +97,16 @@
         const x = document.getElementById("passwordField");
         x.type = x.type === "password" ? "text" : "password";
     }
+
+    document.getElementById('loginFormAdmin').addEventListener('submit', function() {
+        const btn = document.getElementById('submitBtn');
+        const text = document.getElementById('btnText');
+        const spinner = document.getElementById('loadingSpinner');
+        
+        btn.classList.add('btn-loading');
+        text.innerText = 'Memproses...';
+        spinner.style.display = 'inline-block';
+    });
     </script>
     <script>
         if ('serviceWorker' in navigator) {
