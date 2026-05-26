@@ -255,7 +255,7 @@ class LoginController extends Controller
         Cookie::queue(Cookie::forget('remember_user_id'));
 
         if ($role === 'admin') {
-            return redirect('/');
+            return redirect('/login-admin');
         }
 
         return redirect('/login');
