@@ -211,7 +211,7 @@
                     borderRadius: 8 
                 }] 
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } }, x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 9 } } } }, plugins: { legend: { legend: { display: false } } } }
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } }, x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 9 } } } }, plugins: { legend: { display: false } } }
         });
 
         function setConnStatus(status, isOnline = false) {
