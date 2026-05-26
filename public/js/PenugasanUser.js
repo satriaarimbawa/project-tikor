@@ -82,7 +82,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const removeFileBtn = document.getElementById('removeFileBtn');
 
     if(fileInput && uploadBox) {
-        console.log("SPT Upload System Initialized");
         
         // Klik pada box memicu input file
         uploadBox.addEventListener('click', (e) => {
@@ -90,7 +89,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (removeFileBtn && removeFileBtn.contains(e.target)) {
                 return;
             }
-            console.log("Upload box clicked");
             fileInput.click();
         });
 
@@ -152,10 +150,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Menangani file yang dilepaskan (drop)
         uploadBox.addEventListener('drop', (e) => {
-            console.log("File dropped into box");
             const droppedFiles = e.dataTransfer.files;
             if (droppedFiles.length > 0) {
-                console.log("Dropped file detected:", droppedFiles[0].name);
                 // Masukkan file ke input asli menggunakan DataTransfer API agar tersinkronisasi sempurna
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(droppedFiles[0]);
@@ -293,7 +289,7 @@ function searchLocation() {
                     alert("Lokasi tidak ditemukan!");
                 }
             })
-            .catch(err => console.error("Error mencari lokasi:", err));
+            .catch(err => {});
     }
 }
 
@@ -304,7 +300,6 @@ function toggleObjek(objek, providedId = null) {
     
     const row = document.getElementById(targetId);
     if (!row) {
-        console.warn("Row not found for ID:", targetId);
         // Tetap proses penambahan ke input jika baris tidak ditemukan (agar data tetap tersimpan)
     }
 

@@ -1,7 +1,6 @@
 // public/js/geofencing.js
 
 function startGeofencing(checkUrl, csrfToken, loginUrl, interval = 60000) {
-    console.log("Geofencing started...");
 
     function checkTime() {
         const now = new Date();
@@ -21,7 +20,6 @@ function startGeofencing(checkUrl, csrfToken, loginUrl, interval = 60000) {
         if (checkTime()) return;
 
         if (!navigator.geolocation) {
-            console.error("Geolocation is not supported by this browser.");
             return;
         }
 
@@ -60,13 +58,13 @@ function startGeofencing(checkUrl, csrfToken, loginUrl, interval = 60000) {
                             window.location.href = loginUrl;
                         }
                     } else {
-                        console.log("Location Check:", result.distance || "In Radius");
+                        // Location In Radius
                     }
                 })
-                .catch(error => console.error("Geofencing Error:", error));
+                .catch(error => {});
             },
             (error) => {
-                console.warn("GPS Error:", error.message);
+                // GPS Error
             },
             { enableHighAccuracy: true }
         );

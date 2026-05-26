@@ -87,19 +87,14 @@
                         if (data.status_istirahat) {
                             btn.style.backgroundColor = '#0ea5e9'; // Blue
                             btn.innerHTML = '<i class="fas fa-play"></i><span>Selesai Istirahat</span>';
-                            alert("Anda sedang ISTIRAHAT. Aturan radius dinonaktifkan sementara.");
                         } else {
                             btn.style.backgroundColor = '#f59e0b'; // Amber
                             btn.innerHTML = '<i class="fas fa-coffee"></i><span>Mulai Istirahat</span>';
-                            alert("Istirahat selesai. Selamat bertugas kembali!");
                         }
-                    } else {
-                        alert("Gagal mengubah status. Silakan coba lagi.");
                     }
                 })
                 .catch(error => {
                     console.error('Fetch Error:', error);
-                    alert("Koneksi terganggu. Silakan cek sinyal internet Anda.");
                 })
                 .finally(() => {
                     btn.disabled = false;

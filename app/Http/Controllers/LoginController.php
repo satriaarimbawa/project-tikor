@@ -33,6 +33,21 @@ class LoginController extends Controller
         if ($rememberId) {
             $user = $this->database->getReference('users/' . $rememberId)->getValue();
             if ($user) {
+                // --- CEK SINGLE DEVICE UNTUK AUTO-LOGIN ---
+                $isOnline = $user['is_online'] ?? false;
+                $lastSeen = $user['last_seen'] ?? 0;
+                $isOnBreak = isset($user['status_istirahat']) && ($user['status_istirahat'] === true || $user['status_istirahat'] === 'true');
+                
+                $staleThreshold = $isOnBreak ? 18000 : 300;
+                $isStale = (Carbon::now()->timestamp - $lastSeen) > $staleThreshold;
+
+                if ($isOnline && !$isStale) {
+                    // Jika aktif di tempat lain, hapus cookie agar tidak loop error
+                    Cookie::queue(Cookie::forget('remember_user_id'));
+                    return view('login.index')->with('error', 'Sesi login otomatis dibatalkan karena akun Anda aktif di perangkat lain.');
+                }
+                // --- SELESAI CEK ---
+
                 $this->setSession($rememberId, $user);
                 return $this->redirectBasedOnRole($user['role_user']);
             }
@@ -92,6 +107,21 @@ class LoginController extends Controller
 
         $uid = array_key_first($users);
         $user_data = $users[$uid];
+
+        // --- CEK SINGLE DEVICE LOGIN ---
+        $isOnline = $user_data['is_online'] ?? false;
+        $lastSeen = $user_data['last_seen'] ?? 0;
+        $isOnBreak = isset($user_data['status_istirahat']) && ($user_data['status_istirahat'] === true || $user_data['status_istirahat'] === 'true');
+
+        // Batas waktu: Normal = 5 Menit (300 detik), Istirahat = 5 Jam (18000 detik)
+        $staleThreshold = $isOnBreak ? 18000 : 300;
+        $isStale = (Carbon::now()->timestamp - $lastSeen) > $staleThreshold;
+
+        // Jika akun online dan sesi belum kedaluwarsa, TOLAK login
+        if ($isOnline && !$isStale) {
+            return redirect()->back()->with('error', 'Akun ini sedang aktif di perangkat lain!');
+        }
+        // --- SELESAI CEK SINGLE DEVICE ---
 
         if (!Hash::check($password, $user_data['password'])) {
             return redirect()->back()->with('error', 'Username atau password salah!');
@@ -205,7 +235,12 @@ class LoginController extends Controller
         $role = session()->get('role');
 
         if ($uid) {
-            $this->database->getReference("users/{$uid}/is_online")->set(false);
+            // Reset status online dan istirahat
+            $this->database->getReference("users/{$uid}")->update([
+                'is_online' => false,
+                'status_istirahat' => false,
+                'last_seen' => Carbon::now()->timestamp
+            ]);
             
             // RECORD LOG LOGOUT
             $this->logService->log(
@@ -214,7 +249,6 @@ class LoginController extends Controller
                 $username,
                 "<strong>{$username}</strong> telah logout dari sistem."
             );
-
         }
 
         Session::flush();
@@ -312,7 +346,10 @@ class LoginController extends Controller
                 // --- 4. EKSEKUSI LOGOUT OTOMATIS ---
                 if ($adaPelanggaran) {
                     session()->flush();
-                    $this->database->getReference("users/{$uid}/is_online")->set(false);
+                    $this->database->getReference("users/{$uid}")->update([
+                        'is_online' => false,
+                        'last_seen' => Carbon::now()->timestamp
+                    ]);
                     return response()->json([
                         'status' => 'logout',
                         'message' => 'Anda keluar dari radius area penugasan! Kejadian ini telah dilaporkan ke Admin.'
@@ -321,7 +358,10 @@ class LoginController extends Controller
 
                 // --- 5. GRACEFUL LOGOUT (PULANG KERJA) ---
                 if ($sudahLaporHariIni) {
-                    $this->database->getReference("users/{$uid}/is_online")->set(false);
+                    $this->database->getReference("users/{$uid}")->update([
+                        'is_online' => false,
+                        'last_seen' => Carbon::now()->timestamp
+                    ]);
                     session()->flush();
                     return response()->json([
                         'status' => 'logout',
