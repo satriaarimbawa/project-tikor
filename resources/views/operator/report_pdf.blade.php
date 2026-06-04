@@ -4,49 +4,47 @@
     <meta charset="UTF-8">
     <title>Laporan Uji Petik Kendaraan</title>
     <style>
-        @page { margin: 1cm; }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10pt; margin: 0; padding: 0; line-height: 1.3; }
+        @page { margin: 1cm 1cm 0.5cm 1cm; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10pt; margin: 0; padding: 0; line-height: 1.2; }
         
         /* Header Styling */
-        .header { width: 100%; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
+        .header { width: 100%; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 5px; }
         .header table { width: 100%; border: none; border-collapse: collapse; }
         .header td { vertical-align: middle; border: none; }
         .header .logo { width: 80px; }
         .header .title { text-align: center; }
         .header .balinese { font-size: 14pt; margin-bottom: -5px; }
-        .header h1 { font-size: 16pt; margin: 0; text-transform: uppercase; font-weight: bold; }
-        .header h2 { font-size: 14pt; margin: 0; text-transform: uppercase; font-weight: bold; }
-        .header p { font-size: 9pt; margin: 2px 0; }
+        .header h1 { font-size: 14pt; margin: 0; text-transform: uppercase; font-weight: bold; }
+        .header h2 { font-size: 12pt; margin: 0; text-transform: uppercase; font-weight: bold; }
+        .header p { font-size: 8pt; margin: 2px 0; }
 
         /* Report Title */
-        .report-title { text-align: center; margin: 15px 0; }
-        .report-title h3 { font-size: 14pt; margin: 0; text-transform: uppercase; font-weight: bold; }
-        .report-title .lokasi { font-size: 12pt; margin-top: 5px; text-transform: uppercase; }
+        .report-title { text-align: center; margin: 5px 0; }
+        .report-title h3 { font-size: 12pt; margin: 0; text-transform: uppercase; font-weight: bold; }
+        .report-title .lokasi { font-size: 10pt; margin-top: 3px; text-transform: uppercase; }
 
         /* Identity Section */
-        .identity { width: 100%; margin-bottom: 10px; }
+        .identity { width: 100%; margin-bottom: 15px; }
         .identity table { width: 100%; border: none; }
-        .identity td { vertical-align: top; border: none; padding: 2px 0; }
+        .identity td { vertical-align: top; border: none; padding: 1px 0; }
 
         /* Table Styling */
-        table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        table.data-table th, table.data-table td { border: 1px solid #000; padding: 4px 6px; text-align: center; }
-        table.data-table th { background-color: #e9e9e9; font-weight: bold; text-transform: uppercase; font-size: 9pt; }
-        table.data-table td { font-size: 9pt; }
+        table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+        table.data-table th, table.data-table td { border: 1px solid #000; padding: 2px 4px; text-align: center; }
+        table.data-table th { background-color: #e9e9e9; font-weight: bold; text-transform: uppercase; font-size: 8pt; }
+        table.data-table td { font-size: 8pt; }
         .text-left { text-align: left !important; }
         .text-right { text-align: right !important; }
         .font-bold { font-weight: bold; }
 
         /* Summary Title */
-        .section-title { font-weight: bold; margin-bottom: 5px; text-transform: uppercase; font-size: 10pt; }
+        .section-title { font-weight: bold; margin-bottom: 3px; text-transform: uppercase; font-size: 9pt; }
 
         /* Footer / Signature */
-        .footer-section { width: 100%; margin-top: 20px; }
-        .footer-section table { width: 100%; border: none; }
-        .footer-section td { width: 50%; border: none; text-align: center; vertical-align: top; }
-        .signature-space { height: 60px; }
+        .signature-container { position: absolute; bottom: 45px; right: 0; width: 250px; text-align: center; }
+        .signature-space { height: 50px; }
         
-        .disclaimer { font-size: 8pt; font-style: italic; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 5px; }
+        .disclaimer { position: absolute; bottom: 0; left: 0; right: 0; font-size: 8pt; font-style: italic; border-top: 1px solid #ccc; padding-top: 3px; }
     </style>
 </head>
 <body>
@@ -128,8 +126,7 @@
             <tr>
                 <th rowspan="2" style="width: 30px;">NO</th>
                 <th rowspan="2">JENIS KENDARAAN</th>
-                <th colspan="{{ count($hourlyData) }}">JAM (WITA)</th>
-                <th rowspan="2" style="width: 60px;">TOTAL</th>
+                <th colspan="{{ count($hourlyData) }}" >JAM (WITA)</th>
             </tr>
             <tr>
                 @foreach($hourlyData as $label => $counts)
@@ -143,48 +140,29 @@
             <tr>
                 <td>{{ $no++ }}</td>
                 <td class="text-left">{{ $obj }}</td>
-                @php $rowTotal = 0; @endphp
                 @foreach($hourlyData as $label => $counts)
                     @php 
                         $key = strtolower(str_replace(' ', '', $obj));
                         $count = $counts[$key] ?? 0;
-                        $rowTotal += $count;
                     @endphp
                     <td>{{ $count }}</td>
                 @endforeach
-                <td class="font-bold">{{ $rowTotal }}</td>
             </tr>
             @endforeach
-            <tr class="font-bold" style="background-color: #f2f2f2;">
-                <td colspan="2">TOTAL</td>
-                @php $grandTotal = 0; @endphp
-                @foreach($hourlyData as $label => $counts)
-                    @php 
-                        $colTotal = 0;
-                        foreach($objekSurvei as $obj) {
-                            $key = strtolower(str_replace(' ', '', $obj));
-                            $colTotal += ($counts[$key] ?? 0);
-                        }
-                        $grandTotal += $colTotal;
-                    @endphp
-                    <td>{{ $colTotal }}</td>
-                @endforeach
-                <td>{{ $grandTotal }}</td>
-            </tr>
         </tbody>
     </table>
 
     <div class="section-title">B. REKAPITULASI PENERIMAAN</div>
-    <table class="data-table">
+    <table class="data-table" style="width: auto; font-size: 7.5pt;">
         <thead>
             <tr>
-                <th width="30">NO</th>
+                <th width="25">NO</th>
                 <th>JENIS KENDARAAN</th>
-                <th width="80">JUMLAH KENDARAAN</th>
-                <th width="100">TARIF LAMA (RP)</th>
-                <th width="120">TOTAL PENERIMAAN (RP)</th>
-                <th width="100">TARIF BARU (RP)</th>
-                <th width="120">TOTAL PENERIMAAN (RP)</th>
+                <th width="60">JUMLAH</th>
+                <th width="80">TARIF LAMA</th>
+                <th width="90">TOTAL LAMA</th>
+                <th width="80">TARIF BARU</th>
+                <th width="90">TOTAL BARU</th>
             </tr>
         </thead>
         <tbody>
@@ -209,33 +187,15 @@
         </tbody>
     </table>
 
-    <div class="footer-section">
-        <table>
-            <tr>
-                <td>
-                    <p>Mengetahui,</p>
-                    <p>Kepala Dinas Perhubungan</p>
-                    <div class="signature-space"></div>
-                    <p>( .................................................... )</p>
-                    <p>NIP. ........................................</p>
-                </td>
-                <td>
-                    <p>Semarapura, {{ $tanggal }}</p>
-                    <p>Petugas Surveyor,</p>
-                    <div class="signature-space"></div>
-                    <p>( {{ $surveyor }} )</p>
-                </td>
-            </tr>
-        </table>
+    <div class="signature-container">
+        <p>Semarapura, {{ $tanggal }}</p>
+        <p>Petugas Surveyor,</p>
+        <div class="signature-space"></div>
+        <p>( {{ $surveyor }} )</p>
     </div>
 
     <div class="disclaimer">
         * Laporan ini dicetak secara otomatis melalui Sistem Digitalisasi Uji Petik Dinas Perhubungan Kabupaten Klungkung.
     </div>
-</body>
-</html>
-aimer">
-        * Laporan ini dicetak secara otomatis melalui Sistem Digitalisasi Uji Petik Dinas Perhubungan Kabupaten Klungkung.
-    </div>
-</body>
-</html>
+    </body>
+    </html>
