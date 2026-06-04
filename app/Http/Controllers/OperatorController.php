@@ -477,9 +477,9 @@ class OperatorController extends Controller
             ];
         }
 
-        // 4. Proses Data Per Jam (Dinamis sesuai jam penugasan)
-        $jamMulai = (int)Carbon::parse($tugasAktif['waktu_mulai'])->format('H');
-        $jamSelesai = (int)Carbon::parse($tugasAktif['waktu_selesai'])->format('H');
+        // 4. Proses Data Per Jam (Statis 08:00 - 22:00 sesuai permintaan)
+        $jamMulai = 8;
+        $jamSelesai = 21;
         
         $objekSurvei = array_filter(array_map('trim', explode(',', $tugasAktif['objek_survei'] ?? '')));
         $hourlyData = [];
@@ -524,7 +524,8 @@ class OperatorController extends Controller
             'hourlyData' => $hourlyData,
             'summaryData' => $summaryData,
             'objekSurvei' => $objekSurvei,
-            'totalSeluruh' => collect($summaryData)->sum('total')
+            'totalSeluruh' => collect($summaryData)->sum('total'),
+            'arah' => $tugasAktif['arah'] ?? '....................'
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download("Laporan_Uji_Petik_{$today}.pdf");
