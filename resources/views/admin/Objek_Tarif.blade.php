@@ -149,8 +149,12 @@
                         <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Nama Objek</label>
                         <input type="text" name="nama" id="nama" required class="w-full px-5 py-4 bg-[#F7FAFC] border border-transparent rounded-2xl font-bold text-gray-700 outline-none focus:border-blue-200">
                     </div>
+                    <div id="container-tarif-lama">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Tarif Lama (Rp)</label>
+                        <input type="text" name="tarif_lama" id="tarif_lama" required class="w-full px-5 py-4 bg-[#F7FAFC] border border-transparent rounded-2xl font-black text-gray-400 outline-none focus:border-blue-200" onkeyup="this.value = formatRupiah(this.value)">
+                    </div>
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Tarif (Rp)</label>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1" id="label-harga">Tarif Baru (Rp)</label>
                         <input type="text" name="harga" id="harga" required class="w-full px-5 py-4 bg-[#F7FAFC] border border-transparent rounded-2xl font-black text-blue-600 outline-none focus:border-blue-200" onkeyup="this.value = formatRupiah(this.value)">
                     </div>
                     <div>
@@ -218,6 +222,10 @@
             document.getElementById('harga').value = formatRupiah(harga);
             document.getElementById('status').value = status;
             document.getElementById('keterangan').value = keterangan;
+
+            // Sembunyikan input tarif lama saat edit (otomatis)
+            document.getElementById('container-tarif-lama').style.display = 'none';
+            document.getElementById('tarif_lama').required = false;
             
             const preview = document.getElementById('icon-preview');
             if (iconUrl && iconUrl !== 'null' && iconUrl !== '') {
@@ -247,6 +255,11 @@
             document.getElementById('status').value = 'Aktif';
             document.getElementById('keterangan').value = '';
             document.getElementById('icon-input').value = '';
+
+            // Tampilkan kembali input tarif lama saat tambah baru
+            document.getElementById('container-tarif-lama').style.display = 'block';
+            document.getElementById('tarif_lama').value = '';
+            document.getElementById('tarif_lama').required = true;
             
             const preview = document.getElementById('icon-preview');
             preview.src = "{{ asset('assets/Motor.png') }}";

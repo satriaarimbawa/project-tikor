@@ -100,9 +100,9 @@
         </div>';
     @endphp
 
-    <!-- ================= HALAMAN 1: TARGET DAN REALISASI ================= -->
+    <!-- ================= HALAMAN 1: REKAPITULASI (GABUNGAN) ================= -->
     {!! $headerHtml !!}
-    <div class="text-center header-title font-bold">TARGET, REALISASI, DAN HASIL UJI PETIK SETORAN PARKIR</div>
+    <div class="text-center header-title font-bold">REKAPITULASI UJI PETIK KENDARAAN GABUNGAN</div>
     <div class="text-center header-title font-bold" style="margin-bottom: 20px;">
         DI LOKASI PARKIR 
         @php
@@ -110,78 +110,6 @@
             foreach($lokasiRef as $loc) { $lokasiNames[] = strtoupper($loc['nama_lokasi'] ?? $loc['alamat'] ?? 'TANPA NAMA'); }
             echo implode(' DAN ', $lokasiNames);
         @endphp
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th rowspan="2">No.</th>
-                <th rowspan="2">Tanggal</th>
-                @foreach($lokasiRef as $locId => $loc)
-                    <th colspan="3">{{ $loc['nama_lokasi'] ?? $loc['alamat'] ?? 'Lokasi' }}</th>
-                @endforeach
-            </tr>
-            <tr>
-                @foreach($lokasiRef as $locId => $loc)
-                    <th>Target Per Hari (Rp)</th>
-                    <th>Realisasi (Rp)</th>
-                    <th>Hasil Uji Petik (Rp)</th>
-                @endforeach
-            </tr>
-        </thead>
-        <tbody>
-            @php 
-                $n = 1; 
-                $totalTarget = [];
-                $totalRealisasi = [];
-                $totalUjiPetik = [];
-                foreach($lokasiRef as $locId => $loc) {
-                    $totalTarget[$locId] = 0;
-                    $totalRealisasi[$locId] = 0;
-                    $totalUjiPetik[$locId] = 0;
-                }
-            @endphp
-            @foreach($dates as $date)
-                <tr>
-                    <td class="text-center">{{ $n++ }}</td>
-                    <td class="text-center">{{ \Carbon\Carbon::parse($date)->translatedFormat('d F Y') }}</td>
-                    @foreach($lokasiRef as $locId => $loc)
-                        @php
-                            $target = (int)($loc['target_harian'] ?? 0);
-                            $realisasi = 0; // Realisasi tidak ada di DB, diset 0
-                            $ujiPetik = $dataHarian[$date][$locId]['hasil_uji_petik'];
-                            
-                            $totalTarget[$locId] += $target;
-                            $totalRealisasi[$locId] += $realisasi;
-                            $totalUjiPetik[$locId] += $ujiPetik;
-                        @endphp
-                        <td class="text-right">{{ $target > 0 ? number_format($target, 0, ',', '.') : '-' }}</td>
-                        <td class="text-right">{{ $realisasi > 0 ? number_format($realisasi, 0, ',', '.') : '-' }}</td>
-                        <td class="text-right">{{ $ujiPetik > 0 ? number_format($ujiPetik, 0, ',', '.') : '-' }}</td>
-                    @endforeach
-                </tr>
-            @endforeach
-        </tbody>
-        <tfoot>
-            <tr class="font-bold bg-gray-100">
-                <td colspan="2" class="text-center">TOTAL</td>
-                @foreach($lokasiRef as $locId => $loc)
-                    <td class="text-right">{{ $totalTarget[$locId] > 0 ? number_format($totalTarget[$locId], 0, ',', '.') : '-' }}</td>
-                    <td class="text-right">{{ $totalRealisasi[$locId] > 0 ? number_format($totalRealisasi[$locId], 0, ',', '.') : '-' }}</td>
-                    <td class="text-right">{{ $totalUjiPetik[$locId] > 0 ? number_format($totalUjiPetik[$locId], 0, ',', '.') : '-' }}</td>
-                @endforeach
-            </tr>
-        </tfoot>
-    </table>
-    
-    <div class="page-break"></div>
-
-    <!-- ================= HALAMAN 2: REKAPITULASI (GABUNGAN) ================= -->
-    {!! $headerHtml !!}
-    <div class="text-center header-title font-bold">REKAPITULASI UJI PETIK KENDARAAN</div>
-    <div class="text-center header-title font-bold" style="margin-bottom: 20px;">
-        DI LOKASI PARKIR 
-        @php echo implode(' DAN ', $lokasiNames); @endphp
     </div>
 
     <table>

@@ -59,12 +59,14 @@ class ObjekTarifController extends Controller
         $request->validate([
             'nama' => 'required',
             'harga' => 'required',
+            'tarif_lama' => 'required',
             'status' => 'required',
             'icon' => 'nullable|image|max:1024',
         ]);
 
         // Bersihkan format uang (titik) menjadi angka murni
         $hargaClean = (int) preg_replace('/[^0-9]/', '', $request->harga);
+        $tarifLamaClean = (int) preg_replace('/[^0-9]/', '', $request->tarif_lama);
 
         $iconPath = null;
         if ($request->hasFile('icon')) {
@@ -76,7 +78,7 @@ class ObjekTarifController extends Controller
         $data = [
             'nama' => $request->nama,
             'harga' => $hargaClean,
-            'tarif_lama' => 0,
+            'tarif_lama' => $tarifLamaClean,
             'status' => $request->status,
             'keterangan' => $request->keterangan ?? '',
             'icon_path' => $iconPath,

@@ -48,7 +48,7 @@
                 </div>
 
                 <select name="lokasi_id" onchange="this.form.submit()" class="w-64 p-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                    <option value="">Pilih Lokasi</option>
+                    <option value="">Semua Lokasi (Gabungan)</option>
                     @foreach($daftarLokasi as $id => $loc)
                         <option value="{{ $id }}" {{ $id == $lokasiId ? 'selected' : '' }}>{{ $loc['nama_lokasi'] ?? ($loc['alamat'] ?? 'Tanpa Nama') }}</option>
                     @endforeach
@@ -176,11 +176,6 @@
             const lokasiId = form.querySelector('select[name="lokasi_id"]').value;
             const startDate = form.querySelector('input[name="start_date"]').value;
             const endDate = form.querySelector('input[name="end_date"]').value;
-
-            if (!lokasiId) {
-                showAlert("Lokasi Belum Dipilih", "Silakan pilih lokasi terlebih dahulu sebelum mengunduh PDF.", "warning");
-                return;
-            }
 
             const finalUrl = `${baseUrl}?lokasi_id=${lokasiId}&start_date=${startDate}&end_date=${endDate}`;
             window.location.href = finalUrl;
