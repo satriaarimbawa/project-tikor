@@ -67,7 +67,8 @@
                             <tr class="bg-[#F7FAFC]">
                                 <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">No</th>
                                 <th class="py-4 px-4 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase text-left">Nama Objek</th>
-                                <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Tarif</th>
+                                <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Tarif Lama</th>
+                                <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Tarif Baru</th>
                                 <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Status</th>
                                 <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Aksi</th>
                             </tr>
@@ -86,6 +87,7 @@
                                         <span>{{ $item['nama'] }}</span>
                                     </div>
                                 </td>
+                                <td class="py-4 px-2 border border-gray-100 text-center font-bold text-[13px] text-gray-400">Rp. {{ number_format($item['tarif_lama'] ?? 0, 0, ',', '.') }}</td>
                                 <td class="py-4 px-2 border border-gray-100 text-center font-black text-[13px] text-blue-600">Rp. {{ number_format($item['harga'], 0, ',', '.') }}</td>
                                 <td class="py-4 px-2 border border-gray-100 text-center">
                                     <span class="{{ $item['status'] == 'Aktif' ? 'bg-[#EBFFFF] text-[#38B2AC]' : 'bg-gray-100 text-gray-400' }} px-3 py-1 rounded-md text-[9px] font-black uppercase">{{ $item['status'] }}</span>
@@ -101,7 +103,7 @@
                             </tr>
                             @empty
                             <tr id="empty-row">
-                                <td colspan="5" class="py-4 text-center text-gray-400 text-xs">Belum ada data objek & tarif.</td>
+                                <td colspan="6" class="py-4 text-center text-gray-400 text-xs">Belum ada data objek & tarif.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -280,7 +282,7 @@
                 if (!emptyRow) {
                     const tr = document.createElement('tr');
                     tr.id = 'no-results-row';
-                    tr.innerHTML = `<td colspan="5" class="py-4 text-center text-gray-400 text-xs">Pencarian "${searchTerm}" tidak ditemukan.</td>`;
+                    tr.innerHTML = `<td colspan="6" class="py-4 text-center text-gray-400 text-xs">Pencarian "${searchTerm}" tidak ditemukan.</td>`;
                     document.getElementById('table-body').appendChild(tr);
                 } else {
                     emptyRow.querySelector('td').innerText = `Pencarian "${searchTerm}" tidak ditemukan.`;

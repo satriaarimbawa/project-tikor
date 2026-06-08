@@ -34,7 +34,10 @@ class LaporanOperatorController extends Controller
         foreach ($tarifRaw as $t) {
             $namaOriginal = $t['nama'] ?? 'Lainnya';
             $key = strtolower(str_replace(' ', '', $namaOriginal));
-            $mapTarif[$key] = $t['harga'] ?? 0;
+            $mapTarif[$key] = [
+                'harga' => $t['harga'] ?? 0,
+                'tarif_lama' => $t['tarif_lama'] ?? 0
+            ];
             $objekNames[$key] = $namaOriginal;
             $dataRingkasan[$key] = 0; // Inisialisasi awal 0
         }
@@ -62,7 +65,9 @@ class LaporanOperatorController extends Controller
                         // Filter User jika dipilih
                         if ($userId && ($item['user_id'] ?? '') != $userId) continue;
 
-                        foreach ($mapTarif as $jenis => $harga) {
+                        foreach ($mapTarif as $jenis => $tarifData) {
+                            $harga = $tarifData['harga'];
+                            $tarifLama = $tarifData['tarif_lama'];
                             $vol = (int)($item[$jenis] ?? 0);
                             if ($vol > 0) {
                                 $dataRingkasan[$jenis] = ($dataRingkasan[$jenis] ?? 0) + $vol;
@@ -76,6 +81,7 @@ class LaporanOperatorController extends Controller
                                     'jenis' => $objekNames[$jenis],
                                     'jumlah' => $vol,
                                     'tarif' => $harga,
+                                    'tarif_lama' => $tarifLama,
                                     'penerimaan' => $penerimaan
                                 ];
                             }
@@ -151,7 +157,10 @@ class LaporanOperatorController extends Controller
         foreach ($tarifRaw as $t) {
             $namaOriginal = $t['nama'] ?? 'Lainnya';
             $key = strtolower(str_replace(' ', '', $namaOriginal));
-            $mapTarif[$key] = $t['harga'] ?? 0;
+            $mapTarif[$key] = [
+                'harga' => $t['harga'] ?? 0,
+                'tarif_lama' => $t['tarif_lama'] ?? 0
+            ];
             $objekNames[$key] = $namaOriginal;
             $dataRingkasan[$key] = 0;
         }
@@ -174,7 +183,9 @@ class LaporanOperatorController extends Controller
                 foreach ($dataHarian[$hourKey] as $idPenugasan => $item) {
                     if ($userId && ($item['user_id'] ?? '') != $userId) continue;
 
-                    foreach ($mapTarif as $jenis => $harga) {
+                    foreach ($mapTarif as $jenis => $tarifData) {
+                        $harga = $tarifData['harga'];
+                        $tarifLama = $tarifData['tarif_lama'];
                         $vol = (int)($item[$jenis] ?? 0);
                         if ($vol > 0) {
                             $dataRingkasan[$jenis] += $vol;
@@ -186,6 +197,7 @@ class LaporanOperatorController extends Controller
                                 'jenis' => $objekNames[$jenis],
                                 'jumlah' => $vol,
                                 'tarif' => $harga,
+                                'tarif_lama' => $tarifLama,
                                 'penerimaan' => $penerimaan
                             ];
                         }

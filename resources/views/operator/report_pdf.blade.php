@@ -194,15 +194,16 @@
                 <td>{{ $noSummary++ }}</td>
                 <td class="text-left">{{ $data['nama'] }}</td>
                 <td>{{ number_format($data['jumlah']) }}</td>
-                <td></td>
-                <td></td>
+                <td class="text-right" style="color: #666;">{{ number_format($data['tarif_lama'], 0, ',', '.') }}</td>
+                <td class="text-right" style="color: #666;">{{ number_format($data['total_lama'], 0, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($data['tarif'], 0, ',', '.') }}</td>
                 <td class="text-right font-bold">{{ number_format($data['total'], 0, ',', '.') }}</td>
             </tr>
             @endforeach
             <tr class="font-bold" style="background-color: #f2f2f2;">
-                <td colspan="4" class="text-right">TOTAL KESELURUHAN</td>
-                <td></td>
+                <td colspan="3" class="text-right">TOTAL KESELURUHAN</td>
+                <td style="background-color: #e9e9e9;"></td>
+                <td class="text-right" style="color: #666;">Rp {{ number_format($totalSeluruhLama, 0, ',', '.') }}</td>
                 <td style="background-color: #e9e9e9;"></td>
                 <td class="text-right">Rp {{ number_format($totalSeluruh, 0, ',', '.') }}</td>
             </tr>

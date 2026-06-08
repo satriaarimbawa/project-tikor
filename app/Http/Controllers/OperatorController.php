@@ -473,7 +473,8 @@ class OperatorController extends Controller
             $key = strtolower(str_replace(' ', '', $t['nama']));
             $tarifMap[$key] = [
                 'nama' => $t['nama'],
-                'harga' => (int)($t['harga'] ?? 0)
+                'harga' => (int)($t['harga'] ?? 0),
+                'tarif_lama' => (int)($t['tarif_lama'] ?? 0)
             ];
         }
 
@@ -491,7 +492,9 @@ class OperatorController extends Controller
                 'nama' => $obj,
                 'jumlah' => 0,
                 'tarif' => $tarifMap[$key]['harga'] ?? 0,
-                'total' => 0
+                'tarif_lama' => $tarifMap[$key]['tarif_lama'] ?? 0,
+                'total' => 0,
+                'total_lama' => 0
             ];
         }
 
@@ -514,6 +517,7 @@ class OperatorController extends Controller
                 // Akumulasi ke summary
                 $summaryData[$key]['jumlah'] += $count;
                 $summaryData[$key]['total'] += ($count * $summaryData[$key]['tarif']);
+                $summaryData[$key]['total_lama'] += ($count * $summaryData[$key]['tarif_lama']);
             }
         }
 
@@ -525,6 +529,7 @@ class OperatorController extends Controller
             'summaryData' => $summaryData,
             'objekSurvei' => $objekSurvei,
             'totalSeluruh' => collect($summaryData)->sum('total'),
+            'totalSeluruhLama' => collect($summaryData)->sum('total_lama'),
             'arah' => $tugasAktif['arah'] ?? '....................'
         ])->setPaper('a4', 'landscape');
 

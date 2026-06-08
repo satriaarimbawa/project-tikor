@@ -158,7 +158,8 @@
                             <th class="p-4 border-b">Waktu</th>
                             <th class="p-4 border-b">Jenis</th>
                             <th class="p-4 border-b text-center">Jumlah</th>
-                            <th class="p-4 border-b">Tarif</th>
+                            <th class="p-4 border-b">Tarif Lama</th>
+                            <th class="p-4 border-b">Tarif Baru</th>
                             <th class="p-4 border-b">Total Penerimaan</th>
                         </tr>
                     </thead>
@@ -184,7 +185,10 @@
                             <td class="p-4 text-center font-bold text-gray-700">
                                 {{ number_format($detail['jumlah']) }}
                             </td>
-                            <td class="p-4 text-gray-500 font-mono">
+                            <td class="p-4 text-gray-400 font-mono">
+                                Rp {{ number_format($detail['tarif_lama'] ?? 0, 0, ',', '.') }}
+                            </td>
+                            <td class="p-4 text-blue-600 font-bold font-mono">
                                 Rp {{ number_format($detail['tarif'], 0, ',', '.') }}
                             </td>
 
@@ -199,7 +203,7 @@
                         @endforeach
                         @empty
                         <tr>
-                            <td colspan="6" class="p-10 text-center text-gray-400 italic">
+                            <td colspan="7" class="p-10 text-center text-gray-400 italic">
                                 Belum ada data survei untuk filter ini.
                             </td>
                         </tr>

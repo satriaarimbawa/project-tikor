@@ -99,9 +99,10 @@
                 <th width="5%">No</th>
                 <th width="15%">Waktu</th>
                 <th>Jenis Kendaraan</th>
-                <th width="15%">Jumlah</th>
-                <th width="20%">Tarif</th>
-                <th width="20%">Subtotal</th>
+                <th width="10%">Jumlah</th>
+                <th width="15%">Tarif Lama</th>
+                <th width="15%">Tarif Baru</th>
+                <th width="15%">Subtotal</th>
             </tr>
         </thead>
         <tbody>
@@ -115,19 +116,20 @@
                         @endif
                         <td>{{ $detail['jenis'] }}</td>
                         <td class="text-center">{{ number_format($detail['jumlah']) }}</td>
+                        <td class="text-right" style="color: #666;">Rp {{ number_format($detail['tarif_lama'] ?? 0, 0, ',', '.') }}</td>
                         <td class="text-right">Rp {{ number_format($detail['tarif'], 0, ',', '.') }}</td>
                         <td class="text-right font-bold">Rp {{ number_format($detail['penerimaan'], 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
             @empty
                 <tr>
-                    <td colspan="6" class="text-center" style="padding: 20px;">Tidak ada data survei.</td>
+                    <td colspan="7" class="text-center" style="padding: 20px;">Tidak ada data survei.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr class="font-bold" style="background-color: #f2f2f2;">
-                <td colspan="5" class="text-center">TOTAL REALISASI</td>
+                <td colspan="6" class="text-center">TOTAL REALISASI</td>
                 <td class="text-right">Rp {{ number_format($keuangan['realisasi'], 0, ',', '.') }}</td>
             </tr>
         </tfoot>

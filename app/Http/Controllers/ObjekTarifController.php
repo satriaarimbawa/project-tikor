@@ -30,6 +30,7 @@ class ObjekTarifController extends Controller
                 'id' => $id,
                 'nama' => $item['nama'] ?? '-',
                 'harga' => $item['harga'] ?? 0,
+                'tarif_lama' => $item['tarif_lama'] ?? 0,
                 'status' => $item['status'] ?? 'Inaktif',
                 'keterangan' => $item['keterangan'] ?? '',
                 'icon_url' => $iconUrl
@@ -75,6 +76,7 @@ class ObjekTarifController extends Controller
         $data = [
             'nama' => $request->nama,
             'harga' => $hargaClean,
+            'tarif_lama' => 0,
             'status' => $request->status,
             'keterangan' => $request->keterangan ?? '',
             'icon_path' => $iconPath,
@@ -111,6 +113,13 @@ class ObjekTarifController extends Controller
 
         $currentData = ObjekTarif::find($id);
         $iconPath = $currentData['icon_path'] ?? null;
+        $tarifLama = $currentData['tarif_lama'] ?? 0;
+        $hargaLama = $currentData['harga'] ?? 0;
+
+        // Jika harga berubah, maka harga lama masuk ke tarif_lama
+        if ($hargaClean != $hargaLama) {
+            $tarifLama = $hargaLama;
+        }
 
         if ($request->hasFile('icon')) {
             $file = $request->file('icon');
@@ -121,6 +130,7 @@ class ObjekTarifController extends Controller
         $data = [
             'nama' => $request->nama,
             'harga' => $hargaClean,
+            'tarif_lama' => $tarifLama,
             'status' => $request->status,
             'keterangan' => $request->keterangan ?? '',
             'icon_path' => $iconPath,
