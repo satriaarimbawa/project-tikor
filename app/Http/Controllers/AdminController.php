@@ -45,17 +45,33 @@ class AdminController extends Controller
 
         // 1. Ambil Master Tarif & Inisialisasi Kunci Valid
         $tarifRaw = $this->database->getReference('objek_tarif')->getValue() ?? [];
-        $tarifMap = [];
+        $tarifMap   = [];
         $objekNames = [];
-        $validKeys = [];
+        $validKeys  = []; // parent keys, mis: "motor", "minibus,pick-up", "truk"
+        $subKeyMap  = []; // reverse map: sub-key → parent-key
+                          // mis: "minibus" → "minibus,pick-up", "pick-up" → "minibus,pick-up"
 
         foreach ($tarifRaw as $item) {
             $namaOriginal = $item['nama'] ?? 'Lainnya';
-            // Normalisasi kunci: lowercase dan hapus spasi
-            $key = strtolower(str_replace(' ', '', $namaOriginal));
-            $tarifMap[$key] = (int)($item['harga'] ?? 0);
-            $objekNames[$key] = $namaOriginal;
-            $validKeys[] = $key;
+            $harga        = (int)($item['harga'] ?? 0);
+
+            // Parent key dari nama lengkap (mis: "Mini Bus, Pick-up" → "minibus,pick-up")
+            $parentKey = strtolower(str_replace(' ', '', $namaOriginal));
+
+            if (!in_array($parentKey, $validKeys)) {
+                $tarifMap[$parentKey]   = $harga;
+                $objekNames[$parentKey] = $namaOriginal;
+                $validKeys[]            = $parentKey;
+            }
+
+            // Buat sub-key mapping untuk tiap bagian nama yang dipisah koma
+            // Mis: "Mini Bus, Pick-up" → sub-keys: "minibus" & "pick-up", keduanya → "minibus,pick-up"
+            $namaParts = array_map('trim', explode(',', $namaOriginal));
+            foreach ($namaParts as $namaPart) {
+                if ($namaPart === '') continue;
+                $subKey = strtolower(str_replace(' ', '', $namaPart));
+                $subKeyMap[$subKey] = $parentKey;
+            }
         }
 
         // 2. Ambil Semua Data Survei
@@ -65,55 +81,61 @@ class AdminController extends Controller
         $detailPendapatan = [];
         $groupedSurvei = []; // Untuk chart & stats [tanggal][kunci]
 
-        // 3. Proses Data dengan Struktur: survei_harian -> id_lokasi -> tanggal -> jam -> id_penugasan
+        // 3. Proses Data — Struktur Firebase: survei_harian/{id_lokasi}/{tanggal}/{jam}/{id_penugasan}/{data}
         foreach ($surveiHarianRaw as $idLokasi => $dataTanggal) {
             if (!is_array($dataTanggal)) continue;
 
             foreach ($dataTanggal as $tgl => $dataJam) {
                 if (!is_array($dataJam)) continue;
-                
+
+                // Inisialisasi tanggal ini jika belum ada
                 if (!isset($groupedSurvei[$tgl])) {
+                    $groupedSurvei[$tgl] = [];
                     foreach ($validKeys as $vk) $groupedSurvei[$tgl][$vk] = 0;
                 }
 
-                foreach ($dataJam as $jam => $dataPenugasan) {
-                    if (!is_array($dataPenugasan)) continue;
+                // Loop JAM (mis: "08", "09", ...)
+                foreach ($dataJam as $jam => $dataPerJam) {
+                    if (!is_array($dataPerJam)) continue;
 
-                    // Support baik struktur langsung (ada user_id) maupun berjenjang (id_penugasan)
-                    $itemsToProcess = [];
-                    if (isset($dataPenugasan['user_id'])) {
-                        $itemsToProcess[] = $dataPenugasan;
-                    } else {
-                        foreach ($dataPenugasan as $item) {
-                            if (is_array($item)) $itemsToProcess[] = $item;
-                        }
-                    }
+                    // Loop ID_PENUGASAN dalam jam ini
+                    foreach ($dataPerJam as $idPenugasan => $item) {
+                        if (!is_array($item)) continue;
 
-                    foreach ($itemsToProcess as $item) {
-                        foreach ($validKeys as $key) {
-                            $vol = (int)($item[$key] ?? 0);
-                            if ($vol > 0) {
-                                // Akumulasi untuk statistik (berdasarkan tanggal)
-                                $groupedSurvei[$tgl][$key] += $vol;
+                        // Iterasi semua field di item, petakan ke parent-key via subKeyMap
+                        // Ini menggabungkan "minibus" + "pick-up" ke satu bucket parent-nya
+                        foreach ($item as $fieldKey => $vol) {
+                            $vol = (int)$vol;
+                            if ($vol <= 0) continue;
+                            if (!isset($subKeyMap[$fieldKey])) continue; // bukan field kendaraan
 
-                                // Akumulasi untuk hari ini (pendapatan & detail)
-                                if ($tgl === $hariIni) {
-                                    $harga = $tarifMap[$key] ?? 0;
-                                    $subTotal = $vol * $harga;
-                                    $totalPendapatan += $subTotal;
+                            $parentKey = $subKeyMap[$fieldKey];
 
-                                    $keyDetail = $idLokasi . '_' . $key;
-                                    if (!isset($detailPendapatan[$keyDetail])) {
-                                        $detailPendapatan[$keyDetail] = [
-                                            'objek' => $objekNames[$key],
-                                            'id_lokasi' => $idLokasi,
-                                            'jumlah' => 0,
-                                            'nominal' => 0
-                                        ];
-                                    }
-                                    $detailPendapatan[$keyDetail]['jumlah'] += $vol;
-                                    $detailPendapatan[$keyDetail]['nominal'] += $subTotal;
+                            // Inisialisasi aman untuk multi-lokasi
+                            if (!isset($groupedSurvei[$tgl][$parentKey])) {
+                                $groupedSurvei[$tgl][$parentKey] = 0;
+                            }
+
+                            // Akumulasi statistik per tanggal (untuk chart)
+                            $groupedSurvei[$tgl][$parentKey] += $vol;
+
+                            // Akumulasi untuk hari ini (pendapatan & tabel detail)
+                            if ($tgl === $hariIni) {
+                                $harga    = $tarifMap[$parentKey] ?? 0;
+                                $subTotal = $vol * $harga;
+                                $totalPendapatan += $subTotal;
+
+                                $keyDetail = $idLokasi . '_' . $parentKey;
+                                if (!isset($detailPendapatan[$keyDetail])) {
+                                    $detailPendapatan[$keyDetail] = [
+                                        'objek'     => $objekNames[$parentKey],
+                                        'id_lokasi' => $idLokasi,
+                                        'jumlah'    => 0,
+                                        'nominal'   => 0
+                                    ];
                                 }
+                                $detailPendapatan[$keyDetail]['jumlah']  += $vol;
+                                $detailPendapatan[$keyDetail]['nominal'] += $subTotal;
                             }
                         }
                     }
@@ -133,7 +155,7 @@ class AdminController extends Controller
         foreach ($validKeys as $key) $chartData[$key] = [];
 
         // Ambil awal minggu ini (dimulai dari hari Minggu)
-        $startOfWeek = Carbon::now('Asia/Makassar')->startOfWeek(Carbon::SUNDAY);
+        $startOfWeek = Carbon::now('Asia/Makassar')->startOfWeek(Carbon::SUNDAY)->setTimezone('Asia/Makassar');
 
         for ($i = 0; $i < 7; $i++) {
             $date = (clone $startOfWeek)->addDays($i);

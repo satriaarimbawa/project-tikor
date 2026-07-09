@@ -25,6 +25,7 @@ Route::get('/debug-gd', function() {
     ];
 });
 
+
 //link landing page 
 Route::get('/', function () {
     return view('landing');
