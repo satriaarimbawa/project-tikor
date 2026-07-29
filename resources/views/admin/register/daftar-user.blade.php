@@ -64,70 +64,72 @@
                 </a>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="table-custom">
-                    <thead>
-                        <tr>
-                            <th class="w-16">No</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($users as $index => $user)
-                        @php $uid = $user['id']; @endphp
-                        <tr class="table-row-hover">
-                            <td class="text-center font-medium text-gray-500">
-                                {{ ($currentPage - 1) * $perPage + ($index + 1) }}
-                            </td>
-                            <td class="font-bold text-[#253D6B]">{{ $user['username'] ?? 'No Name' }}</td>
-                            <td class="text-gray-600">{{ $user['email'] ?? '-' }}</td>
-                            <td>
-                                <span
-                                    class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase">
-                                    {{ $user['role_user'] ?? 'No Role' }}
-                                </span>
-                            </td>
-                            <td class="flex justify-center gap-2">
-                                <a href="{{ route('user.edit', $uid) }}"
-                                    class="w-8 h-8 bg-yellow-400 hover:bg-yellow-500 text-white rounded-md flex items-center justify-center transition-colors">
-                                    <iconify-icon icon="lucide:edit-3"></iconify-icon>
-                                </a>
-                                <form action="{{ route('user.destroy', $uid) }}" method="POST"
-                                    onsubmit="confirmDelete(event, this, 'Apakah Anda yakin ingin menghapus user ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center justify-center transition-colors">
-                                        <iconify-icon icon="lucide:trash-2"></iconify-icon>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="py-10 text-center text-gray-500 italic">Data tidak ditemukan.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+            <div id="table-container">
+                <div class="overflow-hidden border border-gray-100 rounded-2xl shadow-sm">
+                    <table class="w-full text-left bg-white">
+                        <thead class="bg-[#F8FAFC] text-gray-500 text-xs font-bold uppercase border-b border-gray-100">
+                            <tr>
+                                <th class="w-16">No</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($users as $index => $user)
+                            @php $uid = $user['id']; @endphp
+                            <tr class="table-row-hover">
+                                <td class="text-center font-medium text-gray-500">
+                                    {{ ($currentPage - 1) * $perPage + ($index + 1) }}
+                                </td>
+                                <td class="font-bold text-[#253D6B]">{{ $user['username'] ?? 'No Name' }}</td>
+                                <td class="text-gray-600">{{ $user['email'] ?? '-' }}</td>
+                                <td>
+                                    <span
+                                        class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase">
+                                        {{ $user['role_user'] ?? 'No Role' }}
+                                    </span>
+                                </td>
+                                <td class="flex justify-center gap-2">
+                                    <a href="{{ route('user.edit', $uid) }}"
+                                        class="w-8 h-8 bg-yellow-400 hover:bg-yellow-500 text-white rounded-md flex items-center justify-center transition-colors">
+                                        <iconify-icon icon="lucide:edit-3"></iconify-icon>
+                                    </a>
+                                    <form action="{{ route('user.destroy', $uid) }}" method="POST"
+                                        onsubmit="confirmDelete(event, this, 'Apakah Anda yakin ingin menghapus user ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center justify-center transition-colors">
+                                            <iconify-icon icon="lucide:trash-2"></iconify-icon>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="py-10 text-center text-gray-500 italic">Data tidak ditemukan.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- Pagination -->
-            <div class="flex justify-center mt-8 gap-4 items-center">
-                <a href="{{ $currentPage > 1 ? url('/daftar-user?page='.($currentPage - 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}"
-                    class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
-                    <iconify-icon icon="lucide:chevron-left" class="text-xl"></iconify-icon>
-                </a>
-                
-                <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
+                <!-- Pagination -->
+                <div class="flex justify-center mt-8 gap-4 items-center">
+                    <a href="{{ $currentPage > 1 ? url('/daftar-user?page='.($currentPage - 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}"
+                        class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
+                        <iconify-icon icon="lucide:chevron-left" class="text-xl"></iconify-icon>
+                    </a>
+                    
+                    <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
 
-                <a href="{{ $currentPage < $totalPages ? url('/daftar-user?page='.($currentPage + 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}"
-                    class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
-                    <iconify-icon icon="lucide:chevron-right" class="text-xl"></iconify-icon>
-                </a>
+                    <a href="{{ $currentPage < $totalPages ? url('/daftar-user?page='.($currentPage + 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}"
+                        class="w-10 h-10 rounded-full bg-[#D99D81] text-white flex items-center justify-center hover:opacity-80 transition {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
+                        <iconify-icon icon="lucide:chevron-right" class="text-xl"></iconify-icon>
+                    </a>
+                </div>
             </div>
         </div>
     </main>

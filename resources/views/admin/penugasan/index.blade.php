@@ -57,96 +57,98 @@
                 </a>
             </div>
 
-            <div class="overflow-hidden border border-gray-300 rounded-sm">
-                <table class="w-full text-left border-collapse" id="penugasanTable">
-                    <thead>
-                        <tr class="bg-[#FDE047] border-b border-gray-300">
-                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800 w-12 text-center">
-                                No</th>
-                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Username</th>
-                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Nama lokasi</th>
-                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Waktu</th>
-                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800 text-center">SPT</th>
-                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800 text-center">Status</th>
-                            <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Objek</th>
-                            <th class="py-3 px-4 font-semibold text-gray-800 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-[#FFFBEB]">
-                        @forelse ($dataPenugasan as $index => $penugasan)
-                        <tr class="border-b border-gray-300 data-row">
-                            <td class="py-3 px-4 border-r border-gray-300 text-center text-sm">
-                                {{ ($currentPage - 1) * $perPage + ($index + 1) }}
-                            </td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm search-target">{{ $penugasan['nama_operator'] }}</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm search-target">{{ $penugasan['nama_lokasi'] }}</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['tanggal_rentang'] }}
-                                <br>{{ $penugasan['jam_rentang'] }}</td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm text-center">
-                                @if($penugasan['file_spt'] !== '-')
-                                <button onclick="previewSPT('{{ asset('uploads/spt/' . $penugasan['file_spt']) }}', '{{ $penugasan['file_spt'] }}')" 
-                                   class="inline-flex items-center justify-center w-10 h-10 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 hover:text-blue-800 transition-all duration-200 shadow-sm" title="Preview SPT">
-                                   <iconify-icon icon="lucide:eye" class="text-xl"></iconify-icon>
-                                </button>
-                                @else
-                                <span class="text-gray-400">Tidak ada file</span>
-                                @endif
-                            </td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm text-center">
-                                @if(strtolower($penugasan['status'] ?? 'aktif') === 'aktif')
-                                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-green-200 search-target">Aktif</span>
-                                @else
-                                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-red-200 search-target">Inaktif</span>
-                                @endif
-                            </td>
-                            <td class="py-3 px-4 border-r border-gray-300 text-sm italic search-target">{{ $penugasan['objek_survei'] }}</td>
-                            <td class="py-3 px-4">
-                                <div class="flex justify-center gap-2">
-                                    @if(($penugasan['status'] ?? 'aktif') === 'inaktif')
-                                    <form action="{{ route('penugasan.reset', $penugasan['id']) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="bg-blue-500 p-1.5 rounded hover:bg-blue-600 flex items-center justify-center transition-colors shadow-md" title="Aktifkan Kembali">
-                                            <iconify-icon icon="lucide:refresh-cw" class="text-white text-lg"></iconify-icon>
-                                        </button>
-                                    </form>
+            <div id="table-container">
+                <div class="overflow-hidden border border-gray-300 rounded-sm">
+                    <table class="w-full text-left border-collapse" id="penugasanTable">
+                        <thead>
+                            <tr class="bg-[#FDE047] border-b border-gray-300">
+                                <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800 w-12 text-center">
+                                    No</th>
+                                <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Username</th>
+                                <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Nama lokasi</th>
+                                <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Waktu</th>
+                                <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800 text-center">SPT</th>
+                                <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800 text-center">Status</th>
+                                <th class="py-3 px-4 border-r border-gray-300 font-semibold text-gray-800">Objek</th>
+                                <th class="py-3 px-4 font-semibold text-gray-800 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-[#FFFBEB]">
+                            @forelse ($dataPenugasan as $index => $penugasan)
+                            <tr class="border-b border-gray-300 data-row">
+                                <td class="py-3 px-4 border-r border-gray-300 text-center text-sm">
+                                    {{ ($currentPage - 1) * $perPage + ($index + 1) }}
+                                </td>
+                                <td class="py-3 px-4 border-r border-gray-300 text-sm search-target">{{ $penugasan['nama_operator'] }}</td>
+                                <td class="py-3 px-4 border-r border-gray-300 text-sm search-target">{{ $penugasan['nama_lokasi'] }}</td>
+                                <td class="py-3 px-4 border-r border-gray-300 text-sm">{{ $penugasan['tanggal_rentang'] }}
+                                    <br>{{ $penugasan['jam_rentang'] }}</td>
+                                <td class="py-3 px-4 border-r border-gray-300 text-sm text-center">
+                                    @if($penugasan['file_spt'] !== '-')
+                                    <button onclick="previewSPT('{{ asset('uploads/spt/' . $penugasan['file_spt']) }}', '{{ $penugasan['file_spt'] }}')" 
+                                       class="inline-flex items-center justify-center w-10 h-10 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 hover:text-blue-800 transition-all duration-200 shadow-sm" title="Preview SPT">
+                                       <iconify-icon icon="lucide:eye" class="text-xl"></iconify-icon>
+                                    </button>
+                                    @else
+                                    <span class="text-gray-400">Tidak ada file</span>
                                     @endif
-                                    <a href="{{ url('/dashboard-penugasan/edit/'.$penugasan['id']) }}" class="bg-yellow-400 p-1.5 rounded hover:bg-yellow-500 flex items-center justify-center transition-colors shadow-md">
-                                        <iconify-icon icon="lucide:edit-3" class="text-white text-lg"></iconify-icon>
-                                    </a>
-                                    <form action="{{ url('/delete-penugasan/'.$penugasan['id']) }}" method="POST" onsubmit="confirmDelete(event, this, 'Yakin ingin menghapus penugasan ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="bg-red-500 p-1.5 rounded hover:bg-red-600 flex items-center justify-center transition-colors shadow-md">
-                                            <iconify-icon icon="lucide:trash-2" class="text-white text-lg"></iconify-icon>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="py-10 text-center text-gray-500 italic">Tidak ada data penugasan.</td>
-                        </tr>
-                        @endforelse
-                        <tr id="noResultsRow" class="hidden">
-                            <td colspan="8" class="py-10 text-center text-gray-500 italic">Data tidak ditemukan.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                                </td>
+                                <td class="py-3 px-4 border-r border-gray-300 text-sm text-center">
+                                    @if(strtolower($penugasan['status'] ?? 'aktif') === 'aktif')
+                                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-green-200 search-target">Aktif</span>
+                                    @else
+                                        <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-red-200 search-target">Inaktif</span>
+                                    @endif
+                                </td>
+                                <td class="py-3 px-4 border-r border-gray-300 text-sm italic search-target">{{ $penugasan['objek_survei'] }}</td>
+                                <td class="py-3 px-4">
+                                    <div class="flex justify-center gap-2">
+                                        @if(($penugasan['status'] ?? 'aktif') === 'inaktif')
+                                        <form action="{{ route('penugasan.reset', $penugasan['id']) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="bg-blue-500 p-1.5 rounded hover:bg-blue-600 flex items-center justify-center transition-colors shadow-md" title="Aktifkan Kembali">
+                                                <iconify-icon icon="lucide:refresh-cw" class="text-white text-lg"></iconify-icon>
+                                            </button>
+                                        </form>
+                                        @endif
+                                        <a href="{{ url('/dashboard-penugasan/edit/'.$penugasan['id']) }}" class="bg-yellow-400 p-1.5 rounded hover:bg-yellow-500 flex items-center justify-center transition-colors shadow-md">
+                                            <iconify-icon icon="lucide:edit-3" class="text-white text-lg"></iconify-icon>
+                                        </a>
+                                        <form action="{{ url('/delete-penugasan/'.$penugasan['id']) }}" method="POST" onsubmit="confirmDelete(event, this, 'Yakin ingin menghapus penugasan ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="bg-red-500 p-1.5 rounded hover:bg-red-600 flex items-center justify-center transition-colors shadow-md">
+                                                <iconify-icon icon="lucide:trash-2" class="text-white text-lg"></iconify-icon>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="8" class="py-10 text-center text-gray-500 italic">Tidak ada data penugasan.</td>
+                            </tr>
+                            @endforelse
+                            <tr id="noResultsRow" class="hidden">
+                                <td colspan="8" class="py-10 text-center text-gray-500 italic">Data tidak ditemukan.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-            <div class="flex justify-center items-center gap-4 mt-8">
-                <a href="{{ $currentPage > 1 ? url('/dashboard-penugasan?page='.($currentPage - 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}" 
-                    class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
-                    <iconify-icon icon="lucide:chevron-left" class="text-white text-xl"></iconify-icon>
-                </a>
-                
-                <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
+                <div class="flex justify-center items-center gap-4 mt-8">
+                    <a href="{{ $currentPage > 1 ? url('/dashboard-penugasan?page='.($currentPage - 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}" 
+                        class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
+                        <iconify-icon icon="lucide:chevron-left" class="text-white text-xl"></iconify-icon>
+                    </a>
+                    
+                    <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
 
-                <a href="{{ $currentPage < $totalPages ? url('/dashboard-penugasan?page='.($currentPage + 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}" 
-                    class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
-                    <iconify-icon icon="lucide:chevron-right" class="text-white text-xl"></iconify-icon>
-                </a>
+                    <a href="{{ $currentPage < $totalPages ? url('/dashboard-penugasan?page='.($currentPage + 1).'&search='.$searchTerm.'&perPage='.$perPage) : '#' }}" 
+                        class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-full shadow-md hover:bg-[#1a2e52] transition-all {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
+                        <iconify-icon icon="lucide:chevron-right" class="text-white text-xl"></iconify-icon>
+                    </a>
+                </div>
             </div>
         </div>
     </main>

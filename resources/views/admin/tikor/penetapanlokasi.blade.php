@@ -60,6 +60,7 @@
                     </div>
                 </form>
 
+            <div id="table-container">
                 <div class="overflow-x-auto mt-6">
                     <table class="w-full border-separate border-spacing-y-2">
                         <thead class="bg-[#E5E7EB] text-[#1E293B] text-[12px] uppercase font-bold">
@@ -131,6 +132,7 @@
                         <iconify-icon icon="lucide:chevron-right" class="text-xl"></iconify-icon>
                     </a>
                 </div>
+            </div>
             </div>
 
             <div class="w-full xl:flex-[2] bg-white rounded-[2rem] shadow-[0_30px_90px_rgba(0,0,0,0.15)] border border-gray-50/50 overflow-hidden flex flex-col">

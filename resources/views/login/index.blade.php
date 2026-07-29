@@ -158,21 +158,39 @@
     }
 
     if (navigator.geolocation) {
-        const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
-        navigator.geolocation.watchPosition(
-            function(position) {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                document.getElementById('latitude').value = lat;
-                document.getElementById('longitude').value = lng;
-                if (targetData.lat) {
-                    initGuideMap(lat, lng);
-                    updateDistance(lat, lng);
-                }
-            },
-            function(error) { console.warn("GPS Error: ", error.message); },
-            options
-        );
+        const options = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
+        
+        function handlePosition(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            if (targetData.lat) {
+                initGuideMap(lat, lng);
+                updateDistance(lat, lng);
+            }
+        }
+
+        function handleError(error) {
+            let errorMsg = "GPS Error: ";
+            if (error.code === 1) errorMsg = "Mohon izinkan akses lokasi (GPS) pada browser Anda untuk dapat melakukan Login.";
+            else if (error.code === 2) errorMsg = "Sinyal GPS tidak tersedia, pastikan GPS / Lokasi Anda menyala.";
+            else if (error.code === 3) errorMsg = "Waktu permintaan lokasi habis. Coba muat ulang halaman.";
+            
+            console.warn("GPS Error: ", error.message);
+            // Hanya tampilkan alert jika belum ada data lat/lng sama sekali
+            if (!document.getElementById('latitude').value) {
+                alert(errorMsg);
+            }
+        }
+
+        // Gunakan getCurrentPosition untuk mendapatkan kordinat pertama dengan cepat
+        navigator.geolocation.getCurrentPosition(handlePosition, handleError, options);
+        
+        // Lalu gunakan watchPosition untuk memantau pergerakan secara real-time
+        navigator.geolocation.watchPosition(handlePosition, handleError, options);
+    } else {
+        alert("Browser atau perangkat Anda tidak mendukung fitur Lokasi (GPS). Pastikan Anda mengakses aplikasi melalui koneksi aman (HTTPS).");
     }
     </script>
     <script>

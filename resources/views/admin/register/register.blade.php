@@ -63,6 +63,10 @@
             <input type="email" name="email" value="{{ $user['email'] ?? old('email') }}" required
                 class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-all shadow-sm"
                 placeholder="Masukkan Email">
+            <div class="flex items-start gap-1.5 mt-2">
+                <iconify-icon icon="lucide:info" class="text-blue-500 text-[14px] mt-0.5"></iconify-icon>
+                <p class="text-[12px] text-gray-500 font-medium italic">Pastikan email yang Anda input benar</p>
+            </div>
             @error('email')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror

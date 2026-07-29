@@ -350,7 +350,23 @@
                 if (users) { 
                     for (let uid in users) { 
                         const u = users[uid]; 
-                        const isOnline = u.is_online === true || u.is_online === 'true' || u.is_online == 1; 
+                        
+                        // Sembunyikan IT Support dari live monitoring
+                        if (u.username === 'IT Support' || (u.email && u.email.toLowerCase().includes('itsupport'))) {
+                            continue;
+                        }
+
+                        let isOnline = u.is_online === true || u.is_online === 'true' || u.is_online == 1; 
+                        
+                        const role = u.role_user || 'user';
+                        const now = Math.floor(Date.now() / 1000);
+                        const lastSeen = u.last_seen || 0;
+                        const isStale = role === 'operator' && lastSeen > 0 && (now - lastSeen) > 150;
+                        
+                        if (isStale) {
+                            isOnline = false;
+                        }
+
                         if (isOnline) onlineCount++; 
                         updateOperatorStatus(uid, u); 
                     } 
@@ -363,6 +379,8 @@
             // REAL-TIME ACTIVITY LOGS
             db.ref('activity_logs').limitToLast(15).on('child_added', (snapshot) => {
                 const log = snapshot.val();
+                if (log && log.username && log.username.toLowerCase().includes('it support')) return;
+                
                 if (log && log.message) {
                     const logTime = new Date(log.timestamp).getTime();
                     // Hanya tampilkan jika log terjadi dalam 1 jam terakhir untuk menghindari banjir data saat load
@@ -381,10 +399,9 @@
                     const now = new Date();
                     for (let id in data) {
                         const t = data[id];
-                        if (t.status === 'aktif') {
-                            const mulai = new Date(t.waktu_mulai);
-                            const selesai = new Date(t.waktu_selesai);
-                            if (now >= mulai && now <= selesai) {
+                        if (t.waktu_mulai) {
+                            const mulaiDate = t.waktu_mulai.split(' ')[0];
+                            if (mulaiDate === today) {
                                 if (t.id_lokasi) activeLocIds.add(t.id_lokasi.toString());
                             }
                         }
@@ -417,7 +434,11 @@
                                     const s = tgl[j][p]; 
                                     if(s) {
                                         validKeys.forEach(k => { 
-                                            const v = parseInt(s[k] || 0); 
+                                            const subKeys = k.split(',');
+                                            let v = 0;
+                                            subKeys.forEach(sub => {
+                                                v += parseInt(s[sub] || 0);
+                                            });
                                             newGlobal[k] += v; 
                                             newLokasiTotal[idL] += v; 
                                             detailedLokasi[idL][k] += v;
@@ -462,7 +483,12 @@
                     if (dailyData && dailyData[h]) {
                         for (let p in dailyData[h]) {
                             const s = dailyData[h][p];
-                            validKeys.forEach(k => { totalHour += parseInt(s[k] || 0); });
+                            validKeys.forEach(k => { 
+                                const subKeys = k.split(',');
+                                subKeys.forEach(sub => {
+                                    totalHour += parseInt(s[sub] || 0); 
+                                });
+                            });
                         }
                     }
                     if (totalHour > maxCount) {

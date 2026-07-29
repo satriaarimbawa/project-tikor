@@ -29,15 +29,12 @@ class LiveDashboardController extends Controller
         $allLokasi = $this->database->getReference('lokasi')->getValue() ?? [];
         $allPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
         
-        // 2. Filter Lokasi yang punya Penugasan Aktif SAAT INI
+        // 2. Filter Lokasi yang punya Penugasan HARI INI
         $activeLocationIds = [];
         foreach ($allPenugasan as $t) {
-            if (($t['status'] ?? '') === 'aktif') {
-                $mulai = Carbon::parse($t['waktu_mulai'], 'Asia/Makassar');
-                $selesai = Carbon::parse($t['waktu_selesai'], 'Asia/Makassar');
-                
-                // Jika sekarang berada di dalam rentang waktu penugasan
-                if ($now->between($mulai, $selesai)) {
+            if (!empty($t['waktu_mulai'])) {
+                $mulai = Carbon::parse($t['waktu_mulai'], 'Asia/Makassar')->toDateString();
+                if ($mulai === $today) {
                     $activeLocationIds[] = $t['id_lokasi'] ?? '';
                 }
             }
@@ -76,7 +73,12 @@ class LiveDashboardController extends Controller
                     foreach ($dataJam as $idKey => $stats) {
                         if (is_array($stats)) {
                             foreach ($validKeys as $key) {
-                                $val = (int)($stats[$key] ?? 0);
+                                $subKeys = explode(',', $key);
+                                $val = 0;
+                                foreach ($subKeys as $sub) {
+                                    $val += (int)($stats[$sub] ?? 0);
+                                }
+                                
                                 $initialGlobal[$key] += $val;
                                 if (isset($initialLokasi[$idLokasi])) {
                                     $initialLokasi[$idLokasi] += $val;
@@ -107,6 +109,11 @@ class LiveDashboardController extends Controller
         }
 
         foreach ($usersRaw as $uid => $u) {
+            // Sembunyikan akun IT Support agar tidak tampil di Live Monitoring
+            if (($u['username'] ?? '') === 'IT Support' || strpos(strtolower($u['email'] ?? ''), 'itsupport') !== false) {
+                continue;
+            }
+            
             $role = $u['role_user'] ?? 'user';
             $locationName = 'Tanpa Lokasi';
             

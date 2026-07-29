@@ -64,86 +64,88 @@
             </form>
         </div>
 
-        <div class="p-6 overflow-x-auto">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="text-[#253D6B] font-bold text-sm uppercase tracking-wider border-b-2 border-gray-50">
-                        <th class="px-4 py-4">Waktu</th>
-                        <th class="px-4 py-4">Operator</th>
-                        <th class="px-4 py-4">Aktivitas</th>
-                        <th class="px-4 py-4 text-center">Tipe</th>
-                    </tr>
-                </thead>
-                <tbody id="logTableBody" class="divide-y divide-gray-50">
-                    @forelse($logs as $log)
-                    <tr id="log-{{ $log['id'] }}" class="hover:bg-gray-50/50 transition-colors group">
-                        <td class="px-4 py-4 whitespace-nowrap">
-                            <div class="flex flex-col">
-                                <span class="font-bold text-gray-700">{{ \Carbon\Carbon::parse($log['timestamp'])->translatedFormat('d F Y') }}</span>
-                                <span class="text-xs text-blue-500 font-mono">{{ \Carbon\Carbon::parse($log['timestamp'])->format('H:i:s') }}</span>
-                            </div>
-                        </td>
-                        <td class="px-4 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[#253D6B] font-bold text-xs border border-gray-200">
-                                    {{ substr($log['username'], 0, 1) }}
+        <div id="table-container">
+            <div class="p-6 overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[#253D6B] font-bold text-sm uppercase tracking-wider border-b-2 border-gray-50">
+                            <th class="px-4 py-4">Waktu</th>
+                            <th class="px-4 py-4">Operator</th>
+                            <th class="px-4 py-4">Aktivitas</th>
+                            <th class="px-4 py-4 text-center">Tipe</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody" class="divide-y divide-gray-50">
+                        @forelse($logs as $log)
+                        <tr id="log-{{ $log['id'] }}" class="hover:bg-gray-50/50 transition-colors group">
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-gray-700">{{ \Carbon\Carbon::parse($log['timestamp'])->translatedFormat('d F Y') }}</span>
+                                    <span class="text-xs text-blue-500 font-mono">{{ \Carbon\Carbon::parse($log['timestamp'])->format('H:i:s') }}</span>
                                 </div>
-                                <span class="font-semibold text-gray-700">{{ $log['username'] }}</span>
-                            </div>
-                        </td>
-                        <td class="px-4 py-4">
-                            <p class="text-sm text-gray-600 leading-relaxed">
-                                {!! $log['message'] !!}
-                            </p>
-                        </td>
-                        <td class="px-4 py-4 text-center">
-                            @php
-                                $badgeClass = match($log['type']) {
-                                    'login' => 'bg-emerald-100 text-emerald-600 border-emerald-200',
-                                    'logout' => 'bg-slate-100 text-slate-600 border-slate-200',
-                                    'violation' => 'bg-red-100 text-red-600 border-red-200',
-                                    default => 'bg-blue-100 text-blue-600 border-blue-200'
-                                };
-                                $icon = match($log['type']) {
-                                    'login' => 'lucide:log-in',
-                                    'logout' => 'lucide:log-out',
-                                    'violation' => 'lucide:alert-triangle',
-                                    default => 'lucide:info'
-                                };
-                            @endphp
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider {{ $badgeClass }}">
-                                <iconify-icon icon="{{ $icon }}"></iconify-icon>
-                                {{ $log['type'] }}
-                            </span>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="4" class="py-20 text-center">
-                            <div class="flex flex-col items-center gap-3">
-                                <iconify-icon icon="lucide:database" class="text-5xl text-gray-200"></iconify-icon>
-                                <p class="text-gray-400 italic">Belum ada riwayat aktivitas yang tercatat.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[#253D6B] font-bold text-xs border border-gray-200">
+                                        {{ substr($log['username'], 0, 1) }}
+                                    </div>
+                                    <span class="font-semibold text-gray-700">{{ $log['username'] }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <p class="text-sm text-gray-600 leading-relaxed">
+                                    {!! $log['message'] !!}
+                                </p>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                @php
+                                    $badgeClass = match($log['type']) {
+                                        'login' => 'bg-emerald-100 text-emerald-600 border-emerald-200',
+                                        'logout' => 'bg-slate-100 text-slate-600 border-slate-200',
+                                        'violation' => 'bg-red-100 text-red-600 border-red-200',
+                                        default => 'bg-blue-100 text-blue-600 border-blue-200'
+                                    };
+                                    $icon = match($log['type']) {
+                                        'login' => 'lucide:log-in',
+                                        'logout' => 'lucide:log-out',
+                                        'violation' => 'lucide:alert-triangle',
+                                        default => 'lucide:info'
+                                    };
+                                @endphp
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider {{ $badgeClass }}">
+                                    <iconify-icon icon="{{ $icon }}"></iconify-icon>
+                                    {{ $log['type'] }}
+                                </span>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" class="py-20 text-center">
+                                <div class="flex flex-col items-center gap-3">
+                                    <iconify-icon icon="lucide:database" class="text-5xl text-gray-200"></iconify-icon>
+                                    <p class="text-gray-400 italic">Belum ada riwayat aktivitas yang tercatat.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
 
-        <!-- Pagination -->
-        <div class="p-6 border-t border-gray-50 flex justify-center items-center gap-4">
-            <a href="{{ $currentPage > 1 ? url()->current().'?page='.($currentPage - 1).'&search='.$searchTerm.'&date='.$searchDate.'&perPage='.$perPage : '#' }}" 
-                class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-xl shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
-                <iconify-icon icon="lucide:chevron-left" class="text-xl"></iconify-icon>
-            </a>
-            
-            <span class="text-sm font-bold text-gray-600">Halaman {{ $currentPage }} dari {{ $totalPages }}</span>
+            <!-- Pagination -->
+            <div class="p-6 border-t border-gray-50 flex justify-center items-center gap-4">
+                <a href="{{ $currentPage > 1 ? url()->current().'?page='.($currentPage - 1).'&search='.$searchTerm.'&date='.$searchDate.'&perPage='.$perPage : '#' }}" 
+                    class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-xl shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
+                    <iconify-icon icon="lucide:chevron-left" class="text-xl"></iconify-icon>
+                </a>
+                
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Page {{ $currentPage }} of {{ $totalPages }}</span>
 
-            <a href="{{ $currentPage < $totalPages ? url()->current().'?page='.($currentPage + 1).'&search='.$searchTerm.'&date='.$searchDate.'&perPage='.$perPage : '#' }}" 
-                class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-xl shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
-                <iconify-icon icon="lucide:chevron-right" class="text-xl"></iconify-icon>
-            </a>
+                <a href="{{ $currentPage < $totalPages ? url()->current().'?page='.($currentPage + 1).'&search='.$searchTerm.'&date='.$searchDate.'&perPage='.$perPage : '#' }}" 
+                    class="w-10 h-10 flex items-center justify-center bg-[#253D6B] rounded-xl shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
+                    <iconify-icon icon="lucide:chevron-right" class="text-xl"></iconify-icon>
+                </a>
+            </div>
         </div>
     </div>
 </div>

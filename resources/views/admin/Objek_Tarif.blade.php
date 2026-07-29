@@ -61,68 +61,70 @@
                     </form>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse">
-                        <thead>
-                            <tr class="bg-[#F7FAFC]">
-                                <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">No</th>
-                                <th class="py-4 px-4 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase text-left">Nama Objek</th>
-                                <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Tarif Lama</th>
-                                <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Tarif Baru</th>
-                                <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Status</th>
-                                <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-body">
-                            @forelse($data as $index => $item)
-                            <tr class="hover:bg-gray-50/50 transition-colors">
-                                <td class="py-4 px-2 border border-gray-100 text-center text-xs font-bold text-gray-400">
-                                    {{ ($currentPage - 1) * $perPage + ($index + 1) }}
-                                </td>
-                                <td class="py-4 px-4 border border-gray-100 text-[13px] font-bold text-gray-700">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-50 p-1">
-                                            <img src="{{ $item['icon_url'] }}" class="w-full h-full object-contain">
+                <div id="table-container">
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-[#F7FAFC]">
+                                    <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">No</th>
+                                    <th class="py-4 px-4 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase text-left">Nama Objek</th>
+                                    <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Tarif Lama</th>
+                                    <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Tarif Baru</th>
+                                    <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Status</th>
+                                    <th class="py-4 px-2 border border-[#E6E6E6] text-[10px] font-black text-gray-900 uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                @forelse($data as $index => $item)
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="py-4 px-2 border border-gray-100 text-center text-xs font-bold text-gray-400">
+                                        {{ ($currentPage - 1) * $perPage + ($index + 1) }}
+                                    </td>
+                                    <td class="py-4 px-4 border border-gray-100 text-[13px] font-bold text-gray-700">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-50 p-1">
+                                                <img src="{{ $item['icon_url'] }}" class="w-full h-full object-contain">
+                                            </div>
+                                            <span>{{ $item['nama'] }}</span>
                                         </div>
-                                        <span>{{ $item['nama'] }}</span>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-2 border border-gray-100 text-center font-bold text-[13px] text-gray-400">Rp. {{ number_format($item['tarif_lama'] ?? 0, 0, ',', '.') }}</td>
-                                <td class="py-4 px-2 border border-gray-100 text-center font-black text-[13px] text-blue-600">Rp. {{ number_format($item['harga'], 0, ',', '.') }}</td>
-                                <td class="py-4 px-2 border border-gray-100 text-center">
-                                    <span class="{{ $item['status'] == 'Aktif' ? 'bg-[#EBFFFF] text-[#38B2AC]' : 'bg-gray-100 text-gray-400' }} px-3 py-1 rounded-md text-[9px] font-black uppercase">{{ $item['status'] }}</span>
-                                </td>
-                                <td class="py-4 px-2 border border-gray-100 text-center text-gray-300">
-                                    <button onclick="editData('{{ $item['id'] }}', '{{ $item['nama'] }}', '{{ $item['harga'] }}', '{{ $item['status'] }}', '{{ $item['keterangan'] }}', '{{ $item['icon_url'] }}')" class="hover:text-gray-900 mr-2"><i class="fas fa-pencil-alt text-[10px]"></i></button>
-                                    <form action="{{ route('objek-tarif.destroy', $item['id']) }}" method="POST" class="inline" onsubmit="confirmDelete(event, this, 'Apakah Anda yakin ingin menghapus data ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="hover:text-red-500"><i class="fas fa-trash-alt text-[10px]"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr id="empty-row">
-                                <td colspan="6" class="py-4 text-center text-gray-400 text-xs">Belum ada data objek & tarif.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                                    </td>
+                                    <td class="py-4 px-2 border border-gray-100 text-center font-bold text-[13px] text-gray-400">Rp. {{ number_format($item['tarif_lama'] ?? 0, 0, ',', '.') }}</td>
+                                    <td class="py-4 px-2 border border-gray-100 text-center font-black text-[13px] text-blue-600">Rp. {{ number_format($item['harga'], 0, ',', '.') }}</td>
+                                    <td class="py-4 px-2 border border-gray-100 text-center">
+                                        <span class="{{ $item['status'] == 'Aktif' ? 'bg-[#EBFFFF] text-[#38B2AC]' : 'bg-gray-100 text-gray-400' }} px-3 py-1 rounded-md text-[9px] font-black uppercase">{{ $item['status'] }}</span>
+                                    </td>
+                                    <td class="py-4 px-2 border border-gray-100 text-center text-gray-300">
+                                        <button onclick="editData('{{ $item['id'] }}', '{{ $item['nama'] }}', '{{ $item['harga'] }}', '{{ $item['status'] }}', '{{ $item['keterangan'] }}', '{{ $item['icon_url'] }}')" class="hover:text-gray-900 mr-2"><i class="fas fa-pencil-alt text-[10px]"></i></button>
+                                        <form action="{{ route('objek-tarif.destroy', $item['id']) }}" method="POST" class="inline" onsubmit="confirmDelete(event, this, 'Apakah Anda yakin ingin menghapus data ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="hover:text-red-500"><i class="fas fa-trash-alt text-[10px]"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr id="empty-row">
+                                    <td colspan="6" class="py-4 text-center text-gray-400 text-xs">Belum ada data objek & tarif.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
 
-                <!-- Pagination -->
-                <div class="mt-6 flex justify-center items-center gap-4">
-                    <a href="{{ $currentPage > 1 ? url()->current().'?page='.($currentPage - 1).'&perPage='.$perPage.'&search='.request('search') : '#' }}" 
-                        class="w-8 h-8 flex items-center justify-center bg-[#253D6B] rounded-lg shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
-                        <iconify-icon icon="lucide:chevron-left" class="text-sm"></iconify-icon>
-                    </a>
-                    
-                    <span class="text-[10px] font-bold text-gray-400 uppercase">Page {{ $currentPage }} of {{ $totalPages }}</span>
+                    <!-- Pagination -->
+                    <div class="mt-6 flex justify-center items-center gap-4">
+                        <a href="{{ $currentPage > 1 ? url()->current().'?page='.($currentPage - 1).'&perPage='.$perPage.'&search='.request('search') : '#' }}" 
+                            class="w-8 h-8 flex items-center justify-center bg-[#253D6B] rounded-lg shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : '' }}">
+                            <iconify-icon icon="lucide:chevron-left" class="text-sm"></iconify-icon>
+                        </a>
+                        
+                        <span class="text-[10px] font-bold text-gray-400 uppercase">Page {{ $currentPage }} of {{ $totalPages }}</span>
 
-                    <a href="{{ $currentPage < $totalPages ? url()->current().'?page='.($currentPage + 1).'&perPage='.$perPage.'&search='.request('search') : '#' }}" 
-                        class="w-8 h-8 flex items-center justify-center bg-[#253D6B] rounded-lg shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
-                        <iconify-icon icon="lucide:chevron-right" class="text-sm"></iconify-icon>
-                    </a>
+                        <a href="{{ $currentPage < $totalPages ? url()->current().'?page='.($currentPage + 1).'&perPage='.$perPage.'&search='.request('search') : '#' }}" 
+                            class="w-8 h-8 flex items-center justify-center bg-[#253D6B] rounded-lg shadow-sm hover:bg-[#1a2e52] transition-all text-white {{ $currentPage >= $totalPages ? 'opacity-30 cursor-not-allowed' : '' }}">
+                            <iconify-icon icon="lucide:chevron-right" class="text-sm"></iconify-icon>
+                        </a>
+                    </div>
                 </div>
             </div>
 
