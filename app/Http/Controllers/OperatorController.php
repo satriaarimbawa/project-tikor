@@ -488,11 +488,23 @@ class OperatorController extends Controller
 
         foreach ($objekSurvei as $obj) {
             $key = strtolower(str_replace(' ', '', $obj));
+            
+            $matchedTarif = 0;
+            $matchedTarifLama = 0;
+            foreach ($tarifMap as $masterKey => $masterData) {
+                $masterSubKeys = explode(',', $masterKey);
+                if (in_array($key, $masterSubKeys)) {
+                    $matchedTarif = $masterData['harga'];
+                    $matchedTarifLama = $masterData['tarif_lama'];
+                    break;
+                }
+            }
+
             $summaryData[$key] = [
                 'nama' => $obj,
                 'jumlah' => 0,
-                'tarif' => $tarifMap[$key]['harga'] ?? 0,
-                'tarif_lama' => $tarifMap[$key]['tarif_lama'] ?? 0,
+                'tarif' => $matchedTarif,
+                'tarif_lama' => $matchedTarifLama,
                 'total' => 0,
                 'total_lama' => 0
             ];

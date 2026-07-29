@@ -70,7 +70,11 @@ class LaporanLokasiController extends Controller
                             if (is_array($dataPenugasan)) {
                                 foreach ($dataPenugasan as $idPenugasan => $item) {
                                     foreach ($mapTarif as $jenisKey => $harga) {
-                                        $vol = (int)($item[$jenisKey] ?? 0);
+                                        $subKeys = explode(',', $jenisKey);
+                                        $vol = 0;
+                                        foreach ($subKeys as $sub) {
+                                            $vol += (int)($item[$sub] ?? 0);
+                                        }
                                         if ($vol > 0) {
                                             $totals[$jenisKey] += $vol;
 
@@ -221,7 +225,11 @@ class LaporanLokasiController extends Controller
                             if (is_array($dataPenugasan)) {
                                 foreach ($dataPenugasan as $idPenugasan => $item) {
                                     foreach ($mapTarif as $jenisKey => $harga) {
-                                        $vol = (int)($item[$jenisKey] ?? 0);
+                                        $subKeys = explode(',', $jenisKey);
+                                        $vol = 0;
+                                        foreach ($subKeys as $sub) {
+                                            $vol += (int)($item[$sub] ?? 0);
+                                        }
                                         if ($vol > 0) {
                                             $penerimaan = $vol * $harga;
                                             

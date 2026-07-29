@@ -68,7 +68,11 @@ class LaporanOperatorController extends Controller
                         foreach ($mapTarif as $jenis => $tarifData) {
                             $harga = $tarifData['harga'];
                             $tarifLama = $tarifData['tarif_lama'];
-                            $vol = (int)($item[$jenis] ?? 0);
+                            $subKeys = explode(',', $jenis);
+                            $vol = 0;
+                            foreach ($subKeys as $sub) {
+                                $vol += (int)($item[$sub] ?? 0);
+                            }
                             if ($vol > 0) {
                                 $dataRingkasan[$jenis] = ($dataRingkasan[$jenis] ?? 0) + $vol;
                                 $jamTotal += $vol;
@@ -186,7 +190,11 @@ class LaporanOperatorController extends Controller
                     foreach ($mapTarif as $jenis => $tarifData) {
                         $harga = $tarifData['harga'];
                         $tarifLama = $tarifData['tarif_lama'];
-                        $vol = (int)($item[$jenis] ?? 0);
+                        $subKeys = explode(',', $jenis);
+                        $vol = 0;
+                        foreach ($subKeys as $sub) {
+                            $vol += (int)($item[$sub] ?? 0);
+                        }
                         if ($vol > 0) {
                             $dataRingkasan[$jenis] += $vol;
                             $penerimaan = $vol * $harga;
