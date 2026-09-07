@@ -14,31 +14,19 @@ use App\Http\Controllers\LiveDashboardController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ActivityLogController;
 
-Route::get('/debug-gd', function() {
-    return [
-        'gd_loaded' => extension_loaded('gd'),
-        'gd_info' => function_exists('gd_info') ? gd_info() : 'N/A',
-        'php_version' => phpversion(),
-        'php_ini' => php_ini_loaded_file(),
-        'extensions_dir' => ini_get('extension_dir'),
-        'all_extensions' => get_loaded_extensions(),
-    ];
-});
-
-
 //link landing page 
 Route::get('/', function () {
     return view('landing');
 });
-
-    // Live Monitoring Dashboard
-    Route::get('/dashboard-live', [LiveDashboardController::class, 'index'])->name('admin.live');
 
 //route login
 Route::get('/login', [LoginController::class, 'index'])->name('login');
 Route::get('/logout', [LoginController::class, 'logout']);
 Route::post('/cek_login', [LoginController::class, 'cek_login']);
 Route::get('/login-admin', [AdminController::class, 'loginadmin']);
+
+// Live Monitoring Dashboard (Public Command Center)
+Route::get('/dashboard-live', [LiveDashboardController::class, 'index'])->name('admin.live');
 
 // Route Lupa Password
 

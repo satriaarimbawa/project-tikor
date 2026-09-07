@@ -68,15 +68,23 @@
             </div>
 
             {{-- Action Buttons --}}
-            <div class="mt-4 flex justify-between items-center">
-                <button type="button" id="btn-lapor-main" onclick="akhirSurvei()" style="background-color: #D9D9D9;"
-                    class="flex-1 max-w-xs hover:bg-gray-300 py-2 px-6 rounded-2xl flex items-center justify-center gap-4 shadow-sm border border-gray-200 transition-all active:scale-95 group">
-                    <div class="p-2 rounded-xl border-2 border-red-500"><i class="fas fa-exclamation-triangle text-lg text-red-500"></i></div>
-                    <span class="font-bold text-slate-700 text-xl">Lapor</span>
-                </button>
-                <div class="flex flex-col gap-2 ml-4">
-                    <button onclick="window.location.href='{{ route('operator.download.pdf') }}'" class="hover:scale-110 transition-transform"><i class="far fa-file-alt text-2xl text-slate-600"></i></button>
-                    <button onclick="window.location.href='{{ route('operator.download.pdf') }}'" class="hover:scale-110 transition-transform"><i class="fas fa-download text-2xl text-slate-600"></i></button>
+            <div class="mt-4 flex justify-between items-center gap-3">
+                <div class="relative flex-1 max-w-xs">
+                    <button type="button" id="btn-lapor-hold"
+                        @if($sudahLapor) disabled @endif
+                        class="relative w-full overflow-hidden {{ $sudahLapor ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-200 hover:bg-slate-300 text-slate-800 active:scale-98' }} py-3 px-4 rounded-2xl flex items-center justify-center gap-3 shadow-sm border border-slate-300 font-bold transition-all select-none touch-none">
+                        <div id="hold-progress" class="absolute left-0 top-0 bottom-0 bg-red-500/25 w-0 transition-none pointer-events-none rounded-2xl"></div>
+                        <div class="p-1.5 rounded-xl border-2 {{ $sudahLapor ? 'border-slate-400' : 'border-red-500' }} flex items-center justify-center">
+                            <i class="fas {{ $sudahLapor ? 'fa-check text-slate-400' : 'fa-hand-pointer text-red-500' }} text-sm" id="hold-icon"></i>
+                        </div>
+                        <span id="hold-text" class="font-bold text-sm leading-tight text-center">
+                            {{ $sudahLapor ? 'Laporan Hari Ini Terkirim' : 'Tahan 3 Detik untuk Lapor' }}
+                        </span>
+                    </button>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <button onclick="window.location.href='{{ route('operator.download.pdf') }}'" class="hover:scale-110 transition-transform p-1" title="Lihat Laporan"><i class="far fa-file-alt text-2xl text-slate-600"></i></button>
+                    <button onclick="window.location.href='{{ route('operator.download.pdf') }}'" class="hover:scale-110 transition-transform p-1" title="Unduh PDF"><i class="fas fa-download text-2xl text-slate-600"></i></button>
                 </div>
             </div>
         </div>
@@ -150,12 +158,16 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <script>
-        // --- Firebase Initialization ---
         let firebaseConfig = @json(config('firebase.projects.app'));
         firebaseConfig.apiKey = "AIzaSyA_raJzGxDNyvpn1OIFczKdB6I-mpdTYdI";
         if (!firebaseConfig.databaseURL) firebaseConfig.databaseURL = "{{ config('firebase.projects.app.database.url') }}";
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const emulatorHost = "{{ env('FIREBASE_DATABASE_EMULATOR_HOST') }}";
+        if (emulatorHost) {
+            const parts = emulatorHost.split(':');
+            db.useEmulator(parts[0], parseInt(parts[1]) || 9000);
+        }
         const currentUserId = "{{ session('user_id') }}";
 
         // Real-time Delegation Logic
@@ -264,29 +276,123 @@
             }).catch(e => console.error(e));
         }
 
-        function akhirSurvei() {
-            confirmAction("Akhiri Survei", "Yakin ingin mengakhiri survei?", 'warning').then((result) => {
-                if (result.isConfirmed) {
-                    const btn = document.getElementById('btn-lapor-main');
-                    if(btn) btn.disabled = true;
-                    fetch("{{ route('lapor.survei') }}", {
-                        method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
-                        body: JSON.stringify({ id_penugasan: "{{ $idPenugasan }}" })
-                    }).then(r => r.json()).then(d => { 
-                        if (d.success) {
-                            Swal.fire({
-                                title: 'Laporan Berhasil!',
-                                text: 'Terima kasih atas kerja keras Anda hari ini. Hati-hati di jalan!',
-                                icon: 'success',
-                                confirmButtonColor: '#253D6B',
-                                confirmButtonText: 'Kembali ke Penugasan',
-                                allowOutsideClick: false
-                            }).then(() => {
-                                window.location.href = "/dashboard-operator-penugasan";
-                            });
-                        }
-                    });
+        // --- HOLD-TO-CONFIRM LOGIC (3 DETIK) ---
+        let holdTimer = null;
+        let isHolding = false;
+        const HOLD_DURATION = 3000; // 3000ms = 3 detik
+
+        const btnLaporHold = document.getElementById('btn-lapor-hold');
+        const holdProgress = document.getElementById('hold-progress');
+        const holdText = document.getElementById('hold-text');
+        const holdIcon = document.getElementById('hold-icon');
+
+        if (btnLaporHold && !btnLaporHold.disabled) {
+            const startHold = (e) => {
+                if (e.type === 'touchstart') {
+                    // prevent ghost click
                 }
+                if (isHolding) return;
+                isHolding = true;
+
+                holdProgress.style.transition = 'width 3s linear';
+                holdProgress.style.width = '100%';
+                holdText.innerText = 'Tahan terus...';
+                if (holdIcon) holdIcon.className = 'fas fa-spinner fa-spin text-red-500 text-sm';
+
+                holdTimer = setTimeout(() => {
+                    isHolding = false;
+                    if (navigator.vibrate) {
+                        try { navigator.vibrate(100); } catch(err) {}
+                    }
+                    resetHold();
+                    bukaKonfirmasiLapor();
+                }, HOLD_DURATION);
+            };
+
+            const cancelHold = () => {
+                if (!isHolding) return;
+                isHolding = false;
+                clearTimeout(holdTimer);
+                resetHold();
+            };
+
+            const resetHold = () => {
+                if (holdProgress) {
+                    holdProgress.style.transition = 'none';
+                    holdProgress.style.width = '0%';
+                }
+                if (holdText) holdText.innerText = 'Tahan 3 Detik untuk Lapor';
+                if (holdIcon) holdIcon.className = 'fas fa-hand-pointer text-red-500 text-sm';
+            };
+
+            // Touch events for Mobile Phones
+            btnLaporHold.addEventListener('touchstart', startHold, { passive: false });
+            btnLaporHold.addEventListener('touchend', cancelHold);
+            btnLaporHold.addEventListener('touchcancel', cancelHold);
+
+            // Mouse events for Desktop Browser
+            btnLaporHold.addEventListener('mousedown', startHold);
+            btnLaporHold.addEventListener('mouseup', cancelHold);
+            btnLaporHold.addEventListener('mouseleave', cancelHold);
+        }
+
+        function bukaKonfirmasiLapor() {
+            const total = document.getElementById('total-survei') ? document.getElementById('total-survei').innerText : 0;
+
+            Swal.fire({
+                title: 'Konfirmasi Akhir Shift',
+                html: `
+                    <div class="text-left bg-slate-50 p-4 rounded-xl text-sm mb-2 border border-slate-200">
+                        <p class="font-bold text-slate-700 mb-1">📊 Rangkuman Survei Anda Hari Ini:</p>
+                        <p class="text-slate-600">Total Kendaraan Tercatat: <span class="font-black text-slate-900">${total} unit</span></p>
+                        <p class="text-xs text-amber-600 mt-2 font-medium">⚠️ Perhatian: Setelah melapor, tombol pencatatan akan dikunci dan shift Anda hari ini selesai.</p>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#DC2626',
+                cancelButtonColor: '#253D6B',
+                confirmButtonText: 'Ya, Selesaikan Shift',
+                cancelButtonText: '❌ Batal / Lanjut Survei',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    kirimLaporanKeServer();
+                }
+            });
+        }
+
+        function kirimLaporanKeServer() {
+            if (btnLaporHold) btnLaporHold.disabled = true;
+
+            fetch("{{ route('lapor.survei') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
+                body: JSON.stringify({ id_penugasan: "{{ $idPenugasan }}" })
+            })
+            .then(r => r.json())
+            .then(d => { 
+                if (d.success) {
+                    Swal.fire({
+                        title: 'Laporan Berhasil!',
+                        text: 'Terima kasih atas kerja keras Anda hari ini. Hati-hati di jalan!',
+                        icon: 'success',
+                        confirmButtonColor: '#253D6B',
+                        confirmButtonText: 'Kembali ke Penugasan',
+                        allowOutsideClick: false
+                    }).then(() => {
+                        window.location.href = "/dashboard-operator-penugasan";
+                    });
+                } else {
+                    Swal.fire('Gagal', d.message || 'Terjadi kesalahan saat melapor.', 'error');
+                    if (btnLaporHold) btnLaporHold.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire('Error', 'Gagal menghubungi server.', 'error');
+                if (btnLaporHold) btnLaporHold.disabled = false;
             });
         }
 

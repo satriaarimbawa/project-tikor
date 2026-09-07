@@ -31,7 +31,7 @@
 
             <div class="bg-slate-100 rounded-2xl p-4 text-center border border-slate-100">
                 <p class="text-slate-500 text-sm">Total Survei : <span
-                        class="text-slate-900 font-bold text-lg">{{ $totalSemua }}</span></p>
+                        id="total-survei" class="text-slate-900 font-bold text-lg">{{ $totalSemua }}</span></p>
                 <hr class="my-3 border-slate-200">
 
                 <div class="grid grid-cols-2 gap-4">
@@ -55,7 +55,7 @@
                             <i class="{{ $conf['icon'] }} text-2xl text-slate-700"></i>
                             <div class="text-left">
                                 <p class="text-[10px] text-slate-500 leading-none mb-1">{{ $label }}</p>
-                                <p class="font-bold text-sm leading-none">{{ $counts[$key] ?? 0 }}</p>
+                                <p id="count-{{ $key }}" class="font-bold text-sm leading-none">{{ $counts[$key] ?? 0 }}</p>
                             </div>
                         </div>
                     @endforeach
@@ -147,6 +147,54 @@
 
     </div>
     <script src="{{ asset('js/deteksiTikorUser.js') }}"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script>
+        let firebaseConfig = @json(config('firebase.projects.app'));
+        firebaseConfig.apiKey = "AIzaSyA_raJzGxDNyvpn1OIFczKdB6I-mpdTYdI";
+        if (!firebaseConfig.databaseURL) firebaseConfig.databaseURL = "{{ config('firebase.projects.app.database.url') }}";
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const emulatorHost = "{{ env('FIREBASE_DATABASE_EMULATOR_HOST') }}";
+        if (emulatorHost) {
+            const parts = emulatorHost.split(':');
+            db.useEmulator(parts[0], parseInt(parts[1]) || 9000);
+        }
+
+        const idLokasi = "{{ session('id_lokasi_aktif') }}";
+        const today = "{{ \Carbon\Carbon::now('Asia/Makassar')->toDateString() }}";
+        if (idLokasi) {
+            db.ref(`survei_harian/${idLokasi}/${today}`).on('value', snapshot => {
+                const dataHariIni = snapshot.val();
+                if (!dataHariIni) return;
+
+                const counts = {};
+                let totalSemua = 0;
+                document.querySelectorAll('[id^="count-"]').forEach(el => {
+                    const key = el.id.replace('count-', '');
+                    counts[key] = 0;
+                });
+
+                Object.values(dataHariIni).forEach(dataJam => {
+                    Object.values(dataJam).forEach(dataTugas => {
+                        Object.keys(counts).forEach(key => {
+                            const val = parseInt(dataTugas[key]) || 0;
+                            counts[key] += val;
+                            totalSemua += val;
+                        });
+                    });
+                });
+
+                Object.keys(counts).forEach(key => {
+                    const el = document.getElementById(`count-${key}`);
+                    if (el) el.innerText = counts[key];
+                });
+
+                const totalEl = document.getElementById('total-survei');
+                if (totalEl) totalEl.innerText = totalSemua;
+            });
+        }
+    </script>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         startGeofencing(

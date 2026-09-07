@@ -93,9 +93,11 @@ class LiveDashboardController extends Controller
         // 3. Generate Custom Token
         $customToken = null;
         try {
-            $userId = session('user_id') ?? 'admin_monitor';
-            $token = $this->auth->createCustomToken($userId);
-            $customToken = method_exists($token, 'toString') ? $token->toString() : (string) $token;
+            $userId = session('user_id');
+            if ($userId) {
+                $token = $this->auth->createCustomToken($userId);
+                $customToken = method_exists($token, 'toString') ? $token->toString() : (string) $token;
+            }
         } catch (\Exception $e) {}
 
         // 4. Ambil Daftar User untuk Presence Monitoring

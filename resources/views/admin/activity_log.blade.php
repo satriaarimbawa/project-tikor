@@ -10,19 +10,19 @@
                 <div>
                     <h2 class="text-2xl font-bold flex items-center gap-3">
                         <iconify-icon icon="lucide:history" class="text-3xl text-yellow-400"></iconify-icon>
-                        Log Aktivitas Operator
+                        Log Aktivitas Sistem
                     </h2>
-                    <p class="text-white/60 text-sm mt-1">Riwayat login, logout, dan pelanggaran radius operator secara real-time.</p>
+                    <p class="text-white/60 text-sm mt-1">Riwayat login, logout, pencatatan, dan aktivitas sistem secara real-time.</p>
                 </div>
                 <div class="bg-white/10 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/10 text-center">
                     <p class="text-[10px] uppercase font-bold text-white/50 tracking-widest">Total Aktivitas</p>
-                    <p class="text-2xl font-black text-white">{{ count($logs) }}</p>
+                    <p class="text-2xl font-black text-white">{{ $totalData ?? count($logs) }}</p>
                 </div>
             </div>
             
             <!-- SEARCH & FILTER -->
             <form action="{{ url()->current() }}" method="GET" class="mt-8 flex flex-wrap gap-4 items-center bg-white/5 p-4 rounded-2xl border border-white/10">
-                <div class="flex-1 min-w-[250px] relative">
+                <div class="flex-1 min-w-[200px] relative">
                     <iconify-icon icon="lucide:search" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"></iconify-icon>
                     <input type="text" name="search" value="{{ $searchTerm }}" placeholder="Cari username atau pesan..." 
                         class="w-full bg-white/10 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 text-white text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all">
@@ -32,6 +32,26 @@
                     <iconify-icon icon="lucide:calendar" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"></iconify-icon>
                     <input type="date" name="date" value="{{ $searchDate }}" 
                         class="w-full md:w-auto bg-white/10 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all [color-scheme:dark]">
+                </div>
+
+                <div class="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-xl border border-white/10">
+                    <span class="text-[10px] font-bold text-white/50 uppercase whitespace-nowrap">Role:</span>
+                    <select name="role" onchange="this.form.submit()" class="bg-transparent text-white text-sm focus:outline-none cursor-pointer appearance-none px-2 py-1.5 min-w-[80px] text-center">
+                        <option value="" {{ ($searchRole ?? '') === '' ? 'selected' : '' }} class="bg-[#253D6B]">Semua Role</option>
+                        <option value="operator" {{ ($searchRole ?? '') === 'operator' ? 'selected' : '' }} class="bg-[#253D6B]">Operator</option>
+                        <option value="admin" {{ ($searchRole ?? '') === 'admin' ? 'selected' : '' }} class="bg-[#253D6B]">Admin</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-xl border border-white/10">
+                    <span class="text-[10px] font-bold text-white/50 uppercase whitespace-nowrap">Tipe:</span>
+                    <select name="type" onchange="this.form.submit()" class="bg-transparent text-white text-sm focus:outline-none cursor-pointer appearance-none px-2 py-1.5 min-w-[80px] text-center">
+                        <option value="" {{ ($searchType ?? '') === '' ? 'selected' : '' }} class="bg-[#253D6B]">Semua Tipe</option>
+                        <option value="login" {{ ($searchType ?? '') === 'login' ? 'selected' : '' }} class="bg-[#253D6B]">Login</option>
+                        <option value="logout" {{ ($searchType ?? '') === 'logout' ? 'selected' : '' }} class="bg-[#253D6B]">Logout</option>
+                        <option value="violation" {{ ($searchType ?? '') === 'violation' ? 'selected' : '' }} class="bg-[#253D6B]">Pelanggaran</option>
+                        <option value="update" {{ ($searchType ?? '') === 'update' ? 'selected' : '' }} class="bg-[#253D6B]">Pencatatan</option>
+                    </select>
                 </div>
 
                 <div class="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-xl border border-white/10">
@@ -55,7 +75,7 @@
                         Unduh Log PDF
                     </a>
 
-                    @if($searchTerm || $searchDate)
+                    @if($searchTerm || $searchDate || ($searchRole ?? '') || ($searchType ?? ''))
                         <a href="{{ url()->current() }}" class="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm border border-white/10">
                             Reset
                         </a>
@@ -70,7 +90,7 @@
                     <thead>
                         <tr class="text-[#253D6B] font-bold text-sm uppercase tracking-wider border-b-2 border-gray-50">
                             <th class="px-4 py-4">Waktu</th>
-                            <th class="px-4 py-4">Operator</th>
+                            <th class="px-4 py-4">Pengguna</th>
                             <th class="px-4 py-4">Aktivitas</th>
                             <th class="px-4 py-4 text-center">Tipe</th>
                         </tr>
@@ -89,12 +109,15 @@
                                     <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[#253D6B] font-bold text-xs border border-gray-200">
                                         {{ substr($log['username'], 0, 1) }}
                                     </div>
-                                    <span class="font-semibold text-gray-700">{{ $log['username'] }}</span>
+                                    <div class="flex flex-col">
+                                        <span class="font-semibold text-gray-700">{{ $log['username'] }}</span>
+                                        <span class="text-[10px] text-gray-400 uppercase font-bold">{{ $log['role'] ?? 'User' }}</span>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-4 py-4">
                                 <p class="text-sm text-gray-600 leading-relaxed">
-                                    {!! $log['message'] !!}
+                                    {!! strip_tags($log['message'], '<strong><b>') !!}
                                 </p>
                             </td>
                             <td class="px-4 py-4 text-center">
@@ -103,12 +126,14 @@
                                         'login' => 'bg-emerald-100 text-emerald-600 border-emerald-200',
                                         'logout' => 'bg-slate-100 text-slate-600 border-slate-200',
                                         'violation' => 'bg-red-100 text-red-600 border-red-200',
-                                        default => 'bg-blue-100 text-blue-600 border-blue-200'
+                                        'update' => 'bg-blue-100 text-blue-600 border-blue-200',
+                                        default => 'bg-purple-100 text-purple-600 border-purple-200'
                                     };
                                     $icon = match($log['type']) {
                                         'login' => 'lucide:log-in',
                                         'logout' => 'lucide:log-out',
                                         'violation' => 'lucide:alert-triangle',
+                                        'update' => 'lucide:edit-3',
                                         default => 'lucide:info'
                                     };
                                 @endphp
@@ -176,6 +201,11 @@
         firebase.initializeApp(firebaseConfig);
     }
     const database = firebase.database();
+    const emulatorHost = "{{ env('FIREBASE_DATABASE_EMULATOR_HOST') }}";
+    if (emulatorHost) {
+        const parts = emulatorHost.split(':');
+        database.useEmulator(parts[0], parseInt(parts[1]) || 9000);
+    }
 
     // Referensi ke activity_logs
     const logRef = database.ref('activity_logs');
@@ -192,10 +222,7 @@
             return;
         }
 
-        // 2. Filter tipe log yang ingin ditampilkan
-        if (['login', 'logout', 'violation'].includes(log.type)) {
-            renderNewLogRow(logId, log);
-        }
+        renderNewLogRow(logId, log);
     }, (error) => {
         console.error("Firebase Error:", error);
     });
@@ -211,8 +238,8 @@
         const currentBody = document.getElementById('logTableBody');
 
         const date = new Date(data.timestamp);
-        const day = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-        const time = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+        const day = isNaN(date.getTime()) ? data.timestamp : date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        const time = isNaN(date.getTime()) ? '' : date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
 
         let badgeClass = '';
         let icon = '';
@@ -230,10 +257,19 @@
                 badgeClass = 'bg-red-100 text-red-600 border-red-200';
                 icon = 'lucide:alert-triangle';
                 break;
-            default:
+            case 'update':
                 badgeClass = 'bg-blue-100 text-blue-600 border-blue-200';
+                icon = 'lucide:edit-3';
+                break;
+            default:
+                badgeClass = 'bg-purple-100 text-purple-600 border-purple-200';
                 icon = 'lucide:info';
         }
+
+        // Sanitasi pesan dari tag berbahaya
+        const div = document.createElement('div');
+        div.innerHTML = data.message || '-';
+        const cleanMessage = div.innerText || div.textContent;
 
         const newRow = `
             <tr id="log-${id}" class="hover:bg-gray-50/50 transition-colors group animate-slide-in">
@@ -248,7 +284,9 @@
                         <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[#253D6B] font-bold text-xs border border-gray-200">
                             ${data.username ? data.username.charAt(0).toUpperCase() : '?'}
                         </div>
-                        <span class="font-semibold text-gray-700">${data.username || 'Unknown'}</span>
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-gray-700">${data.username || 'Unknown'}</span>
+                        </div>
                     </div>
                 </td>
                 <td class="px-4 py-4">

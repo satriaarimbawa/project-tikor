@@ -20,6 +20,8 @@ class ActivityLogController extends Controller
     {
         $searchTerm = strtolower($request->input('search', ''));
         $searchDate = $request->input('date'); 
+        $searchRole = $request->input('role', ''); 
+        $searchType = $request->input('type', ''); 
 
         // Ambil data log dan data user
         $logsRaw = $this->database->getReference('activity_logs')->getValue() ?? [];
@@ -27,13 +29,15 @@ class ActivityLogController extends Controller
         
         $filteredLogs = [];
         foreach ($logsRaw as $id => $log) {
-            // 1. Filter Tipe Log
-            if (!in_array($log['type'] ?? '', ['login', 'logout', 'violation'])) continue;
-
-            // 2. Filter Role (Hanya Operator)
+            $type = $log['type'] ?? 'info';
             $userId = $log['user_id'] ?? null;
-            $userRole = $usersRaw[$userId]['role_user'] ?? '';
-            if ($userRole !== 'operator') continue;
+            $userRole = $usersRaw[$userId]['role_user'] ?? 'operator';
+
+            // 1. Filter Tipe Log jika dispesifikasikan
+            if ($searchType !== '' && $type !== $searchType) continue;
+
+            // 2. Filter Role jika dispesifikasikan
+            if ($searchRole !== '' && $userRole !== $searchRole) continue;
 
             // 3. Filter Tanggal
             if ($searchDate) {
@@ -44,13 +48,14 @@ class ActivityLogController extends Controller
             // 4. Filter Pencarian
             if ($searchTerm !== '') {
                 $username = strtolower($log['username'] ?? '');
-                $message = strtolower($log['message'] ?? '');
+                $message = strtolower(strip_tags($log['message'] ?? ''));
                 if (!str_contains($username, $searchTerm) && !str_contains($message, $searchTerm)) continue;
             }
 
             $filteredLogs[] = [
                 'id' => $id,
-                'type' => $log['type'],
+                'type' => $type,
+                'role' => $userRole,
                 'username' => $log['username'] ?? 'Unknown',
                 'message' => $log['message'] ?? '-',
                 'timestamp' => $log['timestamp'] ?? '-',
@@ -66,7 +71,7 @@ class ActivityLogController extends Controller
         $perPage = (int) $request->input('perPage', 10);
         $currentPage = (int) $request->input('page', 1);
         $totalData = count($filteredLogs);
-        $totalPages = ceil($totalData / $perPage);
+        $totalPages = $totalData > 0 ? (int) ceil($totalData / $perPage) : 1;
         $offset = ($currentPage - 1) * $perPage;
         
         $dataPaginated = array_slice($filteredLogs, $offset, $perPage);
@@ -76,9 +81,12 @@ class ActivityLogController extends Controller
             'firebaseConfig' => config('firebase.projects.app'),
             'searchTerm' => $searchTerm,
             'searchDate' => $searchDate,
+            'searchRole' => $searchRole,
+            'searchType' => $searchType,
             'perPage' => $perPage,
             'currentPage' => $currentPage,
-            'totalPages' => $totalPages
+            'totalPages' => $totalPages,
+            'totalData' => $totalData
         ]);
     }
 

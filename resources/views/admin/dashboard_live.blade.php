@@ -247,6 +247,11 @@
         try {
             if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
             const db = firebase.database();
+            const emulatorHost = "{{ env('FIREBASE_DATABASE_EMULATOR_HOST') }}";
+            if (emulatorHost) {
+                const parts = emulatorHost.split(':');
+                db.useEmulator(parts[0], parseInt(parts[1]) || 9000);
+            }
             
             // Listener Master Lokasi (Real-time!)
             db.ref('lokasi').on('value', (snap) => {
