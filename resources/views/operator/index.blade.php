@@ -1,26 +1,3 @@
-@php
-//Simulasi database
-$riwayat = [
-(object)['jam' => '10.00', 'kendaraan' => 'Motor', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.20', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.21', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.22', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.24', 'kendaraan' => 'MiniBus', 'lokasi' => 'Terminal Galiran'],
-];
-
-
-$totalMotor = collect($riwayat)->where('kendaraan', 'Motor')->count();
-$totalMobil = collect($riwayat)->where('kendaraan', 'Mobil')->count();
-$totalTruk = collect($riwayat)->where('kendaraan', 'Truk')->count();
-$totalMiniBus = collect($riwayat)->where('kendaraan', 'MiniBus')->count();
-$totalSemua = collect($riwayat)->count();
-@endphp
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -28,7 +5,8 @@ $totalSemua = collect($riwayat)->count();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>DASHBOARD || OPERATOR</title>
+    <title>Beranda - Operator</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -42,16 +20,14 @@ $totalSemua = collect($riwayat)->count();
                 <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo">
             </div>
             <div>
-                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - Terminal Galiran</h1>
-                <p class="text-xs lg:text-sm text-slate-500">Shift Pagi | 18 Maret 2026</p>
+                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - {{ $nama_lokasi }}</h1>
+                <p class="text-xs lg:text-sm text-slate-500">{{ \Carbon\Carbon::now()->translatedFormat('j F Y') }}</p>
             </div>
         </div>
 
         <div class="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-200 mb-6 relative">
             <h2 class="font-bold mb-4 text-sm lg:text-base text-slate-900">Ringkasan Harian ( Status : <span
-                    class="text-emerald-500">● AKTIF</span> )</h2>
-
-
+                    class="{{ $isAktif ? 'text-emerald-500' : 'text-red-500' }}">● {{ $isAktif ? 'AKTIF' : 'INAKTIF' }}</span> )</h2>
 
             <div class="bg-slate-100 rounded-2xl p-4 text-center border border-slate-100">
                 <p class="text-slate-500 text-sm">Total Survei : <span
@@ -59,46 +35,42 @@ $totalSemua = collect($riwayat)->count();
                 <hr class="my-3 border-slate-200">
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="flex items-center gap-3 border-r border-slate-200 pr-2">
-                        <i class="fas fa-motorcycle text-2xl text-slate-700"></i>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Motor</p>
-                            <p class="font-bold">{{ $totalMotor }}</p>
+                    @php
+                        $iconConfig = [
+                            'motor' => ['icon' => 'fas fa-motorcycle', 'label' => 'Motor'],
+                            'minibus' => ['icon' => 'fas fa-car-side', 'label' => 'Mini Bus'],
+                            'bus' => ['icon' => 'fas fa-bus', 'label' => 'Bus'],
+                            'truk' => ['icon' => 'fas fa-truck', 'label' => 'Truk'],
+                            'default' => ['icon' => 'fas fa-car', 'label' => 'Lainnya']
+                        ];
+                    @endphp
+
+                    @foreach($objekSurvei as $obj)
+                        @php 
+                            $key = strtolower(str_replace(' ', '', $obj));
+                            $conf = $iconConfig[$key] ?? $iconConfig['default'];
+                            $label = isset($iconConfig[$key]) ? $conf['label'] : ucfirst($obj);
+                        @endphp
+                        <div class="flex items-center gap-3 border-r border-slate-200 pr-2 last:border-r-0">
+                            <i class="{{ $conf['icon'] }} text-2xl text-slate-700"></i>
+                            <div class="text-left">
+                                <p class="text-[10px] text-slate-500 leading-none mb-1">{{ $label }}</p>
+                                <p class="font-bold text-sm leading-none">{{ $counts[$key] ?? 0 }}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class=" p-2 rounded-lg text-2xl text-slate-700">
-                            <i class="fas fa-car text-lg"></i>
+                    @endforeach
+                    
+                    @if(empty($objekSurvei))
+                        <div class="col-span-2 py-2 text-slate-400 text-xs italic">
+                            Belum ada objek penugasan aktif
                         </div>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Mobil</p>
-                            <p class="font-bold">{{ $totalMobil }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class=" p-2 rounded-lg text-2xl text-slate-700">
-                            <i class="fas fa-bus text-lg"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Mini Bus</p>
-                            <p class="font-bold">{{ $totalMiniBus }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class=" p-2 rounded-lg text-2xl text-slate-700">
-                            <i class="fas fa-truck text-lg"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Truk</p>
-                            <p class="font-bold">{{ $totalTruk }}</p>
-                        </div>
-                    </div>
+                    @endif
                 </div>
             </div>
             <div class="mt-4 flex justify-between items-end">
                 <div
-                    class="bg-emerald-100 text-emerald-600 px-6 py-1 rounded-full text-sm font-bold border border-emerald-200 shadow-inner">
-                    Status : [ ● AKTIF ]
+                    class="{{ $isAktif ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-red-100 text-red-600 border-red-200' }} px-6 py-1 rounded-full text-sm font-bold border shadow-inner">
+                    Status : [ ● {{ $isAktif ? 'AKTIF' : 'INAKTIF' }} ]
                 </div>
                 <div class="flex flex-col gap-2">
                     <button onclick="handleFile()" class="hover:scale-110 transition-transform p-1">
@@ -125,20 +97,26 @@ $totalSemua = collect($riwayat)->count();
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($riwayat as $row)
+                        @forelse($riwayat_kendaraan as $row)
                         <tr
                             class="bg-white shadow-md rounded-xl overflow-hidden transform transition hover:scale-[1.01]">
-                            <td class="p-4 rounded-l-xl border-y border-l border-slate-100">
-                                {{ $row->jam }}
+                            <td class="p-4 rounded-l-xl border-y border-l border-slate-100 font-bold text-slate-900">
+                                {{ $row['jam'] ?? '--:--' }}
                             </td>
                             <td class="p-4 text-center border-y border-slate-100 font-medium text-slate-900">
-                                {{ $row->kendaraan }}
+                                {{ $row['kendaraan'] ?? 'Tidak Dikenal' }}
                             </td>
-                            <td class="p-4 rounded-r-xl border-y border-r border-slate-100 text-slate-500">
-                                {{ $row->lokasi }}
+                            <td class="p-4 rounded-r-xl border-y border-r border-slate-100 text-slate-500 text-xs">
+                                {{ $row['lokasi'] ?? 'Tidak Dikenal' }}
                             </td>
                         </tr>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="3" class="p-10 text-center text-slate-400 italic bg-slate-50 rounded-xl">
+                                Belum ada aktivitas survei hari ini.
+                            </td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -147,19 +125,19 @@ $totalSemua = collect($riwayat)->count();
         <div class="fixed bottom-0 left-0 right-0 bg-[#5A6C8F] shadow-2xl rounded-t-2xl z-50">
             <div class="flex justify-around p-3 text-slate-300 max-w-md mx-auto lg:max-w-lg">
                 <button class="flex flex-col items-center text-xs opacity-100 text-white hover:scale-110 transition">
-                    <i class="fas fa-home text-lg mb-1"></i>Beranda
+                    <a href="/dashboard-operator" class="fas fa-home text-lg mb-1"></a>Beranda
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-clipboard-list text-lg mb-1"></i>Penugasan
+                    <a href="/dashboard-operator-penugasan" class="fas fa-clipboard-list text-lg mb-1"></a>Penugasan
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-poll text-lg mb-1"></i>Survei
+                    <a href="/dashboard-operator-survei" class="fas fa-poll text-lg mb-1"></a>Survei
                 </button>
                 <button
-                    class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-user-circle text-lg mb-1"></i>Profil
+                    class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110"><a
+                        href="/dashboard-operator-profile" class="fas fa-user-circle text-lg mb-1"></a>Profil
                 </button>
             </div>
         </div>
@@ -168,6 +146,25 @@ $totalSemua = collect($riwayat)->count();
 
 
     </div>
+    <script src="{{ asset('js/deteksiTikorUser.js') }}"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        startGeofencing(
+            "{{ route('check.location.radius') }}", 
+            "{{ csrf_token() }}",                  
+            "{{ route('login') }}"                      
+        );
+    });
+
+    function handleFile() {
+        // Logika file
+    }
+
+    function handleDownload() {
+        window.location.href = "{{ route('operator.download.pdf') }}";
+    }
+    </script>
+    @include('template.shared_scripts')
 </body>
 
 </html>

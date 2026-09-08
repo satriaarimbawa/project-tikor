@@ -4,133 +4,259 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
-
+use Carbon\Carbon;
 
 class PenugasanController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     protected $database;
+
     public function __construct(Database $database)
     {
         $this->database = $database;
     }
 
-
-    public function index()
+    public function index(Request $request)
     {
-        retry(100, function() {
-            return view('admin.penugasan.index');
-        }, 100);
-    }
+        $tugas = $this->database->getReference('penugasan')->getValue() ?? [];
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        // 1. Controller "menelpon" Firebase untuk meminta data lokasi dan user
-        $lokasitikor = $this->database->getReference('pengaturan_lokasi')->getValue() ?? [];
+        // Urutkan dari yang terbaru
+        $tugas = array_reverse($tugas, true);
+
         $users = $this->database->getReference('users')->getValue() ?? [];
+        $lokasiMaster = $this->database->getReference('lokasi')->getValue() ?? [];
+        
+        $searchTerm = strtolower($request->input('search', ''));
+ 
+        $dataFinal = [];
 
-        // @dd($lokasitikor);
-        // 2. Controller memanggil file form HTML (Blade) DAN MENYELIPKAN datanya
-        return view('admin.penugasan.form_penugasan', [
-            'lokasitikor' => $lokasitikor, // <-- Ini variabel yang dikirim!
-            'users' => $users                // <-- Ini variabel yang dikirim!
+        foreach ($tugas as $idPenugasan => $data) {
+            $uidUser = $data['id_user'] ?? null;
+            $uidLokasi = $data['id_lokasi'] ?? null;
+
+            $namaOperator = $users[$uidUser]['username'] ?? 'User Tidak Ditemukan';
+            $namaLokasi = $lokasiMaster[$uidLokasi]['nama_lokasi'] ?? ($lokasiMaster[$uidLokasi]['alamat'] ?? 'Lokasi Tidak Ditemukan');
+            $objekSurvei = $data['objek_survei'] ?? '-';
+            
+            // Ambil status asli dari DB, jika kosong default ke 'aktif'
+            $rawStatus = isset($data['status']) ? strtolower($data['status']) : 'aktif';
+
+            // Filter Pencarian (Server-side)
+            if ($searchTerm !== '') {
+                $match = str_contains(strtolower($namaOperator), $searchTerm) || 
+                         str_contains(strtolower($namaLokasi), $searchTerm) || 
+                         str_contains(strtolower($objekSurvei), $searchTerm) ||
+                         str_contains($rawStatus, $searchTerm);
+                
+                if (!$match) continue;
+            }
+
+            $rawMulai = $data['waktu_mulai'] ?? now()->toDateTimeString();
+            $rawSelesai = $data['waktu_selesai'] ?? now()->toDateTimeString();
+            
+            $tglMulai = Carbon::parse($rawMulai)->locale('id')->translatedFormat('d F Y');
+            $tglSelesai = Carbon::parse($rawSelesai)->locale('id')->translatedFormat('d F Y');
+            
+            $dataFinal[] = [
+                'id' => $idPenugasan,
+                'nama_operator' => $namaOperator,
+                'nama_lokasi'   => $namaLokasi,
+                'waktu_mulai'   => $rawMulai,
+                'file_spt'      => $data['file_spt'] ?? '-',
+                'objek_survei'  => $objekSurvei,
+                'tanggal_rentang' => $tglMulai . ' s/d ' . $tglSelesai,
+                'jam_rentang' => Carbon::parse($rawMulai)->format('H:i') . ' - ' . Carbon::parse($rawSelesai)->format('H:i') . ' WITA',
+                'status'        => $rawStatus,
+                'created_at_raw' => $data['created_at'] ?? '2000-01-01 00:00:00'
+            ];
+        }
+
+        // 1. Sorting Multi-Level: Aktif di atas, lalu Created At Terbaru (DESC)
+        usort($dataFinal, function($a, $b) {
+            // Prioritas status 'aktif'
+            if ($a['status'] === 'aktif' && $b['status'] !== 'aktif') return -1;
+            if ($a['status'] !== 'aktif' && $b['status'] === 'aktif') return 1;
+            
+            // Jika status sama, urutkan berdasarkan created_at terbaru
+            return strtotime($b['created_at_raw']) <=> strtotime($a['created_at_raw']);
+        });
+
+        // 2. Pagination Manual
+        $perPage = (int) $request->input('perPage', 5);
+        $currentPage = (int) $request->input('page', 1);
+        $totalData = count($dataFinal);
+        $totalPages = ceil($totalData / $perPage);
+        $offset = ($currentPage - 1) * $perPage;
+        
+        $dataPaginated = array_slice($dataFinal, $offset, $perPage);
+
+        return view('admin.penugasan.index', [
+            'dataPenugasan' => $dataPaginated,
+            'currentPage' => $currentPage,
+            'totalPages' => $totalPages,
+            'searchTerm' => $searchTerm,
+            'perPage' => $perPage
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    public function create()
+    {
+        $users = $this->database->getReference('users')->getValue() ?? [];
+        $lokasiMaster = $this->database->getReference('lokasi')->getValue() ?? [];
+        $objekTarif = $this->database->getReference('objek_tarif')->getValue() ?? [];
+
+        return view('admin.penugasan.form_penugasan', [
+            'lokasitikor' => $lokasiMaster, 
+            'users' => $users,
+            'objekTarif' => $objekTarif,
+        ]);
+    }
+
     public function store(Request $request)
     {
-        // 1. Validasi Input (Pastikan admin tidak mengirim form kosong)
         $request->validate([
-            'id_lokasi'     => 'required|string',
-            'id_user'       => 'required|string',
-            'waktu_mulai'   => 'required|date',
-            'waktu_selesai' => 'required|date|after:waktu_mulai', // Selesai harus setelah mulai
-            'surat_spt'     => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048' // Maksimal 2MB
+            'id_user' => 'required',
+            'id_lokasi' => 'required',
+            'waktu_mulai' => 'required',
+            'waktu_selesai' => 'required',
+            'objek_terpilih' => 'required',
+            'surat_spt' => 'required|file|mimes:pdf,jpg,png|max:2048',
+        ], [
+            'id_user.required' => 'Silakan pilih operator.',
+            'id_lokasi.required' => 'Silakan pilih lokasi.',
+            'waktu_mulai.required' => 'Waktu mulai wajib diisi.',
+            'waktu_selesai.required' => 'Waktu selesai wajib diisi.',
+            'objek_terpilih.required' => 'Silakan pilih minimal satu objek survei.',
+            'surat_spt.required' => 'File SPT wajib diunggah.',
+            'surat_spt.mimes' => 'Format file SPT harus PDF, JPG, atau PNG.',
+            'surat_spt.max' => 'Ukuran file SPT maksimal adalah 2MB.',
         ]);
 
         try {
-            // 2. Proses Upload File Surat Tugas (SPT)
-            $pathSpt = '';
-            // Mengecek apakah ada file yang diunggah
-            if ($request->hasFile('surat_spt')) {
-                $file = $request->file('surat_spt');
-                
-                // Membuat nama file unik (gabungan waktu saat ini + nama asli file)
-                // Contoh: 1710582000_surattugas_budi.pdf
-                $namaFile = time() . '_' . $file->getClientOriginalName(); 
-                
-                // Menyimpan file secara fisik ke dalam folder public/uploads/spt di project Anda
-                $file->move(public_path('uploads/spt'), $namaFile); 
-                
-                // Menyimpan rute lokasi file untuk ditaruh di Firebase
-                $pathSpt = 'uploads/spt/' . $namaFile; 
+            $file = $request->file('surat_spt');
+            $namaFile = time() . '_' . $file->getClientOriginalName();
+            
+            // Pastikan folder upload ada, jika tidak ada buat otomatis
+            $destinationPath = public_path('uploads/spt');
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
             }
 
-            // 3. Rapikan Format Waktu (Menggunakan Carbon)
-            // Mengubah format bawaan HTML menjadi format baku YYYY-MM-DD HH:MM:SS
-            $waktuMulai = \Carbon\Carbon::parse($request->input('waktu_mulai'))->format('Y-m-d H:i:s');
-            $waktuSelesai = \Carbon\Carbon::parse($request->input('waktu_selesai'))->format('Y-m-d H:i:s');
+            // Simpan ke folder lokal public/uploads/spt
+            $file->move($destinationPath, $namaFile);
 
-            // 4. Bungkus Data ke dalam Array
             $dataPenugasan = [
-                'id_lokasi'     => $request->input('id_lokasi'),
-                'id_user'       => $request->input('id_user'),
-                'waktu_mulai'   => $waktuMulai,
-                'waktu_selesai' => $waktuSelesai,
-                'surat_spt'     => $pathSpt,
-                'dibuat_pada'   => \Carbon\Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s')
+                'id_user'       => $request->id_user,
+                'id_lokasi'     => $request->id_lokasi,
+                'waktu_mulai'   => Carbon::parse($request->waktu_mulai)->format('Y-m-d H:i:s'),
+                'waktu_selesai' => Carbon::parse($request->waktu_selesai)->format('Y-m-d H:i:s'),
+                'file_spt'      => $namaFile,
+                'objek_survei'  => $request->objek_terpilih,
+                'keterangan'    => $request->keterangan ?? '-',
+                'status'        => 'aktif',
+                'created_at'    => Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s'),
             ];
 
-            // 5. Simpan ke Firebase!
-            // Menggunakan push() agar data baru ditambahkan ke bawah daftar, bukan menimpa yang lama
             $this->database->getReference('penugasan')->push($dataPenugasan);
 
-            // 6. Arahkan kembali ke Dashboard Admin dengan pesan sukses
-            return redirect('/dashboard-admin')->with('success', 'Penugasan operator berhasil disimpan!');
-
+            return redirect()->to('/dashboard-penugasan')->with('success', 'Penugasan berhasil dibuat!');
         } catch (\Exception $e) {
-            // Jika ada yang error (misal folder upload belum ada atau Firebase down)
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
-        //
+        $penugasan = $this->database->getReference('penugasan/' . $id)->getValue();
+        if (!$penugasan) {
+            return redirect()->back()->with('error', 'Data tidak ditemukan.');
+        }
+
+        $users = $this->database->getReference('users')->getValue() ?? [];
+        $lokasiMaster = $this->database->getReference('lokasi')->getValue() ?? [];
+        $objekTarif = $this->database->getReference('objek_tarif')->getValue() ?? [];
+
+        return view('admin.penugasan.form_penugasan', [
+            'lokasitikor' => $lokasiMaster,
+            'users' => $users,
+            'penugasan' => $penugasan,
+            'objekTarif' => $objekTarif,
+            'id' => $id
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'id_user' => 'required',
+            'id_lokasi' => 'required',
+            'waktu_mulai' => 'required',
+            'waktu_selesai' => 'required',
+            'surat_spt' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
+        ]);
+
+        try {
+            $dataPenugasan = $this->database->getReference('penugasan/' . $id)->getValue();
+            if (!$dataPenugasan) return redirect()->back()->with('error', 'Data tidak ditemukan.');
+
+            $updateData = [
+                'id_user'       => $request->id_user,
+                'id_lokasi'     => $request->id_lokasi,
+                'waktu_mulai'   => Carbon::parse($request->waktu_mulai)->format('Y-m-d H:i:s'),
+                'waktu_selesai' => Carbon::parse($request->waktu_selesai)->format('Y-m-d H:i:s'),
+                'objek_survei'  => $request->objek_terpilih,
+                'keterangan'    => $request->keterangan ?? '-',
+                'updated_at'    => Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s'),
+            ];
+
+            if ($request->hasFile('surat_spt')) {
+                $file = $request->file('surat_spt');
+                $namaFile = time() . '_' . $file->getClientOriginalName();
+                
+                // Simpan file baru secara lokal
+                $file->move(public_path('uploads/spt'), $namaFile);
+
+                // Hapus file lama jika ada
+                if (isset($dataPenugasan['file_spt']) && $dataPenugasan['file_spt'] !== '-') {
+                    $oldPath = public_path('uploads/spt/' . $dataPenugasan['file_spt']);
+                    if (file_exists($oldPath)) unlink($oldPath);
+                }
+
+                $updateData['file_spt'] = $namaFile;
+            }
+
+            $this->database->getReference('penugasan/' . $id)->update($updateData);
+
+            return redirect()->to('/dashboard-penugasan')->with('success', 'Berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal update: ' . $e->getMessage());
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        try {
+            $data = $this->database->getReference('penugasan/' . $id)->getValue();
+            
+            // Hapus file lokal
+            if (isset($data['file_spt']) && $data['file_spt'] !== '-') {
+                $path = public_path('uploads/spt/' . $data['file_spt']);
+                if (file_exists($path)) unlink($path);
+            }
+
+            $this->database->getReference('penugasan/' . $id)->remove();
+            return redirect()->back()->with('success', 'Penugasan berhasil dihapus!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus: ' . $e->getMessage());
+        }
+    }
+
+    public function resetStatus($id)
+    {
+        try {
+            $this->database->getReference('penugasan/' . $id . '/status')->set('aktif');
+            return redirect()->back()->with('success', 'Status penugasan berhasil diaktifkan kembali!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal reset status: ' . $e->getMessage());
+        }
     }
 }

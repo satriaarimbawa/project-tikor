@@ -1,0 +1,35 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-OmqQ8d3B.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/css/dash_operator.css": {
+    "file": "assets/dash_operator-WmrQS5x5.css",
+    "src": "resources/css/dash_operator.css",
+    "isEntry": true,
+    "name": "dash_operator",
+    "names": [
+      "dash_operator.css"
+    ]
+  },
+  "resources/css/login.css": {
+    "file": "assets/login-CzFDZgpS.css",
+    "src": "resources/css/login.css",
+    "isEntry": true,
+    "name": "login",
+    "names": [
+      "login.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-BjqOcoUn.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  }
+}

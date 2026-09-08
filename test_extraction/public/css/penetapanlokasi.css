@@ -1,0 +1,254 @@
+/* Import Font Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* Warna sesuai sampel gambar Figma */
+    --sidebar-bg: #5D6D8E;
+    --sidebar-active: rgba(255, 255, 255, 0.1);
+    --bg-canvas: #F8FAFC;
+    --accent-yellow: #FDB813;
+    --status-active-bg: #DCFCE7;
+    --status-active-text: #166534;
+    --status-inactive-bg: #E2E8F0;
+    --status-inactive-text: #64748B;
+    --btn-save: #22C55E;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-canvas);
+    margin: 0;
+    display: flex;
+    min-height: 100vh;
+}
+
+input {
+    color: #1E293B;
+}
+
+input::placeholder {
+    color: #CBD5E0;
+    font-weight: 500;
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-2px);
+}
+
+/* --- SIDEBAR STYLE --- */
+.sidebar-navy {
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    z-index: 50;
+}
+
+.logo-container {
+    padding: 30px 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.logo-circle {
+    width: 70px;
+    height: 70px;
+    background-color: var(--accent-yellow);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    color: #FFFFFF;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link.active {
+    background-color: var(--sidebar-active);
+    border-left: 4px solid var(--accent-yellow);
+    font-weight: 600;
+}
+
+.nav-link i {
+    width: 20px;
+    margin-right: 12px;
+    font-size: 16px;
+}
+
+.profile-section {
+    padding: 15px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.profile-info { display: flex; align-items: center; gap: 10px; }
+.avatar-placeholder { width: 35px; height: 35px; background: #CBD5E1; border-radius: 50%; }
+.user-name { font-size: 13px; font-weight: 700; color: white; margin: 0; }
+.user-role { font-size: 10px; color: #CBD5E1; text-transform: uppercase; margin: 0; }
+
+/* --- MAIN CONTENT AREA --- */
+.main-content {
+    margin-left: 260px;
+    padding: 40px;
+    width: calc(100% - 260px);
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Flex Container untuk membagi Tabel (Kiri) dan Form (Kanan) */
+.content-flex {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+/* Bagian Daftar Lokasi (Kiri) */
+.card-table {
+    flex: 1;
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.card-table h2 {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+.search-input-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.search-input-wrapper input {
+    width: 100%;
+    padding: 10px 10px 10px 40px;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    outline: none;
+}
+
+.search-input-wrapper i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+}
+
+/* Tabel Custom */
+.table-wrapper {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table-custom {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-custom th {
+    background-color: #FFFFFF;
+    border-bottom: 1px solid #E2E8F0;
+    border-right: 1px solid #E2E8F0;
+    padding: 12px;
+    font-size: 12px;
+    text-transform: capitalize;
+    color: #64748B;
+}
+
+.table-custom td {
+    padding: 12px;
+    border-bottom: 1px solid #E2E8F0;
+    border-right: 1px solid #E2E8F0;
+    font-size: 13px;
+    color: #1E293B;
+}
+
+.table-custom tr:nth-child(even) { background-color: #F8FAFC; }
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.status-aktif { background: var(--status-active-bg); color: var(--status-active-text); }
+.status-inaktif { background: var(--status-inactive-bg); color: var(--status-inactive-text); }
+
+/* Bagian Form (Kanan) */
+.card-form {
+    width: 350px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.map-placeholder {
+    width: 100%;
+    height: 180px;
+    background-color: #E2E8F0;
+    background-image: url('https://via.placeholder.com/350x180?text=Map+View'); /* Ganti dengan screenshot map jika ada */
+    background-size: cover;
+}
+
+.form-body { padding: 20px; }
+.form-body h3 { font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 20px; }
+
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-size: 10px; font-weight: 800; color: #64748B; margin-bottom: 5px; text-transform: uppercase; }
+.form-group input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.warning-text { color: #EF4444; font-size: 10px; font-weight: 700; font-style: italic; margin: 15px 0; }
+
+.btn-simpan {
+    width: 100%;
+    background-color: var(--btn-save);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+}
+
+.action-btns { display: flex; justify-content: center; gap: 10px; }
+.action-btns i { cursor: pointer; color: #64748B; }
+.action-btns i:hover { color: #1E293B; }

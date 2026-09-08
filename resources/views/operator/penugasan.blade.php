@@ -1,23 +1,24 @@
 @php
-//Simulasi database
-$riwayat = [
-(object)['jam' => '10.00', 'kendaraan' => 'Motor', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.20', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.21', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.22', 'kendaraan' => 'Mobil', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.23', 'kendaraan' => 'Truk', 'lokasi' => 'Terminal Galiran'],
-(object)['jam' => '10.24', 'kendaraan' => 'MiniBus', 'lokasi' => 'Terminal Galiran'],
-];
+// --- MENGHITUNG BERDASARKAN RIWAYAT PENUGASAN (TABEL DI BAWAH) ---
+$totalMotor = collect($riwayat)->filter(function($item) {
+    return str_contains(strtolower($item['objek_survei'] ?? ''), 'motor');
+})->count();
 
+$totalMobil = collect($riwayat)->filter(function($item) {
+    return str_contains(strtolower($item['objek_survei'] ?? ''), 'minibus') || str_contains(strtolower($item['objek_survei'] ?? ''), 'mobil');
+})->count();
 
-$totalMotor = collect($riwayat)->where('kendaraan', 'Motor')->count();
-$totalMobil = collect($riwayat)->where('kendaraan', 'Mobil')->count();
-$totalTruk = collect($riwayat)->where('kendaraan', 'Truk')->count();
-$totalMiniBus = collect($riwayat)->where('kendaraan', 'MiniBus')->count();
+$totalTruk = collect($riwayat)->filter(function($item) {
+    return str_contains(strtolower($item['objek_survei'] ?? ''), 'truk');
+})->count();
+
+$totalMiniBus = collect($riwayat)->filter(function($item) {
+    return str_contains(strtolower($item['objek_survei'] ?? ''), 'minibus');
+})->count();
+
 $totalSemua = collect($riwayat)->count();
 
-
+// @dd(session()->all());
 
 $penugasan = [
 (object)[
@@ -58,7 +59,8 @@ $penugasan = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>DASHBOARD || OPERATOR</title>
+    <title>Riwayat Penugasan - Operator</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -72,8 +74,8 @@ $penugasan = [
                 <img src="{{ asset('assets/logo_dishub.png') }}" alt="Logo">
             </div>
             <div>
-                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - Terminal Galiran</h1>
-                <p class="text-xs lg:text-sm text-slate-500">Shift Pagi | 18 Maret 2026</p>
+                <h1 class="font-bold text-lg lg:text-xl leading-tight text-slate-900">Uji Petik - {{ $namaLokasi }}</h1>
+                <p class="text-xs lg:text-sm text-slate-500">{{ \Carbon\Carbon::now()->translatedFormat('j F Y') }}</p>
             </div>
         </div>
 
@@ -89,40 +91,30 @@ $penugasan = [
                 <hr class="my-3 border-slate-200">
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="flex items-center gap-3 border-r border-slate-200 pr-2">
-                        <i class="fas fa-motorcycle text-2xl text-slate-700"></i>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Motor</p>
-                            <p class="font-bold">{{ $totalMotor }}</p>
+                    @php
+                        $iconConfig = [
+                            'motor' => ['icon' => 'fas fa-motorcycle', 'label' => 'Motor'],
+                            'minibus' => ['icon' => 'fas fa-car-side', 'label' => 'Mini Bus'],
+                            'bus' => ['icon' => 'fas fa-bus', 'label' => 'Bus'],
+                            'truk' => ['icon' => 'fas fa-truck', 'label' => 'Truk'],
+                            'default' => ['icon' => 'fas fa-car', 'label' => 'Lainnya']
+                        ];
+                    @endphp
+
+                    @foreach($objekSurvei ?? [] as $obj)
+                        @php 
+                            $key = strtolower(str_replace(' ', '', $obj));
+                            $conf = $iconConfig[$key] ?? $iconConfig['default'];
+                            $label = isset($iconConfig[$key]) ? $conf['label'] : ucfirst($obj);
+                        @endphp
+                        <div class="flex items-center gap-3 border-r border-slate-200 pr-2 last:border-r-0">
+                            <i class="{{ $conf['icon'] }} text-2xl text-slate-700"></i>
+                            <div class="text-left">
+                                <p class="text-xs text-slate-500">{{ $label }}</p>
+                                <p class="font-bold">{{ $counts[$key] ?? 0 }}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class=" p-2 rounded-lg text-2xl text-slate-700">
-                            <i class="fas fa-car text-lg"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Mobil</p>
-                            <p class="font-bold">{{ $totalMobil }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class=" p-2 rounded-lg text-2xl text-slate-700">
-                            <i class="fas fa-bus text-lg"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Mini Bus</p>
-                            <p class="font-bold">{{ $totalMiniBus }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class=" p-2 rounded-lg text-2xl text-slate-700">
-                            <i class="fas fa-truck text-lg"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs text-slate-500">Truk</p>
-                            <p class="font-bold">{{ $totalTruk }}</p>
-                        </div>
-                    </div>
+                    @endforeach
                 </div>
             </div>
             <div class="mt-4 flex justify-between items-end">
@@ -155,28 +147,28 @@ $penugasan = [
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($penugasan as $item)
+                        @foreach($riwayat as $item)
                         <tr
-                            class="bg-white shadow-[0_8px_20px_rgb(0,0,0,0.08)] rounded-2xl overflow-hidden transform transition hover:scale-[1.01]">
-                            <td class="p-4 rounded-l-2xl border-y border-l border-slate-100">
-                                <span class="block font-medium text-slate-700">{{ $item->tgl_mulai }}</span>
-                                <span class="block text-[10px] text-slate-400">Sampai</span>
-                                <span class="block font-medium text-slate-700">{{ $item->tgl_selesai }}</span>
+                            class="bg-white shadow-[0_4px_12px_rgb(0,0,0,0.05)] rounded-2xl overflow-hidden transform transition hover:scale-[1.01]">
+                            <td class="p-3 rounded-l-2xl border-y border-l border-slate-50">
+                                <span class="block font-bold text-slate-700 text-[11px]">{{ $item['tanggal'] }}</span>
+                                <span class="block text-[9px] text-slate-400">{{ \Carbon\Carbon::parse($item['waktu_mulai'])->format('H:i') }} - {{ \Carbon\Carbon::parse($item['waktu_selesai'])->format('H:i') }}</span>
                             </td>
 
-                            <td class="p-4 border-y border-slate-100 align-middle">
-                                <span class="font-bold text-slate-800">{{ $item->lokasi }}</span>
+                            <td class="p-3 border-y border-slate-50 align-middle">
+                                <span class="block font-bold text-slate-800 text-[11px] truncate max-w-[120px] lg:max-w-none">{{ $item['nama_lokasi_display'] }}</span>
+                                <span class="block text-[9px] text-slate-400 italic truncate max-w-[120px]">{{ $item['objek_survei'] }}</span>
                             </td>
 
-                            <td class="p-4 rounded-r-2xl border-y border-r border-slate-100 text-center align-middle">
-                                @if($item->status == 'Aktif')
+                            <td class="p-3 rounded-r-2xl border-y border-r border-slate-50 text-center align-middle">
+                                @if($item['status'] === 'aktif')
                                 <span
-                                    class="bg-emerald-500 text-white px-4 py-1 rounded-lg text-[10px] font-bold shadow-sm shadow-emerald-200">
+                                    class="bg-emerald-500 text-white px-3 py-1 rounded-full text-[9px] font-bold shadow-sm">
                                     Aktif
                                 </span>
                                 @else
-                                <span class="bg-slate-400 text-white px-4 py-1 rounded-lg text-[10px] font-bold">
-                                    Non Aktif
+                                <span class="bg-slate-300 text-slate-600 px-3 py-1 rounded-full text-[9px] font-bold">
+                                    Selesai
                                 </span>
                                 @endif
                             </td>
@@ -192,18 +184,18 @@ $penugasan = [
             <div class="flex justify-around p-3 text-slate-300 max-w-md mx-auto lg:max-w-lg">
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-home text-lg mb-1"></i>Beranda
+                    <a href="/dashboard-operator" class="fas fa-home text-lg mb-1"></a>Beranda
                 </button>
                 <button class="flex flex-col items-center text-xs opacity-100 text-white hover:scale-110 transition">
-                    <i class="fas fa-clipboard-list text-lg mb-1"></i>Penugasan
+                    <a href="/dashboard-operator-penugasan" class="fas fa-clipboard-list text-lg mb-1"></a>Penugasan
                 </button>
                 <button
                     class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-poll text-lg mb-1"></i>Survei
+                    <a href="/dashboard-operator-survei" class="fas fa-poll text-lg mb-1"></a>Survei
                 </button>
                 <button
-                    class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110">
-                    <i class="fas fa-user-circle text-lg mb-1"></i>Profil
+                    class="flex flex-col items-center text-xs opacity-60 hover:opacity-100 transition hover:scale-110"><a
+                        href="/dashboard-operator-profile" class="fas fa-user-circle text-lg mb-1"></a>Profil
                 </button>
             </div>
         </div>
@@ -212,6 +204,26 @@ $penugasan = [
 
 
     </div>
+
+
+    <script src="{{ asset('js/deteksiTikorUser.js') }}"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        startGeofencing(
+            "{{ route('check.location.radius') }}", // URL Route
+            "{{ csrf_token() }}",                  // Token Keamanan
+            "{{ route('login') }}"                        // URL Redirect jika logout
+        );
+    });
+
+    function handleDownload() {
+        window.location.href = "{{ route('operator.download.pdf') }}";
+    }
+
+    function handleFile() {
+        alert("Fitur file penugasan belum aktif");
+    }
+    </script>
 </body>
 
 </html>

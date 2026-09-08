@@ -5,150 +5,373 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Illuminate\Support\Facades\Session;
-use Carbon\Carbon; // WAJIB: Untuk mengecek jadwal jam penugasan
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cookie;
+use Carbon\Carbon;
+use App\Services\ActivityLogService;
 
 class LoginController extends Controller
 {
     protected $database;
+    protected $logService;
 
-    public function __construct(Database $database)
+    public function __construct(Database $database, ActivityLogService $logService)
     {
         $this->database = $database;
+        $this->logService = $logService;
     }
 
     public function index()
     {
+        // Cek jika sudah ada session
+        if (session()->has('login_status')) {
+            return $this->redirectBasedOnRole(session()->get('role'));
+        }
+
+        // Cek Cookie Remember Me
+        $rememberId = Cookie::get('remember_user_id');
+        if ($rememberId) {
+            $user = $this->database->getReference('users/' . $rememberId)->getValue();
+            if ($user) {
+                // --- CEK SINGLE DEVICE UNTUK AUTO-LOGIN ---
+                $isOnline = $user['is_online'] ?? false;
+                $lastSeen = $user['last_seen'] ?? 0;
+                $isOnBreak = isset($user['status_istirahat']) && ($user['status_istirahat'] === true || $user['status_istirahat'] === 'true');
+                
+                $staleThreshold = $isOnBreak ? 18000 : 300;
+                $isStale = (Carbon::now()->timestamp - $lastSeen) > $staleThreshold;
+
+                if ($isOnline && !$isStale) {
+                    // Jika aktif di tempat lain, hapus cookie agar tidak loop error
+                    Cookie::queue(Cookie::forget('remember_user_id'));
+                    return view('login.index')->with('error', 'Sesi login otomatis dibatalkan karena akun Anda aktif di perangkat lain.');
+                }
+                // --- SELESAI CEK ---
+
+                $this->setSession($rememberId, $user);
+                return $this->redirectBasedOnRole($user['role_user']);
+            }
+        }
+
         return view('login.index');
+    }
+
+    private function setSession($uid, $user_data, $idLokasiTugas = null, $namaLokasiTugas = 'Area Penugasan')
+    {
+        session()->put([
+            'login_status' => true,
+            'username'     => $user_data['username'] ?? 'User',
+            'role'         => $user_data['role_user'] ?? 'user',
+            'user_id'      => $uid,
+            'isLoggedIn'   => true,
+            'id_lokasi_aktif' => $idLokasiTugas,
+            'nama_lokasi_aktif' => $namaLokasiTugas,
+        ]);
+    }
+
+    private function redirectBasedOnRole($role)
+    {
+        if ($role === 'admin') {
+            return redirect('/dashboard-admin');
+        } elseif ($role === 'operator') {
+            return redirect('/dashboard-operator-penugasan');
+        }
+        return redirect('/login');
     }
 
     private function hitungJarak($lat1, $lon1, $lat2, $lon2)
     {
-        $radiusBumi = 6371000; 
+        $radiusBumi = 6371000;
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
-        
-        $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-        
-        return $radiusBumi * $c; 
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $radiusBumi * $c;
     }
 
     public function cek_login(Request $request)
     {
-        // dd($request->all());
         $username = $request->input('username');
-        $password = $request->input('password');    
+        $password = $request->input('password');
 
         $users = $this->database->getReference('users')
             ->orderByChild('username')
             ->equalTo($username)
             ->getValue();
-        // @dd($users);
 
-        if ($users != null) {
-            $user_data = reset($users); // Gunakan nama variabel $user_data agar lebih jelas
-            
-            if ($user_data['password'] === $password) {
-                
-                // --- 1. Pengecekan Khusus Operator (Geofencing & Jadwal) ---
-                if($user_data['role_user'] === 'operator') {
-                    $latitudeUser = $request->input('latitude');
-                    $longitudeUser = $request->input('longitude');
+        if (!$users) {
+            return redirect()->back()->with('error', 'Username atau password salah!');
+        }
 
-                    if (empty($latitudeUser) || empty($longitudeUser)) {
-                        return redirect()->back()->with('error', 'Operator wajib mengizinkan akses lokasi (GPS) pada browser!');
-                    }
-                //  A. Cari jadwal penugasan aktif (Cek SEMUA jadwal, jangan berhenti di yang pertama)
-                $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
-                $waktuSekarang = \Carbon\Carbon::now('Asia/Makassar');
-                $penugasanAktif = null;
+        $uid = array_key_first($users);
+        $user_data = $users[$uid];
 
-                foreach ($semuaPenugasan as $tugas) {
-                    // Pastikan ini adalah tugas untuk user yang sedang login
-                    if (isset($tugas['id_user']) && $tugas['id_user'] == $user_data['username']) {
-                        
-                        $mulai = \Carbon\Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
-                        $selesai = \Carbon\Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+        // --- CEK SINGLE DEVICE LOGIN ---
+        $isOnline = $user_data['is_online'] ?? false;
+        $lastSeen = $user_data['last_seen'] ?? 0;
+        $isOnBreak = isset($user_data['status_istirahat']) && ($user_data['status_istirahat'] === true || $user_data['status_istirahat'] === 'true');
 
-                        // Cek apakah waktu SEKARANG masuk dalam rentang tugas INI
-                        if ($waktuSekarang->between($mulai, $selesai)) {
-                            
-                            // JIKA WAKTU COCOK, CEK RADIUSNYA
-                            $idLokasi = $tugas['id_lokasi'];
-                            $dataTikor = $this->database->getReference('pengaturan_lokasi/' . $idLokasi)->getValue();
+        // Batas waktu: Normal = 5 Menit (300 detik), Istirahat = 5 Jam (18000 detik)
+        $staleThreshold = $isOnBreak ? 18000 : 300;
+        $isStale = (Carbon::now()->timestamp - $lastSeen) > $staleThreshold;
 
-                            if ($dataTikor) {
-                                $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $dataTikor['latitude'], $dataTikor['longitude']);
-                                $radius = $dataTikor['radius'] ?? 100;
+        // Jika akun online dan sesi belum kedaluwarsa, TOLAK login
+        if ($isOnline && !$isStale) {
+            return redirect()->back()->with('error', 'Akun ini sedang aktif di perangkat lain!');
+        }
+        // --- SELESAI CEK SINGLE DEVICE ---
 
-                                if ($jarak <= $radius) {
-                                    // Ketemu! Ada satu tugas yang waktu DAN lokasinya cocok
-                                    $penugasanAktif = $tugas;
-                                    break; // Berhenti hanya jika sudah ketemu yang VALID secara waktu & lokasi
-                                }
+        if (!Hash::check($password, $user_data['password'])) {
+            return redirect()->back()->with('error', 'Username atau password salah!');
+        }
+
+        $idLokasiTugas = null;
+
+        if ($user_data['role_user'] === 'operator') {
+            $latitudeUser = (float) $request->input('latitude');
+            $longitudeUser = (float) $request->input('longitude');
+
+            if (empty($latitudeUser) || empty($longitudeUser)) {
+                return redirect()->back()->with('error', 'GPS wajib aktif!');
+            }
+
+            $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
+            $waktuSekarang = Carbon::now('Asia/Makassar');
+
+            $penugasanDitemukan = false;
+            $pesanError = "Login ditolak! Anda tidak memiliki jadwal penugasan aktif saat ini.";
+            $lokasiTerdekatData = null;
+
+            foreach ($semuaPenugasan as $tugas) {
+                if (isset($tugas['id_user'], $tugas['id_lokasi']) && $tugas['id_user'] == $uid) {
+                    // Cek Waktu
+                    $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
+                    $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+
+                    if ($waktuSekarang->between($mulai, $selesai)) {
+                        // Cek Status Penugasan
+                        if (($tugas['status'] ?? 'inaktif') !== 'aktif') {
+                            $pesanError = "Login ditolak! Sesi penugasan ini sudah tidak aktif/dihentikan.";
+                            continue;
+                        }
+
+                        $idLokasi = $tugas['id_lokasi'];
+                        $dataTikor = $this->database->getReference('lokasi/' . $idLokasi)->getValue();
+
+                        if ($dataTikor) {
+                            $latTarget = $dataTikor['latitude'] ?? 0;
+                            $lonTarget = $dataTikor['longitude'] ?? 0;
+                            $radius = $dataTikor['radius'] ?? 100;
+
+                            $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $latTarget, $lonTarget);
+
+                            // Jika user berada di dalam radius salah satu lokasi tugasnya
+                            if ($jarak <= $radius) {
+                                $idLokasiTugas = $idLokasi;
+                                $penugasanDitemukan = true;
+                                break; // Berhenti karena sudah ketemu lokasi yang cocok
+                            } else {
+                                // Simpan data jarak untuk pesan error yang lebih informatif (opsional: simpan yang terdekat)
+                                $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
+                                $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasi (" . round($jarak) . " meter).";
+                                
+                                $lokasiTerdekatData = [
+                                    'target_lat' => $latTarget,
+                                    'target_lng' => $lonTarget,
+                                    'target_radius' => $radius,
+                                    'nama_lokasi_target' => $namaLokasi
+                                ];
                             }
                         }
                     }
                 }
-
-                $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $dataTikor['latitude'], $dataTikor['longitude']);
-                $radius = $dataTikor['radius'] ?? 100;
-
-                if ($jarak > $radius) {
-                    // TAMBAHKAN INFO JARAK DI SINI
-                    return redirect()->back()->with('error', 
-                        'Login ditolak! Anda berada di luar radius. ' . 
-                        'Jarak Anda: ' . round($jarak) . ' meter. ' .
-                        'Batas Radius: ' . $radius . ' meter.'
-                    );
-                }
-
-                    // B. Ambil Titik Lokasi Spesifik dari Jadwal Tersebut
-                    $idLokasiTugas = $penugasanAktif['id_lokasi'];
-                    $datatikor = $this->database->getReference('pengaturan_lokasi/' . $idLokasiTugas)->getValue();
-
-                    if (!$datatikor) {
-                        return redirect()->back()->with('error', 'Sistem error: Data lokasi penugasan tidak ditemukan!');
-                    }
-
-                    $kantorLat = $datatikor['latitude'];
-                    $kantorLon = $datatikor['longitude'];
-                    $batasJarak = $datatikor['radius'] ?? 100;
-                    $namaLokasi = $datatikor['alamat'] ?? 'Lokasi Tugas';
-
-                    // C. Hitung Jarak
-                    $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $kantorLat, $kantorLon);
-                    
-                    if ($jarak > $batasJarak) {
-                        return redirect()->back()->with('error', 'Login ditolak! Anda berada di luar area penugasan ('. $namaLokasi .'). Jarak Anda: ' . round($jarak) . ' meter.');
-                    }
-                }
-                // --- Akhir Pengecekan Khusus Operator ---
-
-                // --- 2. Jika Lolos (Baik Admin maupun Operator) ---
-                Session::put('login_status', true);
-                Session::put('username', $user_data['username']);
-                Session::put('role', $user_data['role_user']);
-
-                if ($user_data['role_user'] == 'admin') {
-                    return redirect()->to('dashboard-admin')->with('success', 'Selamat datang Admin!');
-                } elseif ($user_data['role_user'] == 'operator') {
-                    return redirect()->to('dashboard-operator')->with('success', 'Selamat bekerja!');
-                }
-
-            } else {
-                return redirect()->back()->with('error', 'Password salah!');
             }
+
+            if (!$penugasanDitemukan) {
+                if ($lokasiTerdekatData) {
+                    return redirect()->back()->with(array_merge(['error' => $pesanError], $lokasiTerdekatData));
+                }
+                return redirect()->back()->with('error', $pesanError);
+            }
+        }
+
+        $this->setSession($uid, $user_data, $idLokasiTugas, $dataTikor['nama_lokasi'] ?? 'Area Penugasan');
+
+        // SET ONLINE STATUS
+        $this->database->getReference("users/{$uid}")->update([
+            'is_online' => true,
+            'last_seen' => Carbon::now()->timestamp
+        ]);
+
+        // RECORD LOG LOGIN
+        $this->logService->log(
+            'login',
+            $uid,
+            $user_data['username'] ?? 'User',
+            "<strong>" . ($user_data['username'] ?? 'User') . "</strong> baru saja login."
+        );
+
+        session()->save();
+
+        // Handle Remember Me (Hanya untuk Admin)
+        if ($request->has('remember') && $user_data['role_user'] === 'admin') {
+            // Simpan cookie selama 30 hari (43200 menit)
+            Cookie::queue('remember_user_id', $uid, 43200);
+        }
+
+        if ($user_data['role_user'] == 'admin') {
+            return redirect()->to('dashboard-admin')->with('success', 'Selamat datang Admin!');
         } else {
-            return redirect()->back()->with('error', 'Username tidak ditemukan!');
+            return redirect()->to('dashboard-operator-penugasan')->with('success', 'Selamat bekerja!');
         }
     }
 
-    // Fungsi logout sekarang berada di dalam area class yang benar
     public function logout()
     {
+        $uid = session()->get('user_id');
+        $username = session()->get('username');
+        $role = session()->get('role');
+
+        if ($uid) {
+            // Reset status online dan istirahat
+            $this->database->getReference("users/{$uid}")->update([
+                'is_online' => false,
+                'status_istirahat' => false,
+                'last_seen' => Carbon::now()->timestamp
+            ]);
+            
+            // RECORD LOG LOGOUT
+            $this->logService->log(
+                'logout',
+                $uid,
+                $username,
+                "<strong>{$username}</strong> telah logout dari sistem."
+            );
+        }
+
         Session::flush();
-        return redirect('/')->with('success', 'Anda telah berhasil logout.');
+        Cookie::queue(Cookie::forget('remember_user_id'));
+
+        if ($role === 'admin') {
+            return redirect('/login-admin');
+        }
+
+        return redirect('/login');
     }
 
+    public function checkLocationRadius(Request $request)
+    {
+        $latUser = (float) $request->input('latitude');
+        $longUser = (float) $request->input('longitude');
+        $idLokasiAktif = session()->get('id_lokasi_aktif');
+        $uid = session()->get('user_id');
+
+        if (!$uid) return response()->json(['status' => 'error'], 401);
+
+        // --- 1. HEARTBEAT ---
+        // Update last_seen untuk monitoring status aktif di Live Dashboard
+        $this->database->getReference("users/{$uid}/last_seen")->set(Carbon::now()->timestamp);
+
+        if (!$idLokasiAktif) return response()->json(['status' => 'ok']);
+
+        $dataTikor = $this->database->getReference('lokasi/' . $idLokasiAktif)->getValue();
+
+        if ($dataTikor) {
+            // --- 2. CEK STATUS ISTIRAHAT ---
+            // Bypass geofencing jika operator sedang dalam mode istirahat
+            $userRef = $this->database->getReference("users/{$uid}")->getValue();
+            if ($userRef['status_istirahat'] ?? false) {
+                return response()->json(['status' => 'ok', 'message' => 'Mode Istirahat Aktif']);
+            }
+
+            $latTarget = $dataTikor['latitude'] ?? 0;
+            $lonTarget = $dataTikor['longitude'] ?? 0;
+            $radius = $dataTikor['radius'] ?? 100;
+
+            // Hitung Jarak (Haversine Formula)
+            $jarak = $this->hitungJarak($latUser, $longUser, $latTarget, $lonTarget);
+
+            if ($jarak > $radius) {
+                $username = session()->get('username');
+                $now = Carbon::now('Asia/Makassar');
+                $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
+                
+                $adaPelanggaran = false;
+                $sudahLaporHariIni = false;
+
+                // --- 3. VALIDASI PELANGGARAN JADWAL ---
+                foreach ($semuaPenugasan as $keyTugas => $tugas) {
+                    if (isset($tugas['id_user']) && $tugas['id_user'] == $uid && 
+                        ($tugas['id_lokasi'] ?? '') == $idLokasiAktif && 
+                        ($tugas['status'] ?? '') == 'aktif' &&
+                        isset($tugas['waktu_mulai'], $tugas['waktu_selesai'])) {
+                        
+                        $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
+                        $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+
+                        if ($now->between($mulai, $selesai)) {
+                            // Cek Laporan: Jika sudah lapor, tidak dianggap melanggar
+                            $today = $now->toDateString();
+                            if (isset($tugas['laporan_harian'][$today]) && $tugas['laporan_harian'][$today] == true) {
+                                $sudahLaporHariIni = true;
+                                continue;
+                            }
+
+                            $adaPelanggaran = true;
+                            $this->database->getReference('penugasan/' . $keyTugas . '/status')->set('inaktif');
+                            
+                            // Kirim Notifikasi Pelanggaran ke Admin
+                            $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
+                            $this->database->getReference('notifikasi')->push([
+                                'judul' => 'Pelanggaran Geofencing',
+                                'pesan' => "Operator $username keluar dari radius penugasan di $namaLokasi.",
+                                'id_user' => $uid,
+                                'username' => $username,
+                                'waktu' => $now->toDateTimeString(),
+                                'status' => 'unread'
+                            ]);
+
+                            $this->logService->log(
+                                'violation',
+                                $uid,
+                                $username,
+                                "Sistem mengeluarkan <strong>{$username}</strong> karena keluar radius di <strong>{$namaLokasi}</strong>."
+                            );
+                        }
+                    }
+                }
+
+                // --- 4. EKSEKUSI LOGOUT OTOMATIS ---
+                if ($adaPelanggaran) {
+                    session()->flush();
+                    $this->database->getReference("users/{$uid}")->update([
+                        'is_online' => false,
+                        'last_seen' => Carbon::now()->timestamp
+                    ]);
+                    return response()->json([
+                        'status' => 'logout',
+                        'message' => 'Anda keluar dari radius area penugasan! Kejadian ini telah dilaporkan ke Admin.'
+                    ]);
+                }
+
+                // --- 5. GRACEFUL LOGOUT (PULANG KERJA) ---
+                if ($sudahLaporHariIni) {
+                    $this->database->getReference("users/{$uid}")->update([
+                        'is_online' => false,
+                        'last_seen' => Carbon::now()->timestamp
+                    ]);
+                    session()->flush();
+                    return response()->json([
+                        'status' => 'logout',
+                        'message' => 'Terima kasih atas kerja kerasnya! Anda telah otomatis logout karena meninggalkan area setelah melaporkan hasil survei.'
+                    ]);
+                }
+            }
+            return response()->json(['status' => 'ok', 'distance' => round($jarak) . 'm']);
+        }
+
+        return response()->json(['status' => 'ok']);
+    }
 }

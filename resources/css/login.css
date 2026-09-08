@@ -150,3 +150,13 @@ body, html {
     transform: rotate(-50deg);
   }
 }
+
+.input-error {
+  border-color: #ff4d4d !important;
+  background-color: #fff5f5 !important;
+}
+
+.input-error::placeholder {
+  color: #ff4d4d;
+  opacity: 0.7;
+}

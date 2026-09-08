@@ -1,0 +1,1 @@
+.shadow-md{box-shadow:0 10px 15px -3px #0000000d,0 4px 6px -2px #00000008}.shadow-inner-custom{box-shadow:inset 0 2px 4px #0000000f;background-color:#f8fafc}@media(min-width:1024px){.grid-cols-2{grid-template-columns:repeat(4,minmax(0,1fr))}.border-r{border-right:1px solid #e2e8f0}}
