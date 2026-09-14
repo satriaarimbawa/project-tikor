@@ -8,17 +8,23 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link rel="icon" type="image/png" href="{{ asset('assets/logo_dishub.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/dashboardadmin.css') }}">
+    
+    <!-- Firebase SDK for Realtime Updates -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 </head>
 <body class="flex bg-[#F5F7FA]">
 
     @include('admin.template.navbar')
 
     <main class="main-content lg:ml-64 p-4 md:p-8 flex-1 min-w-0 overflow-x-hidden">
-        <header class="flex justify-between items-center mb-8">
-            <h1 class="text-gray-800 font-bold text-[30px] tracking-tight">Pendapatan Harian</h1>
+        <header class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-gray-800 font-bold text-[30px] tracking-tight">Pendapatan Harian</h1>
+                <p class="text-xs text-gray-500 font-medium">Monitoring Real-time Survei & Retribusi Dinas Perhubungan</p>
+            </div>
     
             <div class="flex items-center gap-6">
                 <div onclick="toggleNotifModal()" class="cursor-pointer flex items-center gap-2 text-orange-600 font-bold text-sm bg-orange-50 px-5 py-2 rounded-full border border-orange-100 shadow-sm relative hover:bg-orange-100 transition-all">
@@ -40,8 +46,11 @@
                 to { transform: translateX(0); opacity: 1; }
             }
             .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+            .pulse-green { animation: pulse-g 0.5s ease-in-out; }
+            @keyframes pulse-g { 0% { transform: scale(1); } 50% { transform: scale(1.04); color: #059669; } 100% { transform: scale(1); } }
         </style>
 
+        <!-- TOTAL PENDAPATAN CARD -->
         <div class="card-revenue p-10 flex items-center gap-8 mb-10 relative overflow-hidden bg-white rounded-[30px] shadow-[0_10px_25px_rgba(0,0,0,0.1)]">
            <div class="absolute inset-0 opacity-40" 
                 style="background: linear-gradient(90deg, #9AE95B 30%, #FFFFFF 100%);">
@@ -50,8 +59,11 @@
                 <img src="{{ asset('assets/Pendapatan.png') }}" class="w-20 h-20 object-contain" alt="Icon Pendapatan">
             </div>
             <div class="relative z-10">
-                <h2 class="text-6xl font-bold tracking-tight text-gray-900">Rp. {{ number_format($totalPendapatan, 0, ',', '.') }}</h2>
-                <p class="text-[12px] text-gray-500 font-bold uppercase tracking-wider mt-2">Total Pendapatan Harian ( Today )</p>
+                <h2 id="admin-total-revenue" class="text-6xl font-bold tracking-tight text-gray-900 transition-all">Rp. {{ number_format($totalPendapatan, 0, ',', '.') }}</h2>
+                <p class="text-[12px] text-gray-500 font-bold uppercase tracking-wider mt-2 flex items-center gap-2">
+                    <span>Total Pendapatan Harian ( Hari Ini )</span>
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+                </p>
             </div>
         </div>
 
@@ -70,13 +82,16 @@
                 ]
             ];
             $icons = [
-                'motor' => 'Motor.png',
+                'sepedamotor' => 'Motor.png',
+                'mobilpenumpang' => 'Mini Bus.png',
                 'bus' => 'Bus.png',
-                'minibus' => 'Mini Bus.png',
-                'truk' => 'Truk.png'
+                'truk' => 'Truk.png',
+                'motor' => 'Motor.png',
+                'minibus' => 'Mini Bus.png'
             ];
         @endphp
 
+        <!-- STATISTIK KENDARAAN GRID -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
             @foreach($stats as $key => $count)
                 @php 
@@ -89,13 +104,14 @@
                         <img src="{{ asset('assets/' . $iconFile) }}" alt="{{ $key }}" class="w-9 h-9 object-contain">
                     </div>
                     <div class="relative z-10">
-                        <p class="text-[16px] font-black text-[#000000] uppercase tracking-wider">{{ $objekNames[$key] ?? $key }}</p>
-                        <h3 class="text-2xl font-black text-gray-700">{{ $count }}</h3>
+                        <p class="text-[15px] font-black text-[#000000] uppercase tracking-wider">{{ $objekNames[$key] ?? $key }}</p>
+                        <h3 id="admin-count-{{ $key }}" class="text-3xl font-black text-gray-800 transition-all">{{ $count }}</h3>
                     </div>
                 </div>
             @endforeach
         </div>
 
+        <!-- GRAFIK MINGGUAN -->
         <div class="bg-white p-10 rounded-[30px] shadow-sm mb-10 border border-gray-100 w-full">
             <h3 class="font-extrabold text-gray-800 mb-8 flex items-center gap-3">
                 <iconify-icon icon="lucide:trending-up" class="text-blue-500 text-xl"></iconify-icon>
@@ -119,40 +135,40 @@
             </div>
         </div>
 
+        <!-- TABEL DETAIL PENDAPATAN -->
         <div class="bg-white p-10 rounded-[30px] shadow-sm border border-gray-100 overflow-hidden mb-20">
-    <div class="p-8 flex items-center justify-between">
-        <h3 class="font-extrabold text-gray-800 text-lg">Tabel Detail Pendapatan Harian</h3>
-    </div>
-    
-    <div class="overflow-x-auto px-8 pb-8">
-        <table class="w-full border-separate border-spacing-y-3">
-            <thead>
-                <tr class="bg-gray-200">
-                    <th class="p-4 text-gray-800 font-bold text-center rounded-l-xl border-y border-l border-black">Objek</th>
-                    <th class="p-4 text-gray-800 font-bold text-center border-y border-black">Lokasi</th>
-                    <th class="p-4 text-gray-800 font-bold text-center border-y border-black">Jumlah Unit</th>
-                    <th class="p-4 text-gray-800 font-bold text-center rounded-r-xl border-y border-r border-black">Nominal Pendapatan</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($detailPendapatan as $row)
-                <tr class="bg-white group transition-all">
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-l border-black rounded-l-2xl">{{ $row['objek'] }}</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">{{ $row['nama_lokasi'] }}</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-black">{{ $row['jumlah'] }}</td>
-                    <td class="p-4 text-center font-bold text-gray-800 border-y border-r border-black rounded-r-2xl">Rp. {{ number_format($row['nominal'], 0, ',', '.') }}</td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="4" class="p-10 text-center text-gray-400 italic bg-white rounded-2xl border border-black">
-                        Belum ada data pendapatan untuk hari ini.
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
+            <div class="p-8 flex items-center justify-between">
+                <h3 class="font-extrabold text-gray-800 text-lg">Tabel Detail Pendapatan Harian</h3>
+            </div>
+            
+            <div class="overflow-x-auto px-8 pb-8">
+                <table class="w-full border-separate border-spacing-y-3">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="p-4 text-gray-800 font-bold text-center rounded-l-xl border-y border-l border-black">Objek</th>
+                            <th class="p-4 text-gray-800 font-bold text-center border-y border-black">Lokasi</th>
+                            <th class="p-4 text-gray-800 font-bold text-center border-y border-black">Jumlah Unit</th>
+                            <th class="p-4 text-gray-800 font-bold text-center rounded-r-xl border-y border-r border-black">Nominal Pendapatan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-detail-tbody">
+                        @forelse($detailPendapatan as $row)
+                        <tr class="bg-white group transition-all">
+                            <td class="p-4 text-center font-bold text-gray-800 border-y border-l border-black rounded-l-2xl">{{ $row['objek'] }}</td>
+                            <td class="p-4 text-center font-bold text-gray-800 border-y border-black">{{ $row['nama_lokasi'] }}</td>
+                            <td class="p-4 text-center font-bold text-gray-800 border-y border-black">{{ $row['jumlah'] }}</td>
+                            <td class="p-4 text-center font-bold text-gray-800 border-y border-r border-black rounded-r-2xl">Rp. {{ number_format($row['nominal'], 0, ',', '.') }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" class="p-10 text-center text-gray-400 italic bg-white rounded-2xl border border-black">
+                                Belum ada data pendapatan untuk hari ini.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 
@@ -212,12 +228,97 @@
             }
         }
 
+        const formatRupiah = (num) => {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(num || 0);
+        };
+
+        const objekNames = @json($objekNames);
+        const tarifMap = @json($tarifMap);
+        const subKeyMap = @json($subKeyMap);
+        const validKeys = Object.keys(objekNames);
+        const todayStr = "{{ \Carbon\Carbon::now('Asia/Makassar')->toDateString() }}";
+
+        // REALTIME FIREBASE SYNC FOR ADMIN DASHBOARD
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyA_raJzGxDNyvpn1OIFczKdB6I-mpdTYdI",
+                databaseURL: "{{ config('firebase.projects.app.database.url') }}",
+                projectId: "uji-petik-default-rtdb"
+            };
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            const db = firebase.database();
+            const emulatorHost = "{{ env('FIREBASE_DATABASE_EMULATOR_HOST') }}";
+            if (emulatorHost) {
+                const parts = emulatorHost.split(':');
+                db.useEmulator(parts[0], parseInt(parts[1]) || 9000);
+            }
+
+            db.ref('survei_harian').on('value', (snap) => {
+                const dataRaw = snap.val() || {};
+                let totals = {};
+                validKeys.forEach(k => totals[k] = 0);
+                let totalRevenue = 0;
+
+                const dates = [todayStr, new Date().toLocaleDateString('en-CA')];
+
+                for (let idL in dataRaw) {
+                    dates.forEach(tgl => {
+                        if (dataRaw[idL] && dataRaw[idL][tgl]) {
+                            const hours = dataRaw[idL][tgl];
+                            for (let h in hours) {
+                                for (let p in hours[h]) {
+                                    const s = hours[h][p];
+                                    if (s) {
+                                        for (let fieldKey in s) {
+                                            const vol = parseInt(s[fieldKey] || 0);
+                                            if (vol > 0 && subKeyMap[fieldKey]) {
+                                                const parent = subKeyMap[fieldKey];
+                                                totals[parent] = (totals[parent] || 0) + vol;
+                                                const price = tarifMap[parent] || 0;
+                                                totalRevenue += (vol * price);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Update Cards
+                validKeys.forEach(k => {
+                    const el = document.getElementById('admin-count-' + k);
+                    if (el) {
+                        const count = totals[k] || 0;
+                        if (parseInt(el.innerText) !== count) {
+                            el.innerText = count;
+                            el.classList.add('pulse-green');
+                            setTimeout(() => el.classList.remove('pulse-green'), 500);
+                        }
+                    }
+                });
+
+                // Update Total Revenue
+                const revEl = document.getElementById('admin-total-revenue');
+                if (revEl) {
+                    revEl.innerText = formatRupiah(totalRevenue);
+                }
+            });
+        } catch (err) {
+            console.warn("Realtime sync warning:", err);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const ctx = document.getElementById('weeklyMonitoringChart').getContext('2d');
             
             const colors = ['#4A78D7', '#E9A426', '#953EE1', '#E95BA4', '#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
             const chartDataRaw = @json($chartData);
-            const objekNames = @json($objekNames);
             const labelsMingguan = @json($labelsMingguan);
 
             const datasets = Object.keys(chartDataRaw).map((key, index) => {

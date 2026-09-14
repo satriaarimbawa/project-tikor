@@ -23,6 +23,19 @@
                 </div>
             </a>
 
+            <a href="/dashboard-live" class="relative flex items-center px-6 py-4 {{ request()->is('dashboard-live') ? 'text-white' : 'text-cyan-400' }} hover:text-white group transition-all bg-gradient-to-r from-blue-900/30 to-transparent">
+                @if(request()->is('dashboard-live'))
+                    <div class="absolute inset-0 bg-[#253D6B]/50 border-r-4 border-cyan-400"></div>
+                @endif
+                <div class="relative z-10 flex items-center w-full">
+                    <div class="w-6 flex justify-center mr-4"> 
+                        <iconify-icon icon="lucide:radar" class="text-xl text-cyan-400 animate-pulse"></iconify-icon>
+                    </div>
+                    <span class="text-sm font-bold text-cyan-300 group-hover:text-white">Live Monitoring</span>
+                    <span class="ml-auto w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                </div>
+            </a>
+
             <a href="/daftar-user" class="relative flex items-center px-6 py-4 {{ request()->is('daftar-user') || request()->is('tambahuser') ? 'text-white' : 'text-white/60' }} group overflow-hidden transition-all hover:text-white">
                 @if(request()->is('daftar-user') || request()->is('tambahuser'))
                     <div class="absolute inset-0 bg-[#253D6B]/50 border-r-4 border-yellow-400"></div>

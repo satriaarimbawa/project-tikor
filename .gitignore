@@ -31,3 +31,6 @@ SECURITY_AUDIT.md
 test_*.php
 *.cjs
 test_screenshots/
+inspect_backup.php
+storage/backups/
+

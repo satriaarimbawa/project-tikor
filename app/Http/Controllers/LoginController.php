@@ -263,20 +263,24 @@ class LoginController extends Controller
         $role = session()->get('role');
 
         if ($uid) {
-            // Reset status online dan istirahat
-            $this->database->getReference("users/{$uid}")->update([
-                'is_online' => false,
-                'status_istirahat' => false,
-                'last_seen' => Carbon::now()->timestamp
-            ]);
-            
-            // RECORD LOG LOGOUT
-            $this->logService->log(
-                'logout',
-                $uid,
-                $username,
-                "<strong>{$username}</strong> telah logout dari sistem."
-            );
+            try {
+                // Reset status online dan istirahat
+                $this->database->getReference("users/{$uid}")->update([
+                    'is_online' => false,
+                    'status_istirahat' => false,
+                    'last_seen' => Carbon::now()->timestamp
+                ]);
+                
+                // RECORD LOG LOGOUT
+                $this->logService->log(
+                    'logout',
+                    $uid,
+                    $username,
+                    "<strong>{$username}</strong> telah logout dari sistem."
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Firebase logout update failed: ' . $e->getMessage());
+            }
         }
 
         Session::flush();
@@ -374,10 +378,14 @@ class LoginController extends Controller
                 // --- 4. EKSEKUSI LOGOUT OTOMATIS ---
                 if ($adaPelanggaran) {
                     session()->flush();
-                    $this->database->getReference("users/{$uid}")->update([
-                        'is_online' => false,
-                        'last_seen' => Carbon::now()->timestamp
-                    ]);
+                    try {
+                        $this->database->getReference("users/{$uid}")->update([
+                            'is_online' => false,
+                            'last_seen' => Carbon::now()->timestamp
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::error('Firebase auto-logout violation update failed: ' . $e->getMessage());
+                    }
                     return response()->json([
                         'status' => 'logout',
                         'message' => 'Anda keluar dari radius area penugasan! Kejadian ini telah dilaporkan ke Admin.'
@@ -386,10 +394,14 @@ class LoginController extends Controller
 
                 // --- 5. GRACEFUL LOGOUT (PULANG KERJA) ---
                 if ($sudahLaporHariIni) {
-                    $this->database->getReference("users/{$uid}")->update([
-                        'is_online' => false,
-                        'last_seen' => Carbon::now()->timestamp
-                    ]);
+                    try {
+                        $this->database->getReference("users/{$uid}")->update([
+                            'is_online' => false,
+                            'last_seen' => Carbon::now()->timestamp
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::error('Firebase graceful logout update failed: ' . $e->getMessage());
+                    }
                     session()->flush();
                     return response()->json([
                         'status' => 'logout',

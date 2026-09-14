@@ -50,7 +50,11 @@ return [
              *
              */
 
-            'credentials' => env('FIREBASE_CREDENTIALS', env('GOOGLE_APPLICATION_CREDENTIALS')),
+            'credentials' => env('FIREBASE_CREDENTIALS')
+                ? (is_string(env('FIREBASE_CREDENTIALS')) && !str_starts_with(env('FIREBASE_CREDENTIALS'), '{') && !file_exists(env('FIREBASE_CREDENTIALS')) && file_exists(base_path(env('FIREBASE_CREDENTIALS')))
+                    ? base_path(env('FIREBASE_CREDENTIALS'))
+                    : env('FIREBASE_CREDENTIALS'))
+                : env('GOOGLE_APPLICATION_CREDENTIALS'),
 
             /*
              * ------------------------------------------------------------------------
