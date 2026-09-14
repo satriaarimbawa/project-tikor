@@ -278,8 +278,22 @@ class OperatorController extends Controller
         $jenis = strtolower(str_replace(' ', '', $request->jenis_kendaraan));
 
         try {
-            // Cek apakah sudah lapor hari ini (Server-side safety)
+            // Cek data penugasan
             $penugasan = $this->database->getReference("penugasan/{$idPenugasan}")->getValue();
+            if (!$penugasan) {
+                return response()->json(['success' => false, 'message' => 'Penugasan tidak ditemukan.'], 404);
+            }
+
+            // Validasi Otorisasi IDOR: Penugasan harus milik operator ini atau tugas rekan di lokasi sama yang sedang diklaim
+            if (($penugasan['id_user'] ?? '') !== $userId) {
+                $ownerId = $penugasan['id_user'] ?? '';
+                $ownerUser = $this->database->getReference("users/{$ownerId}")->getValue();
+                if (($ownerUser['claimer_id'] ?? '') !== $userId) {
+                    return response()->json(['success' => false, 'message' => 'Akses penugasan tidak sah.'], 403);
+                }
+            }
+
+            // Cek apakah sudah lapor hari ini (Server-side safety)
             if (isset($penugasan['laporan_harian'][$date]) && $penugasan['laporan_harian'][$date] == true) {
                 return response()->json(['success' => false, 'message' => 'Anda sudah melaporkan hasil survei hari ini. Tidak dapat menambah data.'], 403);
             }
@@ -328,17 +342,21 @@ class OperatorController extends Controller
     {
         try {
             $idPenugasan = $request->id_penugasan;
+            $userId = session('user_id');
             
-            if (!$idPenugasan) {
-                return response()->json(['success' => false, 'message' => 'ID Penugasan tidak ditemukan'], 400);
+            if (!$idPenugasan || !$userId) {
+                return response()->json(['success' => false, 'message' => 'ID Penugasan atau sesi tidak valid'], 400);
+            }
+
+            // Validasi Otorisasi IDOR: Hanya pemilik penugasan yang bisa melapor
+            $penugasan = $this->database->getReference("penugasan/{$idPenugasan}")->getValue();
+            if (!$penugasan || ($penugasan['id_user'] ?? '') !== $userId) {
+                return response()->json(['success' => false, 'message' => 'Otorisasi penugasan ditolak.'], 403);
             }
 
             // Catat bahwa operator sudah melapor untuk hari ini
             $today = Carbon::now('Asia/Makassar')->toDateString();
             $this->database->getReference("penugasan/{$idPenugasan}/laporan_harian/{$today}")->set(true);
-
-            // JANGAN ubah status menjadi 'inaktif' agar besok masih bisa digunakan (untuk rentang hari)
-            // $this->database->getReference("penugasan/{$idPenugasan}/status")->set('inaktif');
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {

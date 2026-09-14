@@ -22,3 +22,15 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Security & Audit Documents (Sensitive)
+SECURITY_AUDIT.md
+*.audit.md
+
+# Local Test Scripts & Artifacts
+test_*.php
+*.cjs
+test_screenshots/
+inspect_backup.php
+storage/backups/
+

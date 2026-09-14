@@ -7,6 +7,7 @@ use Illuminate\Validation\Rules\Password;
 use Kreait\Firebase\Contract\Database;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -28,24 +29,33 @@ class ForgotPasswordController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
+        $throttleKey = 'otp-send:' . Str::lower($request->email) . '|' . $request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return back()->with('error', "Terlalu banyak permintaan OTP. Silakan tunggu $seconds detik.");
+        }
+
         $users = $this->database->getReference('users')
                     ->orderByChild('email')
                     ->equalTo($request->email)
                     ->getValue();
 
         if (!$users) {
+            RateLimiter::hit($throttleKey, 300);
             return back()->with('error', 'Email tidak terdaftar!');
         }
 
-        $otp = rand(100000, 999999);
+        $otp = (string) random_int(100000, 999999);
         $expiresAt = Carbon::now('Asia/Makassar')->addMinutes(10);
 
         $emailKey = base64_encode($request->email);
         $this->database->getReference("password_resets/{$emailKey}")->set([
             'email' => $request->email,
-            'otp' => $otp,
+            'otp' => Hash::make($otp),
             'expires_at' => $expiresAt->toDateTimeString()
         ]);
+
+        RateLimiter::hit($throttleKey, 300);
 
         Mail::raw("Kode OTP Lupa Password Anda adalah: $otp. Kode ini berlaku selama 10 menit.", function ($message) use ($request) {
             $message->to($request->email)
@@ -68,10 +78,19 @@ class ForgotPasswordController extends Controller
         $request->validate(['otp' => 'required|numeric']);
         
         $email = session('reset_email');
+        if (!$email) return redirect()->route('password.request');
+
+        $throttleKey = 'otp-verify:' . Str::lower($email) . '|' . $request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return back()->with('error', "Terlalu banyak percobaan OTP salah. Silakan coba lagi dalam $seconds detik.");
+        }
+
         $emailKey = base64_encode($email);
         $resetData = $this->database->getReference("password_resets/{$emailKey}")->getValue();
 
-        if (!$resetData || $resetData['otp'] != $request->otp) {
+        if (!$resetData || !Hash::check((string)$request->otp, $resetData['otp'])) {
+            RateLimiter::hit($throttleKey, 600);
             return back()->with('error', 'Kode OTP salah atau tidak ditemukan!');
         }
 
@@ -79,6 +98,7 @@ class ForgotPasswordController extends Controller
             return back()->with('error', 'Kode OTP telah kedaluwarsa!');
         }
 
+        RateLimiter::clear($throttleKey);
         session(['otp_verified' => true]);
 
         return redirect()->route('password.reset')->with('success', 'OTP Terverifikasi. Silakan masukkan password baru.');

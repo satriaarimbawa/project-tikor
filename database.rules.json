@@ -1,0 +1,27 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "users": {
+      ".indexOn": ["username", "email", "role_user"]
+    },
+    "penugasan": {
+      ".indexOn": ["id_user", "id_lokasi", "tanggal", "status"]
+    },
+    "lokasi": {
+      ".indexOn": ["nama_lokasi"]
+    },
+    "lokasi_tikor": {
+      ".indexOn": ["nama_lokasi"]
+    },
+    "objek_tarif": {
+      ".indexOn": ["nama", "status"]
+    },
+    "laporan_harian": {
+      ".indexOn": ["id_user", "tanggal", "id_lokasi"]
+    },
+    "activity_logs": {
+      ".indexOn": ["timestamp", "role", "action"]
+    }
+  }
+}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class PenugasanController extends Controller
 {
@@ -133,7 +134,8 @@ class PenugasanController extends Controller
 
         try {
             $file = $request->file('surat_spt');
-            $namaFile = time() . '_' . $file->getClientOriginalName();
+            $ext = $file->getClientOriginalExtension();
+            $namaFile = time() . '_' . Str::random(16) . '.' . ($ext ?: 'pdf');
             
             // Pastikan folder upload ada, jika tidak ada buat otomatis
             $destinationPath = public_path('uploads/spt');
@@ -149,8 +151,8 @@ class PenugasanController extends Controller
                 'id_lokasi'     => $request->id_lokasi,
                 'waktu_mulai'   => Carbon::parse($request->waktu_mulai)->format('Y-m-d H:i:s'),
                 'waktu_selesai' => Carbon::parse($request->waktu_selesai)->format('Y-m-d H:i:s'),
-                'file_spt'      => $namaFile,
                 'objek_survei'  => $request->objek_terpilih,
+                'file_spt'      => $namaFile,
                 'keterangan'    => $request->keterangan ?? '-',
                 'status'        => 'aktif',
                 'created_at'    => Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s'),
@@ -158,13 +160,13 @@ class PenugasanController extends Controller
 
             $this->database->getReference('penugasan')->push($dataPenugasan);
 
-            return redirect()->to('/dashboard-penugasan')->with('success', 'Penugasan berhasil dibuat!');
+            return redirect()->to('/dashboard-penugasan')->with('success', 'Penugasan berhasil ditambahkan!');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
     }
 
-    public function edit(string $id)
+    public function edit($id)
     {
         $penugasan = $this->database->getReference('penugasan/' . $id)->getValue();
         if (!$penugasan) {
@@ -184,19 +186,28 @@ class PenugasanController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
         $request->validate([
             'id_user' => 'required',
             'id_lokasi' => 'required',
             'waktu_mulai' => 'required',
             'waktu_selesai' => 'required',
-            'surat_spt' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
+            'objek_terpilih' => 'required',
+            'surat_spt' => 'nullable|mimes:pdf,jpg,png|max:2048',
+        ], [
+            'id_user.required' => 'Silakan pilih operator.',
+            'id_lokasi.required' => 'Silakan pilih lokasi.',
+            'waktu_mulai.required' => 'Waktu mulai wajib diisi.',
+            'waktu_selesai.required' => 'Waktu selesai wajib diisi.',
+            'objek_terpilih.required' => 'Silakan pilih minimal satu objek survei.',
+            'surat_spt.mimes' => 'Format file SPT harus PDF, JPG, atau PNG.',
+            'surat_spt.max' => 'Ukuran file SPT maksimal adalah 2MB.',
         ]);
 
         try {
             $dataPenugasan = $this->database->getReference('penugasan/' . $id)->getValue();
-            if (!$dataPenugasan) return redirect()->back()->with('error', 'Data tidak ditemukan.');
+            if (!$dataPenugasan) return redirect()->to('/dashboard-penugasan')->with('error', 'Data tidak ditemukan');
 
             $updateData = [
                 'id_user'       => $request->id_user,
@@ -210,15 +221,17 @@ class PenugasanController extends Controller
 
             if ($request->hasFile('surat_spt')) {
                 $file = $request->file('surat_spt');
-                $namaFile = time() . '_' . $file->getClientOriginalName();
+                $ext = $file->getClientOriginalExtension();
+                $namaFile = time() . '_' . Str::random(16) . '.' . ($ext ?: 'pdf');
                 
                 // Simpan file baru secara lokal
                 $file->move(public_path('uploads/spt'), $namaFile);
 
-                // Hapus file lama jika ada
+                // Hapus file lama jika ada dengan sanitasi basename
                 if (isset($dataPenugasan['file_spt']) && $dataPenugasan['file_spt'] !== '-') {
-                    $oldPath = public_path('uploads/spt/' . $dataPenugasan['file_spt']);
-                    if (file_exists($oldPath)) unlink($oldPath);
+                    $oldFileName = basename($dataPenugasan['file_spt']);
+                    $oldPath = public_path('uploads/spt/' . $oldFileName);
+                    if (file_exists($oldPath) && is_file($oldPath)) unlink($oldPath);
                 }
 
                 $updateData['file_spt'] = $namaFile;
@@ -237,10 +250,11 @@ class PenugasanController extends Controller
         try {
             $data = $this->database->getReference('penugasan/' . $id)->getValue();
             
-            // Hapus file lokal
+            // Hapus file lokal dengan sanitasi basename
             if (isset($data['file_spt']) && $data['file_spt'] !== '-') {
-                $path = public_path('uploads/spt/' . $data['file_spt']);
-                if (file_exists($path)) unlink($path);
+                $fileName = basename($data['file_spt']);
+                $path = public_path('uploads/spt/' . $fileName);
+                if (file_exists($path) && is_file($path)) unlink($path);
             }
 
             $this->database->getReference('penugasan/' . $id)->remove();
@@ -253,8 +267,10 @@ class PenugasanController extends Controller
     public function resetStatus($id)
     {
         try {
+            $today = Carbon::now('Asia/Makassar')->toDateString();
             $this->database->getReference('penugasan/' . $id . '/status')->set('aktif');
-            return redirect()->back()->with('success', 'Status penugasan berhasil diaktifkan kembali!');
+            $this->database->getReference("penugasan/{$id}/laporan_harian/{$today}")->remove();
+            return redirect()->back()->with('success', 'Status penugasan & kunci laporan hari ini berhasil diaktifkan kembali!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal reset status: ' . $e->getMessage());
         }

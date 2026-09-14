@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\ObjekTarif;
 use App\Services\FirebaseStorageService;
+use Illuminate\Support\Str;
 
 class ObjekTarifController extends Controller
 {
@@ -71,7 +72,8 @@ class ObjekTarifController extends Controller
         $iconPath = null;
         if ($request->hasFile('icon')) {
             $file = $request->file('icon');
-            $fileName = time() . '_' . $file->getClientOriginalName();
+            $ext = $file->getClientOriginalExtension();
+            $fileName = time() . '_' . Str::random(16) . '.' . ($ext ?: 'png');
             $iconPath = $this->storageService->upload('icons/' . $fileName, $file);
         }
 
@@ -125,7 +127,8 @@ class ObjekTarifController extends Controller
 
         if ($request->hasFile('icon')) {
             $file = $request->file('icon');
-            $fileName = time() . '_' . $file->getClientOriginalName();
+            $ext = $file->getClientOriginalExtension();
+            $fileName = time() . '_' . Str::random(16) . '.' . ($ext ?: 'png');
             $iconPath = $this->storageService->upload('icons/' . $fileName, $file);
         }
 

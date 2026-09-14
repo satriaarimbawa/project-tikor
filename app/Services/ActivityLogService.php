@@ -25,14 +25,18 @@ class ActivityLogService
      */
     public function log(string $type, string $userId, string $username, string $message)
     {
-        $now = Carbon::now('Asia/Makassar');
+        try {
+            $now = Carbon::now('Asia/Makassar');
 
-        $this->database->getReference('activity_logs')->push([
-            'type' => $type,
-            'user_id' => $userId,
-            'username' => $username,
-            'message' => $message,
-            'timestamp' => $now->toDateTimeString()
-        ]);
+            $this->database->getReference('activity_logs')->push([
+                'type' => $type,
+                'user_id' => $userId,
+                'username' => $username,
+                'message' => $message,
+                'timestamp' => $now->toDateTimeString()
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ActivityLogService push error: ' . $e->getMessage());
+        }
     }
 }

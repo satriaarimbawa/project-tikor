@@ -7,6 +7,8 @@ use Kreait\Firebase\Contract\Database;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Services\ActivityLogService;
 
@@ -58,6 +60,7 @@ class LoginController extends Controller
 
     private function setSession($uid, $user_data, $idLokasiTugas = null, $namaLokasiTugas = 'Area Penugasan')
     {
+        session()->regenerate();
         session()->put([
             'login_status' => true,
             'username'     => $user_data['username'] ?? 'User',
@@ -93,39 +96,63 @@ class LoginController extends Controller
 
     public function cek_login(Request $request)
     {
+        $throttleKey = Str::transliterate(Str::lower($request->input('username', '')) . '|' . $request->ip());
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return redirect()->back()->with('error', "Terlalu banyak percobaan login yang gagal. Silakan coba lagi dalam {$seconds} detik.");
+        }
+
         $username = $request->input('username');
         $password = $request->input('password');
 
-        $users = $this->database->getReference('users')
-            ->orderByChild('username')
-            ->equalTo($username)
-            ->getValue();
+        try {
+            $users = $this->database->getReference('users')
+                ->orderByChild('username')
+                ->equalTo($username)
+                ->getValue();
+        } catch (\Throwable $e) {
+            $allUsers = $this->database->getReference('users')->getValue() ?? [];
+            $users = [];
+            foreach ($allUsers as $k => $u) {
+                if (($u['username'] ?? '') === $username) {
+                    $users[$k] = $u;
+                    break;
+                }
+            }
+        }
 
         if (!$users) {
+            RateLimiter::hit($throttleKey, 60);
             return redirect()->back()->with('error', 'Username atau password salah!');
         }
 
         $uid = array_key_first($users);
         $user_data = $users[$uid];
 
-        // --- CEK SINGLE DEVICE LOGIN ---
-        $isOnline = $user_data['is_online'] ?? false;
-        $lastSeen = $user_data['last_seen'] ?? 0;
-        $isOnBreak = isset($user_data['status_istirahat']) && ($user_data['status_istirahat'] === true || $user_data['status_istirahat'] === 'true');
+        // --- CEK SINGLE DEVICE LOGIN (HANYA UNTUK OPERATOR DI LAPANGAN) ---
+        if ($user_data['role_user'] === 'operator') {
+            $isOnline = $user_data['is_online'] ?? false;
+            $lastSeen = $user_data['last_seen'] ?? 0;
+            $isOnBreak = isset($user_data['status_istirahat']) && ($user_data['status_istirahat'] === true || $user_data['status_istirahat'] === 'true');
 
-        // Batas waktu: Normal = 5 Menit (300 detik), Istirahat = 5 Jam (18000 detik)
-        $staleThreshold = $isOnBreak ? 18000 : 300;
-        $isStale = (Carbon::now()->timestamp - $lastSeen) > $staleThreshold;
+            // Batas waktu: Normal = 5 Menit (300 detik), Istirahat = 5 Jam (18000 detik)
+            $staleThreshold = $isOnBreak ? 18000 : 300;
+            $isStale = (Carbon::now()->timestamp - $lastSeen) > $staleThreshold;
 
-        // Jika akun online dan sesi belum kedaluwarsa, TOLAK login
-        if ($isOnline && !$isStale) {
-            return redirect()->back()->with('error', 'Akun ini sedang aktif di perangkat lain!');
+            // Jika akun online dan sesi belum kedaluwarsa, TOLAK login
+            if ($isOnline && !$isStale) {
+                return redirect()->back()->with('error', 'Akun operator ini sedang aktif di perangkat lain!');
+            }
         }
         // --- SELESAI CEK SINGLE DEVICE ---
 
         if (!Hash::check($password, $user_data['password'])) {
+            RateLimiter::hit($throttleKey, 60);
             return redirect()->back()->with('error', 'Username atau password salah!');
         }
+
+        RateLimiter::clear($throttleKey);
 
         $idLokasiTugas = null;
 
@@ -197,7 +224,8 @@ class LoginController extends Controller
             }
         }
 
-        $this->setSession($uid, $user_data, $idLokasiTugas, $dataTikor['nama_lokasi'] ?? 'Area Penugasan');
+        $namaLokasiAktif = isset($dataTikor['nama_lokasi']) ? $dataTikor['nama_lokasi'] : 'Area Penugasan';
+        $this->setSession($uid, $user_data, $idLokasiTugas, $namaLokasiAktif);
 
         // SET ONLINE STATUS
         $this->database->getReference("users/{$uid}")->update([
@@ -235,20 +263,24 @@ class LoginController extends Controller
         $role = session()->get('role');
 
         if ($uid) {
-            // Reset status online dan istirahat
-            $this->database->getReference("users/{$uid}")->update([
-                'is_online' => false,
-                'status_istirahat' => false,
-                'last_seen' => Carbon::now()->timestamp
-            ]);
-            
-            // RECORD LOG LOGOUT
-            $this->logService->log(
-                'logout',
-                $uid,
-                $username,
-                "<strong>{$username}</strong> telah logout dari sistem."
-            );
+            try {
+                // Reset status online dan istirahat
+                $this->database->getReference("users/{$uid}")->update([
+                    'is_online' => false,
+                    'status_istirahat' => false,
+                    'last_seen' => Carbon::now()->timestamp
+                ]);
+                
+                // RECORD LOG LOGOUT
+                $this->logService->log(
+                    'logout',
+                    $uid,
+                    $username,
+                    "<strong>{$username}</strong> telah logout dari sistem."
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Firebase logout update failed: ' . $e->getMessage());
+            }
         }
 
         Session::flush();
@@ -346,10 +378,14 @@ class LoginController extends Controller
                 // --- 4. EKSEKUSI LOGOUT OTOMATIS ---
                 if ($adaPelanggaran) {
                     session()->flush();
-                    $this->database->getReference("users/{$uid}")->update([
-                        'is_online' => false,
-                        'last_seen' => Carbon::now()->timestamp
-                    ]);
+                    try {
+                        $this->database->getReference("users/{$uid}")->update([
+                            'is_online' => false,
+                            'last_seen' => Carbon::now()->timestamp
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::error('Firebase auto-logout violation update failed: ' . $e->getMessage());
+                    }
                     return response()->json([
                         'status' => 'logout',
                         'message' => 'Anda keluar dari radius area penugasan! Kejadian ini telah dilaporkan ke Admin.'
@@ -358,10 +394,14 @@ class LoginController extends Controller
 
                 // --- 5. GRACEFUL LOGOUT (PULANG KERJA) ---
                 if ($sudahLaporHariIni) {
-                    $this->database->getReference("users/{$uid}")->update([
-                        'is_online' => false,
-                        'last_seen' => Carbon::now()->timestamp
-                    ]);
+                    try {
+                        $this->database->getReference("users/{$uid}")->update([
+                            'is_online' => false,
+                            'last_seen' => Carbon::now()->timestamp
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::error('Firebase graceful logout update failed: ' . $e->getMessage());
+                    }
                     session()->flush();
                     return response()->json([
                         'status' => 'logout',
