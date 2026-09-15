@@ -80,6 +80,7 @@
                     <option value="" disabled {{ !isset($user) ? 'selected' : '' }}>Pilih Role</option>
                     <option value="admin" {{ (isset($user) && $user['role_user'] == 'admin') ? 'selected' : '' }}>Admin</option>
                     <option value="operator" {{ (isset($user) && $user['role_user'] == 'operator') ? 'selected' : '' }}>Operator</option>
+                    <option value="it_support" {{ (isset($user) && $user['role_user'] == 'it_support') ? 'selected' : '' }}>IT Support</option>
                 </select>
                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
                     <iconify-icon icon="lucide:chevron-down"></iconify-icon>

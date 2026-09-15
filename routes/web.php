@@ -13,6 +13,11 @@ use App\Http\Controllers\LaporanOperatorController;
 use App\Http\Controllers\LiveDashboardController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\TelegramWebhookController;
+
+// Webhook Bot Telegram
+Route::post('/api/telegram/webhook', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
 
 //link landing page 
 Route::get('/', function () {
@@ -36,6 +41,22 @@ Route::get('/verify-otp', [ForgotPasswordController::class, 'showOtpForm'])->nam
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp'])->name('password.verify');
 Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])->name('password.update');
+
+if (app()->environment('local')) {
+    Route::get('/_test_auth/{role}', function ($role) {
+        $isItSupport = ($role === 'it_support');
+        session()->put([
+            'login_status' => true,
+            'username'     => $isItSupport ? 'IT Support Satria' : 'Admin Operasional',
+            'email'        => $isItSupport ? 'itsupport@dishub.go.id' : 'admin@dishub.go.id',
+            'role'         => $role,
+            'is_it_support' => $isItSupport,
+            'user_id'      => 'test_' . $role,
+            'isLoggedIn'   => true,
+        ]);
+        return redirect('/dashboard-admin');
+    });
+}
 
 
 Route::middleware(['admin'])->group(function () {
@@ -92,6 +113,18 @@ Route::middleware(['admin'])->group(function () {
     // Log Aktivitas
     Route::get('/log-aktivitas', [ActivityLogController::class, 'index'])->name('admin.activity-log');
     Route::get('/log-aktivitas/download', [ActivityLogController::class, 'downloadPdf'])->name('admin.activity-log.download');
+
+    // Pengaturan Sistem (Eksklusif IT Support)
+    Route::middleware(['it_support'])->group(function () {
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings/radius', [SettingController::class, 'updateRadius'])->name('settings.radius.update');
+        Route::post('/settings/session-security', [SettingController::class, 'updateSessionSecurity'])->name('settings.session.update');
+        Route::post('/settings/telegram', [SettingController::class, 'updateTelegram'])->name('settings.telegram.update');
+        Route::post('/settings/telegram-test', [SettingController::class, 'testTelegram'])->name('settings.telegram.test');
+        Route::get('/settings/health-check', [SettingController::class, 'runHealthCheck'])->name('settings.health.check');
+        Route::post('/settings/operational', [SettingController::class, 'updateOperational'])->name('settings.operational.update');
+        Route::get('/settings/backup-download', [SettingController::class, 'downloadBackup'])->name('settings.backup.download');
+    });
 });
 
 

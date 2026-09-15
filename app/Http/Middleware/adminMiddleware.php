@@ -20,8 +20,11 @@ class adminMiddleware
             return redirect('/login-admin')->with('error', 'Silahkan login terlebih dahulu.');
         }
 
-        if (session()->get('role') !== 'admin') {
-            return redirect('/dashboard-operator-penugasan')->with('error', 'Akses ditolak! Anda bukan Admin.');
+        $role = session()->get('role');
+        $isItSupport = session()->get('is_it_support', false);
+
+        if (!in_array($role, ['admin', 'it_support', 'superadmin']) && !$isItSupport) {
+            return redirect('/dashboard-operator-penugasan')->with('error', 'Akses ditolak! Anda bukan Administrator.');
         }
 
         return $next($request);

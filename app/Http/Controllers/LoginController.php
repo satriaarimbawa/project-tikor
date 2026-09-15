@@ -60,11 +60,22 @@ class LoginController extends Controller
 
     private function setSession($uid, $user_data, $idLokasiTugas = null, $namaLokasiTugas = 'Area Penugasan')
     {
+        $role = $user_data['role_user'] ?? 'user';
+        $username = $user_data['username'] ?? 'User';
+        $email = $user_data['email'] ?? '-';
+
+        $isItSupport = $role === 'it_support'
+            || str_contains(strtolower($username), 'it support')
+            || str_contains(strtolower($username), 'itsupport')
+            || str_contains(strtolower($email), 'itsupport');
+
         session()->regenerate();
         session()->put([
             'login_status' => true,
-            'username'     => $user_data['username'] ?? 'User',
-            'role'         => $user_data['role_user'] ?? 'user',
+            'username'     => $username,
+            'email'        => $email,
+            'role'         => $role,
+            'is_it_support' => $isItSupport,
             'user_id'      => $uid,
             'isLoggedIn'   => true,
             'id_lokasi_aktif' => $idLokasiTugas,
@@ -74,7 +85,7 @@ class LoginController extends Controller
 
     private function redirectBasedOnRole($role)
     {
-        if ($role === 'admin') {
+        if (in_array($role, ['admin', 'it_support', 'superadmin'])) {
             return redirect('/dashboard-admin');
         } elseif ($role === 'operator') {
             return redirect('/dashboard-operator-penugasan');
@@ -130,14 +141,23 @@ class LoginController extends Controller
         $uid = array_key_first($users);
         $user_data = $users[$uid];
 
-        // --- CEK SINGLE DEVICE LOGIN (HANYA UNTUK OPERATOR DI LAPANGAN) ---
-        if ($user_data['role_user'] === 'operator') {
+        // --- CEK SINGLE / MULTI DEVICE LOGIN DARI PENGATURAN ---
+        try {
+            $sessionSecurity = $this->database->getReference('settings/session_security')->getValue() ?? [];
+        } catch (\Throwable $e) {
+            $sessionSecurity = [];
+        }
+
+        $maxSessions = (int) ($sessionSecurity['max_sessions_per_account'] ?? 1);
+        $staleSec = (int) ($sessionSecurity['stale_timeout_seconds'] ?? 300);
+
+        if ($user_data['role_user'] === 'operator' && $maxSessions === 1) {
             $isOnline = $user_data['is_online'] ?? false;
             $lastSeen = $user_data['last_seen'] ?? 0;
             $isOnBreak = isset($user_data['status_istirahat']) && ($user_data['status_istirahat'] === true || $user_data['status_istirahat'] === 'true');
 
-            // Batas waktu: Normal = 5 Menit (300 detik), Istirahat = 5 Jam (18000 detik)
-            $staleThreshold = $isOnBreak ? 18000 : 300;
+            // Batas waktu: Normal = dari setting (default 300s), Istirahat = 5 Jam (18000s)
+            $staleThreshold = $isOnBreak ? 18000 : $staleSec;
             $isStale = (Carbon::now()->timestamp - $lastSeen) > $staleThreshold;
 
             // Jika akun online dan sesi belum kedaluwarsa, TOLAK login
@@ -165,6 +185,15 @@ class LoginController extends Controller
             }
 
             $semuaPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
+            
+            try {
+                $geofencingSettings = $this->database->getReference('settings/geofencing')->getValue() ?? [];
+            } catch (\Throwable $e) {
+                $geofencingSettings = [];
+            }
+            $operatorRadiusMap = $geofencingSettings['operator_radius'] ?? [];
+            $defaultGlobalRadius = (int) ($geofencingSettings['default_radius'] ?? 100);
+
             $waktuSekarang = Carbon::now('Asia/Makassar');
 
             $penugasanDitemukan = false;
@@ -190,7 +219,9 @@ class LoginController extends Controller
                         if ($dataTikor) {
                             $latTarget = $dataTikor['latitude'] ?? 0;
                             $lonTarget = $dataTikor['longitude'] ?? 0;
-                            $radius = $dataTikor['radius'] ?? 100;
+                            
+                            // Prioritas: 1. Radius Khusus Operator -> 2. Radius Lokasi -> 3. Global Default
+                            $radius = $operatorRadiusMap[$uid] ?? ($dataTikor['radius'] ?? $defaultGlobalRadius);
 
                             $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $latTarget, $lonTarget);
 
@@ -202,7 +233,7 @@ class LoginController extends Controller
                             } else {
                                 // Simpan data jarak untuk pesan error yang lebih informatif (opsional: simpan yang terdekat)
                                 $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
-                                $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasi (" . round($jarak) . " meter).";
+                                $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasi (" . round($jarak) . " meter). Radius yang ditetapkan: " . round($radius) . "m.";
                                 
                                 $lokasiTerdekatData = [
                                     'target_lat' => $latTarget,
@@ -243,14 +274,14 @@ class LoginController extends Controller
 
         session()->save();
 
-        // Handle Remember Me (Hanya untuk Admin)
-        if ($request->has('remember') && $user_data['role_user'] === 'admin') {
+        // Handle Remember Me (Untuk Admin & IT Support)
+        if ($request->has('remember') && in_array($user_data['role_user'], ['admin', 'it_support', 'superadmin'])) {
             // Simpan cookie selama 30 hari (43200 menit)
             Cookie::queue('remember_user_id', $uid, 43200);
         }
 
-        if ($user_data['role_user'] == 'admin') {
-            return redirect()->to('dashboard-admin')->with('success', 'Selamat datang Admin!');
+        if (in_array($user_data['role_user'], ['admin', 'it_support', 'superadmin'])) {
+            return redirect()->to('dashboard-admin')->with('success', 'Selamat datang!');
         } else {
             return redirect()->to('dashboard-operator-penugasan')->with('success', 'Selamat bekerja!');
         }
@@ -286,7 +317,7 @@ class LoginController extends Controller
         Session::flush();
         Cookie::queue(Cookie::forget('remember_user_id'));
 
-        if ($role === 'admin') {
+        if (in_array($role, ['admin', 'it_support', 'superadmin'])) {
             return redirect('/login-admin');
         }
 
@@ -320,7 +351,17 @@ class LoginController extends Controller
 
             $latTarget = $dataTikor['latitude'] ?? 0;
             $lonTarget = $dataTikor['longitude'] ?? 0;
-            $radius = $dataTikor['radius'] ?? 100;
+            
+            // Prioritas: 1. Radius Khusus Operator -> 2. Radius Lokasi -> 3. Global Default
+            try {
+                $geofencingSettings = $this->database->getReference('settings/geofencing')->getValue() ?? [];
+            } catch (\Throwable $e) {
+                $geofencingSettings = [];
+            }
+            $operatorRadiusMap = $geofencingSettings['operator_radius'] ?? [];
+            $defaultGlobalRadius = (int) ($geofencingSettings['default_radius'] ?? 100);
+            
+            $radius = $operatorRadiusMap[$uid] ?? ($dataTikor['radius'] ?? $defaultGlobalRadius);
 
             // Hitung Jarak (Haversine Formula)
             $jarak = $this->hitungJarak($latUser, $longUser, $latTarget, $lonTarget);
