@@ -175,6 +175,7 @@ class LaporanOperatorController extends Controller
 
         // 3. Tarik Data
         $dataHarian = $this->database->getReference("survei_harian/{$lokasiId}/{$selectedDate}")->getValue() ?? [];
+        $penugasanRef = $this->database->getReference('penugasan')->getValue() ?? [];
 
         for ($h = 0; $h <= 23; $h++) {
             $hourKey = str_pad($h, 2, '0', STR_PAD_LEFT);
@@ -187,13 +188,24 @@ class LaporanOperatorController extends Controller
                 foreach ($dataHarian[$hourKey] as $idPenugasan => $item) {
                     if ($userId && ($item['user_id'] ?? '') != $userId) continue;
 
+                    $objekSurveiRaw = $penugasanRef[$idPenugasan]['objek_survei'] ?? '';
+                    $objekSet = [];
+                    foreach (explode(',', $objekSurveiRaw) as $token) {
+                        $token = trim($token);
+                        if ($token !== '') {
+                            $objekSet[strtolower(str_replace(' ', '', $token))] = true;
+                        }
+                    }
+
                     foreach ($mapTarif as $jenis => $tarifData) {
                         $harga = $tarifData['harga'];
                         $tarifLama = $tarifData['tarif_lama'];
                         $subKeys = explode(',', $jenis);
                         $vol = 0;
                         foreach ($subKeys as $sub) {
-                            $vol += (int)($item[$sub] ?? 0);
+                            if (isset($objekSet[$sub])) {
+                                $vol += (int)($item[$sub] ?? 0);
+                            }
                         }
                         if ($vol > 0) {
                             $dataRingkasan[$jenis] += $vol;

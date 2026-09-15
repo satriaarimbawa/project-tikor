@@ -154,6 +154,7 @@ class LaporanLokasiController extends Controller
         // 1. Tarik Data Firebase Master
         $lokasiRef = $this->database->getReference('lokasi')->getValue() ?? [];
         $tarifRef = $this->database->getReference('objek_tarif')->getValue() ?? [];
+        $penugasanRef = $this->database->getReference('penugasan')->getValue() ?? [];
 
         // Mapping Objek Tarif
         $mapTarif = [];
@@ -223,15 +224,26 @@ class LaporanLokasiController extends Controller
                     if (is_array($dataJam)) {
                         foreach ($dataJam as $hour => $dataPenugasan) {
                             if (is_array($dataPenugasan)) {
-                                foreach ($dataPenugasan as $idPenugasan => $item) {
-                                    foreach ($mapTarif as $jenisKey => $harga) {
-                                        $subKeys = explode(',', $jenisKey);
-                                        $vol = 0;
-                                        foreach ($subKeys as $sub) {
-                                            $vol += (int)($item[$sub] ?? 0);
+foreach ($dataPenugasan as $idPenugasan => $item) {
+                                        $objekSurveiRaw = $penugasanRef[$idPenugasan]['objek_survei'] ?? '';
+                                        $objekSet = [];
+                                        foreach (explode(',', $objekSurveiRaw) as $token) {
+                                            $token = trim($token);
+                                            if ($token !== '') {
+                                                $objekSet[strtolower(str_replace(' ', '', $token))] = true;
+                                            }
                                         }
-                                        if ($vol > 0) {
-                                            $penerimaan = $vol * $harga;
+
+                                        foreach ($mapTarif as $jenisKey => $harga) {
+                                            $subKeys = explode(',', $jenisKey);
+                                            $vol = 0;
+                                            foreach ($subKeys as $sub) {
+                                                if (isset($objekSet[$sub])) {
+                                                    $vol += (int)($item[$sub] ?? 0);
+                                                }
+                                            }
+                                            if ($vol > 0) {
+                                                $penerimaan = $vol * $harga;
                                             
                                             $dataHarian[$tgl][$locId]['volume'][$jenisKey] += $vol;
                                             $dataHarian[$tgl][$locId]['penerimaan'][$jenisKey] += $penerimaan;

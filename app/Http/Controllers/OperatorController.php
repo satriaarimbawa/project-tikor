@@ -74,13 +74,10 @@ class OperatorController extends Controller
         $isAktif = false;
         $objekSurvei = [];
         if ($idLokasiAktif) {
-            $penugasanAktif = $this->database->getReference('penugasan')
-                                ->orderByChild('id_user')
-                                ->equalTo($userId)
-                                ->getValue() ?? [];
+            $penugasanAktif = $this->database->getReference('penugasan')->getValue() ?? [];
             
             foreach ($penugasanAktif as $tugas) {
-                if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
+                if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif' && ($tugas['id_user'] ?? '') == $userId) {
                     $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
                     $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
                     if ($now->between($mulai, $selesai)) {
@@ -110,16 +107,14 @@ class OperatorController extends Controller
         $now = Carbon::now('Asia/Makassar');
         $today = $now->toDateString();
         
-        $tugasRaw = $this->database->getReference('penugasan')
-                         ->orderByChild('id_user')
-                         ->equalTo($userId)
-                         ->getValue() ?? [];
+        $tugasRaw = $this->database->getReference('penugasan')->getValue() ?? [];
 
         $lokasiMaster = $this->database->getReference('lokasi')->getValue() ?? [];
         $dataLokasi = $idLokasiAktif ? ($lokasiMaster[$idLokasiAktif] ?? null) : null;
 
         $riwayat = [];
         foreach ($tugasRaw as $key => $tugas) {
+            if (($tugas['id_user'] ?? '') != $userId) continue;
             $idLokasi = $tugas['id_lokasi'] ?? null;
             $riwayat[] = [
                 'tanggal' => Carbon::parse($tugas['waktu_mulai'])->locale('id')->translatedFormat('d M Y'),
@@ -457,15 +452,12 @@ class OperatorController extends Controller
         }
 
         // 1. Ambil Data Penugasan Aktif
-        $penugasanRaw = $this->database->getReference('penugasan')
-                            ->orderByChild('id_user')
-                            ->equalTo($userId)
-                            ->getValue() ?? [];
+        $penugasanRaw = $this->database->getReference('penugasan')->getValue() ?? [];
         
         $tugasAktif = null;
         $idPenugasan = null;
         foreach ($penugasanRaw as $key => $tugas) {
-            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
+            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif' && ($tugas['id_user'] ?? '') == $userId) {
                 $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
                 $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
                 if ($now->between($mulai, $selesai)) {
