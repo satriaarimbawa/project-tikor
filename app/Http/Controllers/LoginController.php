@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Services\ActivityLogService;
+use App\Support\PenugasanWaktu;
 
 class LoginController extends Controller
 {
@@ -201,48 +202,56 @@ class LoginController extends Controller
             $lokasiTerdekatData = null;
 
             foreach ($semuaPenugasan as $tugas) {
-                if (isset($tugas['id_user'], $tugas['id_lokasi']) && $tugas['id_user'] == $uid) {
-                    // Cek Waktu
-                    $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
-                    $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+                if (!isset($tugas['id_user'], $tugas['id_lokasi'])) {
+                    continue;
+                }
 
-                    if ($waktuSekarang->between($mulai, $selesai)) {
-                        // Cek Status Penugasan
-                        if (($tugas['status'] ?? 'inaktif') !== 'aktif') {
-                            $pesanError = "Login ditolak! Sesi penugasan ini sudah tidak aktif/dihentikan.";
-                            continue;
-                        }
+                if ((string) $tugas['id_user'] !== (string) $uid) {
+                    continue;
+                }
 
-                        $idLokasi = $tugas['id_lokasi'];
-                        $dataTikor = $this->database->getReference('lokasi/' . $idLokasi)->getValue();
+                // Aturan "sedang berjalan" dihitung di satu tempat.
+                // Urutannya penting: WAKTU dicek lebih dulu, baru STATUS,
+                // supaya pesan error yang tampil tidak berubah.
+                $alasan = PenugasanWaktu::alasanBerhenti($tugas, $waktuSekarang);
 
-                        if ($dataTikor) {
-                            $latTarget = $dataTikor['latitude'] ?? 0;
-                            $lonTarget = $dataTikor['longitude'] ?? 0;
-                            
-                            // Prioritas: 1. Radius Khusus Operator -> 2. Radius Lokasi -> 3. Global Default
-                            $radius = $operatorRadiusMap[$uid] ?? ($dataTikor['radius'] ?? $defaultGlobalRadius);
+                if ($alasan === PenugasanWaktu::ALASAN_WAKTU) {
+                    continue;
+                }
 
-                            $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $latTarget, $lonTarget);
+                if ($alasan === PenugasanWaktu::ALASAN_DIHENTIKAN) {
+                    $pesanError = "Login ditolak! Sesi penugasan ini sudah tidak aktif/dihentikan.";
+                    continue;
+                }
 
-                            // Jika user berada di dalam radius salah satu lokasi tugasnya
-                            if ($jarak <= $radius) {
-                                $idLokasiTugas = $idLokasi;
-                                $penugasanDitemukan = true;
-                                break; // Berhenti karena sudah ketemu lokasi yang cocok
-                            } else {
-                                // Simpan data jarak untuk pesan error yang lebih informatif (opsional: simpan yang terdekat)
-                                $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
-                                $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasi (" . round($jarak) . " meter). Radius yang ditetapkan: " . round($radius) . "m.";
-                                
-                                $lokasiTerdekatData = [
-                                    'target_lat' => $latTarget,
-                                    'target_lng' => $lonTarget,
-                                    'target_radius' => $radius,
-                                    'nama_lokasi_target' => $namaLokasi
-                                ];
-                            }
-                        }
+                $idLokasi = $tugas['id_lokasi'];
+                $dataTikor = $this->database->getReference('lokasi/' . $idLokasi)->getValue();
+
+                if ($dataTikor) {
+                    $latTarget = $dataTikor['latitude'] ?? 0;
+                    $lonTarget = $dataTikor['longitude'] ?? 0;
+
+                    // Prioritas: 1. Radius Khusus Operator -> 2. Radius Lokasi -> 3. Global Default
+                    $radius = $operatorRadiusMap[$uid] ?? ($dataTikor['radius'] ?? $defaultGlobalRadius);
+
+                    $jarak = $this->hitungJarak($latitudeUser, $longitudeUser, $latTarget, $lonTarget);
+
+                    // Jika user berada di dalam radius salah satu lokasi tugasnya
+                    if ($jarak <= $radius) {
+                        $idLokasiTugas = $idLokasi;
+                        $penugasanDitemukan = true;
+                        break; // Berhenti karena sudah ketemu lokasi yang cocok
+                    } else {
+                        // Simpan data jarak untuk pesan error yang lebih informatif (opsional: simpan yang terdekat)
+                        $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
+                        $pesanError = "Login ditolak! Anda berada di luar radius $namaLokasi (" . round($jarak) . " meter). Radius yang ditetapkan: " . round($radius) . "m.";
+
+                        $lokasiTerdekatData = [
+                            'target_lat' => $latTarget,
+                            'target_lng' => $lonTarget,
+                            'target_radius' => $radius,
+                            'nama_lokasi_target' => $namaLokasi
+                        ];
                     }
                 }
             }
@@ -373,47 +382,47 @@ class LoginController extends Controller
                 
                 $adaPelanggaran = false;
                 $sudahLaporHariIni = false;
+                $today = $now->toDateString();
 
                 // --- 3. VALIDASI PELANGGARAN JADWAL ---
-                foreach ($semuaPenugasan as $keyTugas => $tugas) {
-                    if (isset($tugas['id_user']) && $tugas['id_user'] == $uid && 
-                        ($tugas['id_lokasi'] ?? '') == $idLokasiAktif && 
-                        ($tugas['status'] ?? '') == 'aktif' &&
-                        isset($tugas['waktu_mulai'], $tugas['waktu_selesai'])) {
-                        
-                        $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
-                        $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
+                $penugasanBerjalan = PenugasanWaktu::semua(
+                    $semuaPenugasan,
+                    static function (array $tugas) use ($uid, $idLokasiAktif): bool {
+                        return (string) ($tugas['id_user'] ?? '') === (string) $uid
+                            && (string) ($tugas['id_lokasi'] ?? '') === (string) $idLokasiAktif;
+                    },
+                    $now
+                );
 
-                        if ($now->between($mulai, $selesai)) {
-                            // Cek Laporan: Jika sudah lapor, tidak dianggap melanggar
-                            $today = $now->toDateString();
-                            if (isset($tugas['laporan_harian'][$today]) && $tugas['laporan_harian'][$today] == true) {
-                                $sudahLaporHariIni = true;
-                                continue;
-                            }
+                foreach ($penugasanBerjalan as $entri) {
+                    $tugas = $entri[PenugasanWaktu::KUNCI_TUGAS];
 
-                            $adaPelanggaran = true;
-                            $this->database->getReference('penugasan/' . $keyTugas . '/status')->set('inaktif');
-                            
-                            // Kirim Notifikasi Pelanggaran ke Admin
-                            $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
-                            $this->database->getReference('notifikasi')->push([
-                                'judul' => 'Pelanggaran Geofencing',
-                                'pesan' => "Operator $username keluar dari radius penugasan di $namaLokasi.",
-                                'id_user' => $uid,
-                                'username' => $username,
-                                'waktu' => $now->toDateTimeString(),
-                                'status' => 'unread'
-                            ]);
-
-                            $this->logService->log(
-                                'violation',
-                                $uid,
-                                $username,
-                                "Sistem mengeluarkan <strong>{$username}</strong> karena keluar radius di <strong>{$namaLokasi}</strong>."
-                            );
-                        }
+                    // Cek Laporan: Jika sudah lapor, tidak dianggap melanggar
+                    if (isset($tugas['laporan_harian'][$today]) && $tugas['laporan_harian'][$today] == true) {
+                        $sudahLaporHariIni = true;
+                        continue;
                     }
+
+                    $adaPelanggaran = true;
+                    $this->database->getReference('penugasan/' . $entri[PenugasanWaktu::KUNCI_KEY] . '/status')->set('inaktif');
+
+                    // Kirim Notifikasi Pelanggaran ke Admin
+                    $namaLokasi = $dataTikor['nama_lokasi'] ?? 'Area Penugasan';
+                    $this->database->getReference('notifikasi')->push([
+                        'judul' => 'Pelanggaran Geofencing',
+                        'pesan' => "Operator $username keluar dari radius penugasan di $namaLokasi.",
+                        'id_user' => $uid,
+                        'username' => $username,
+                        'waktu' => $now->toDateTimeString(),
+                        'status' => 'unread'
+                    ]);
+
+                    $this->logService->log(
+                        'violation',
+                        $uid,
+                        $username,
+                        "Sistem mengeluarkan <strong>{$username}</strong> karena keluar radius di <strong>{$namaLokasi}</strong>."
+                    );
                 }
 
                 // --- 4. EKSEKUSI LOGOUT OTOMATIS ---

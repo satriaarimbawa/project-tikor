@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\ActivityLogService;
 use App\Support\ObjekKunci;
+use App\Support\PenugasanWaktu;
 
 /**
  * Halaman dan aksi untuk petugas lapangan (operator).
@@ -101,17 +102,15 @@ class OperatorController extends Controller
                                 ->equalTo($userId)
                                 ->getValue() ?? [];
             
-            foreach ($penugasanAktif as $tugas) {
-                if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
-                    $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
-                    $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
-                    if ($now->between($mulai, $selesai)) {
-                        $isAktif = true;
-                        $rawObjek = $tugas['objek_survei'] ?? '';
-                        $objekSurvei = array_filter(array_map('trim', explode(',', $rawObjek)));
-                        break;
-                    }
-                }
+            $cocok = PenugasanWaktu::cari(
+                $penugasanAktif,
+                static fn (array $tugas): bool => (string) ($tugas['id_lokasi'] ?? '') === (string) $idLokasiAktif,
+                $now
+            );
+
+            if ($cocok !== null) {
+                $isAktif = true;
+                $objekSurvei = PenugasanWaktu::objekSurvei($cocok[PenugasanWaktu::KUNCI_TUGAS]);
             }
         }
 
@@ -173,18 +172,15 @@ class OperatorController extends Controller
             }
         }
 
-        $objekSurveiAktif = [];
-        foreach ($tugasRaw as $tugas) {
-            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
-                $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
-                $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
-                if ($now->between($mulai, $selesai)) {
-                    $rawObjek = $tugas['objek_survei'] ?? '';
-                    $objekSurveiAktif = array_filter(array_map('trim', explode(',', $rawObjek)));
-                    break;
-                }
-            }
-        }
+        $cocok = PenugasanWaktu::cari(
+            $tugasRaw,
+            static fn (array $tugas): bool => (string) ($tugas['id_lokasi'] ?? '') === (string) $idLokasiAktif,
+            $now
+        );
+
+        $objekSurveiAktif = $cocok === null
+            ? []
+            : PenugasanWaktu::objekSurvei($cocok[PenugasanWaktu::KUNCI_TUGAS]);
 
         return view('operator.penugasan', [
             'riwayat' => $riwayat,
@@ -234,27 +230,25 @@ class OperatorController extends Controller
         // Ambil info semua user untuk mapping nama rekan
         $usersMap = $this->database->getReference('users')->getValue() ?? [];
 
-        foreach ($semuaPenugasan as $key => $tugas) {
-            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
-                $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
-                $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
-                
-                if ($waktuSekarang->between($mulai, $selesai)) {
-                    $rawObjek = $tugas['objek_survei'] ?? '';
-                    $objArr = array_filter(array_map('trim', explode(',', $rawObjek)));
+        $berjalan = PenugasanWaktu::semua(
+            $semuaPenugasan,
+            static fn (array $tugas): bool => (string) ($tugas['id_lokasi'] ?? '') === (string) $idLokasiAktif,
+            $waktuSekarang
+        );
 
-                    if (($tugas['id_user'] ?? '') == $userId) {
-                        $objekSaya = $objArr;
-                        $tugasAktifSaatIni = $tugas;
-                        $idPenugasanAktif = $key;
-                    } else {
-                        $uidRekan = $tugas['id_user'] ?? 'unknown';
-                        $objekRekan[$uidRekan] = [
-                            'nama' => $usersMap[$uidRekan]['username'] ?? 'Rekan',
-                            'objek' => $objArr
-                        ];
-                    }
-                }
+        foreach ($berjalan as $entri) {
+            $tugas = $entri[PenugasanWaktu::KUNCI_TUGAS];
+
+            if ((string) ($tugas['id_user'] ?? '') === (string) $userId) {
+                $objekSaya = PenugasanWaktu::objekSurvei($tugas);
+                $tugasAktifSaatIni = $tugas;
+                $idPenugasanAktif = $entri[PenugasanWaktu::KUNCI_KEY];
+            } else {
+                $uidRekan = $tugas['id_user'] ?? 'unknown';
+                $objekRekan[$uidRekan] = [
+                    'nama' => $usersMap[$uidRekan]['username'] ?? 'Rekan',
+                    'objek' => PenugasanWaktu::objekSurvei($tugas)
+                ];
             }
         }
 
@@ -535,19 +529,14 @@ class OperatorController extends Controller
                             ->equalTo($userId)
                             ->getValue() ?? [];
         
-        $tugasAktif = null;
-        $idPenugasan = null;
-        foreach ($penugasanRaw as $key => $tugas) {
-            if (($tugas['id_lokasi'] ?? '') == $idLokasiAktif && ($tugas['status'] ?? '') == 'aktif') {
-                $mulai = Carbon::parse($tugas['waktu_mulai'], 'Asia/Makassar');
-                $selesai = Carbon::parse($tugas['waktu_selesai'], 'Asia/Makassar');
-                if ($now->between($mulai, $selesai)) {
-                    $tugasAktif = $tugas;
-                    $idPenugasan = $key;
-                    break;
-                }
-            }
-        }
+        $cocok = PenugasanWaktu::cari(
+            $penugasanRaw,
+            static fn (array $tugas): bool => (string) ($tugas['id_lokasi'] ?? '') === (string) $idLokasiAktif,
+            $now
+        );
+
+        $tugasAktif  = $cocok[PenugasanWaktu::KUNCI_TUGAS] ?? null;
+        $idPenugasan = $cocok[PenugasanWaktu::KUNCI_KEY] ?? null;
 
         if (!$tugasAktif) {
             return back()->with('error', 'Tidak ada penugasan aktif saat ini.');

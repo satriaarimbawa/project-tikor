@@ -193,12 +193,24 @@
             return d.getTime() - d.getTimezoneOffset() * 60000 + OFFSET_MAKASSAR_MENIT * 60000;
         }
 
+        // Cerminan App\Support\PenugasanWaktu::sedangBerjalan() supaya
+        // kartu operator di layar ini tidak berbeda tampilan dengan
+        // keputusan di server. Dua syarat:
+        //   1. "sekarang" berada di dalam [waktu_mulai, waktu_selesai]
+        //      (batas inklusif, sama seperti Carbon::between()), dan
+        //   2. penugasan belum dihentikan manual.
+        // Penugasan tanpa field 'status' dianggap aktif, sama seperti
+        // di server. Nilai 'active' tidak pernah dipakai di sistem ini.
+        var STATUS_NONAKTIF = 'inaktif';
+
         function isPenugasanBerjalan(t) {
+            if (!t) return false;
             var mulai = parseWaktuFirebase(t.waktu_mulai);
             var selesai = parseWaktuFirebase(t.waktu_selesai);
             if (!mulai || !selesai) return false;
             var nowMs = nowMakassarMs();
-            return nowMs >= mulai.getTime() && nowMs <= selesai.getTime();
+            if (nowMs < mulai.getTime() || nowMs > selesai.getTime()) return false;
+            return String(t.status === undefined ? '' : t.status) !== STATUS_NONAKTIF;
         }
 
         // Nama lokasi: coba data realtime, lalu data server, lalu peta nama.
@@ -351,9 +363,16 @@
                 let hasReported = false;
 
                 if (role === 'operator') {
+                    // Pakai fungsi yang sama dengan penyaringan lokasi
+                    // aktif di bawah, bukan cek status mentah. Dahulu operator
+                    // tetap menampilkan nama lokasi lama begitu jadwalnya
+                    // selesai, dan penugasan tanpa field 'status' justru
+                    // ikut terbuang.
                     for (let idTugas in allPenugasan) {
                         const t = allPenugasan[idTugas];
-                        if (t.id_user == uid && (t.status === 'aktif' || t.status === 'active')) {
+                        if (!t || t.id_user == null) continue;
+                        if (String(t.id_user) !== String(uid)) continue;
+                        if (isPenugasanBerjalan(t)) {
                             currentLocationName = namaLokasi(t.id_lokasi);
                             if (t.laporan_harian && (t.laporan_harian[today] || t.laporan_harian[getClientToday()])) {
                                 hasReported = true;
@@ -462,8 +481,8 @@
                     for (let id in data) {
                         const t = data[id];
                         if (!t || !t.id_lokasi || !t.waktu_mulai || !t.waktu_selesai) continue;
-                        // Sama seperti filter server: hanya penugasan yang
-                        // sedang berjalan (mulai < sekarang < selesai).
+                        // Sama seperti filter server: penugasan yang
+                        // sedang berjalan dan belum dihentikan.
                         if (isPenugasanBerjalan(t)) {
                             activeLocIds.add(t.id_lokasi.toString());
                         }

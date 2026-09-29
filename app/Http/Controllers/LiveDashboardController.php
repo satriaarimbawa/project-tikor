@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Support\ObjekKunci;
+use App\Support\PenugasanWaktu;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
-use Kreait\Firebase\Contract\Auth;
 use Carbon\Carbon;
 
 /**
@@ -20,12 +20,10 @@ use Carbon\Carbon;
 class LiveDashboardController extends Controller
 {
     protected $database;
-    protected $auth;
 
-    public function __construct(Database $database, Auth $auth)
+    public function __construct(Database $database)
     {
         $this->database = $database;
-        $this->auth = $auth;
     }
 
     public function index()
@@ -39,23 +37,18 @@ class LiveDashboardController extends Controller
         $allLokasi = $this->database->getReference('lokasi')->getValue() ?? [];
         $allPenugasan = $this->database->getReference('penugasan')->getValue() ?? [];
         
-        // 2. Filter Lokasi yang punya Penugasan HARI INI
-        $activeLocationIds = [];
-        foreach ($allPenugasan as $t) {
-            if (empty($t['waktu_mulai']) || empty($t['waktu_selesai'])) {
-                continue;
-            }
-            $mulai = Carbon::parse($t['waktu_mulai'], 'Asia/Makassar');
-            $selesai = Carbon::parse($t['waktu_selesai'], 'Asia/Makassar');
-
-            // Lokasi dianggap tampil hanya bila penugasan sedang berjalan.
-            // Field 'status' sengaja tidak dipakai karena hanya diperbarui
-            // saat dashboard dibuka, sehingga bisa basi (stale).
-            if ($mulai->toDateString() === $today && $now->between($mulai, $selesai)) {
-                $activeLocationIds[] = $t['id_lokasi'] ?? '';
-            }
-        }
-        $activeLocationIds = array_unique(array_filter($activeLocationIds));
+        // 2. Filter Lokasi yang sedang ditugaskan.
+        // Aturan "sedang berjalan" (waktu sudah masuk rentang DAN belum
+        // dihentikan admin) dihitung di satu tempat, yaitu
+        // App\Support\PenugasanWaktu, supaya tidak berbeda beda antar
+        // halaman.
+        //
+        // Kode lama juga menuntut waktu_mulai ber-tanggal hari ini.
+        // Syarat itu dihapus: penugasan yang melintang tengah malam
+        // tetap berjalan, dan data survei jam-jam awal hari ini
+        // tetap dihitung di bawah. Dulu lokasi seperti itu ikut hilang
+        // dari dashboard tepat setelah pukul 00:00.
+        $activeLocationIds = PenugasanWaktu::idLokasiBerjalan($allPenugasan, $now);
 
         // Bangun lokasiMaster hanya untuk lokasi yang aktif ditugaskan
         $lokasiMaster = [];
@@ -106,16 +99,6 @@ class LiveDashboardController extends Controller
             }
         }
 
-        // 3. Generate Custom Token
-        $customToken = null;
-        try {
-            $userId = session('user_id');
-            if ($userId) {
-                $token = $this->auth->createCustomToken($userId);
-                $customToken = method_exists($token, 'toString') ? $token->toString() : (string) $token;
-            }
-        } catch (\Exception $e) {}
-
         // 4. Ambil Daftar User untuk Presence Monitoring
         $usersRaw = $this->database->getReference('users')->getValue() ?? [];
         $operators = [];
@@ -134,21 +117,15 @@ class LiveDashboardController extends Controller
             
             $role = $u['role_user'] ?? 'user';
             $locationName = 'Tanpa Lokasi';
-            
+
             if ($role === 'operator') {
-                // Cari lokasi aktif user ini di tabel penugasan
-                foreach ($allPenugasan as $t) {
-                    if (($t['id_user'] ?? '') == $uid && ($t['status'] ?? '') === 'aktif') {
-                        $mulai = Carbon::parse($t['waktu_mulai'], 'Asia/Makassar');
-                        $selesai = Carbon::parse($t['waktu_selesai'], 'Asia/Makassar');
-                        
-                        if ($now->between($mulai, $selesai)) {
-                            $idL = $t['id_lokasi'] ?? '';
-                            $locationName = $lokasiNamesMap[$idL] ?? 'Lokasi Aktif';
-                            break;
-                        }
-                    }
-                }
+                // Cari lokasi yang sedang ditugaskan ke user ini.
+                $locationName = PenugasanWaktu::namaLokasiAktif(
+                    $allPenugasan,
+                    (string) $uid,
+                    $lokasiNamesMap,
+                    $now
+                ) ?? $locationName;
             } else {
                 $locationName = ucfirst($role);
             }
@@ -170,9 +147,7 @@ class LiveDashboardController extends Controller
             'totalGlobal' => array_sum($initialGlobal),
             'operators' => $operators,
             'lokasiNamesMap' => $lokasiNamesMap,
-            'firebaseConfig' => config('firebase.projects.app'),
-            'firebaseToken' => $customToken,
-            'firebaseApiKey' => 'AIzaSyA_raJzGxDNyvpn1OIFczKdB6I-mpdTYdI'
+            'firebaseConfig' => config('firebase.projects.app')
         ]);
     }
 }
