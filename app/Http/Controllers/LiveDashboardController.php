@@ -2,11 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ObjekKunci;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Kreait\Firebase\Contract\Auth;
 use Carbon\Carbon;
 
+/**
+ * Live Monitoring: ringkasan volume kendaraan hari ini per lokasi.
+ *
+ * Aturan pencocokan objek: tarif dicocokkan lewat `ObjekKunci`, bukan lewat
+ * `objek_tarif.nama`. Kalau ikut memakai `nama`, begitu admin me-rename
+ * objek di master, kunci turunan ikut berubah dan seluruh volume historis
+ * objek itu lenyap tanpa error. Rinciannya ada di
+ * `App\Support\ObjekKunci`.
+ */
 class LiveDashboardController extends Controller
 {
     protected $database;
@@ -52,13 +62,17 @@ class LiveDashboardController extends Controller
         $objekNames = [];
         $objekPrices = [];
         $validKeys = [];
-        foreach ($tarifRaw as $item) {
-            $key = strtolower(str_replace(' ', '', $item['nama'] ?? ''));
-            if ($key) {
-                $objekNames[$key] = $item['nama'];
-                $objekPrices[$key] = (int) ($item['harga'] ?? 0);
-                $validKeys[] = $key;
+        foreach ($tarifRaw as $itemId => $item) {
+            if (!is_array($item)) {
+                continue;
             }
+            $key = ObjekKunci::untuk((string) $itemId, $item);
+            if ($key === '' || isset($objekNames[$key])) {
+                continue;
+            }
+            $objekNames[$key] = (string) ($item['nama'] ?? 'Lainnya');
+            $objekPrices[$key] = (int) ($item['harga'] ?? 0);
+            $validKeys[] = $key;
         }
 
         // 3. Ambil Data Survei Hari Ini (Initial Load)
@@ -73,12 +87,8 @@ class LiveDashboardController extends Controller
                     foreach ($dataJam as $idKey => $stats) {
                         if (is_array($stats)) {
                             foreach ($validKeys as $key) {
-                                $subKeys = explode(',', $key);
-                                $val = 0;
-                                foreach ($subKeys as $sub) {
-                                    $val += (int)($stats[$sub] ?? 0);
-                                }
-                                
+                                $val = ObjekKunci::volume($stats, $key);
+
                                 $initialGlobal[$key] += $val;
                                 if (isset($initialLokasi[$idLokasi])) {
                                     $initialLokasi[$idLokasi] += $val;
