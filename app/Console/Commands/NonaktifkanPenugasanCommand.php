@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Services\PenugasanStatusService;
+use App\Support\PenugasanWaktu;
 use Illuminate\Console\Command;
-use Kreait\Firebase\Contract\Database;
 use Carbon\Carbon;
 
 /**
@@ -11,12 +12,13 @@ use Carbon\Carbon;
  *
  * Command ini adalah versi otomatis dari blok "AUTOMATIC CLEANUP" yang
  * sebelumnya hanya berjalan saat admin membuka halaman dashboard (lihat
- * AdminController::dashboard). Tanpa penjadwal, field `status` bisa basi
+ * AdminController::index). Tanpa penjadwal, field `status` bisa basi
  * (stale) selamanya sehingga penugasan lama tetap terbaca aktif.
  *
- * JANGAN memakai field `status` sebagai sumber kebenaran di mana pun.
- * Penentuan "sedang berjalan" selalu dari perbandingan waktu:
- *     waktu_mulai < sekarang < waktu_selesai
+ * Penentuan siapa yang kedaluwarsa TIDAK ada di file ini. Aturan itu milik
+ * `App\Support\PenugasanWaktu` dan ditulis lewat
+ * `App\Services\PenugasanStatusService`, jadi command ini hanya mengatur
+ * tampilan, bukan keputusan.
  */
 class NonaktifkanPenugasanCommand extends Command
 {
@@ -25,12 +27,12 @@ class NonaktifkanPenugasanCommand extends Command
 
     protected $description = 'Set status penugasan menjadi inaktif bila waktu selesai sudah terlewati';
 
-    protected $database;
+    protected $penugasanStatus;
 
-    public function __construct(Database $database)
+    public function __construct(PenugasanStatusService $penugasanStatus)
     {
         parent::__construct();
-        $this->database = $database;
+        $this->penugasanStatus = $penugasanStatus;
     }
 
     public function handle(): int
@@ -39,47 +41,20 @@ class NonaktifkanPenugasanCommand extends Command
         $dryRun = (bool) $this->option('dry-run');
 
         $this->info('=== NONAKTIFKAN PENUGASAN KEDALUWARSA ===');
-        $this->line('Waktu acuan (Asia/Makassar): ' . $now->toDateTimeString());
+        $this->line('Waktu acuan (' . PenugasanWaktu::ZONA_WAKTU . '): ' . $now->toDateTimeString());
         if ($dryRun) {
             $this->warn('Mode DRY-RUN: tidak ada perubahan yang ditulis ke database.');
         }
         $this->newLine();
 
+        // Command ini tidak lagi menentukan sendiri siapa yang kedaluwarsa.
+        // Aturan itu milik App\Support\PenugasanWaktu, supaya tidak
+        // berbeda dengan halaman lain.
         try {
-            $semuaTugas = $this->database->getReference('penugasan')->getValue() ?? [];
+            $kandidat = $this->penugasanStatus->kandidatKedaluwarsa($now);
         } catch (\Throwable $e) {
             $this->error('Gagal membaca data penugasan: ' . $e->getMessage());
             return self::FAILURE;
-        }
-
-        if (empty($semuaTugas)) {
-            $this->info('Tidak ada data penugasan.');
-            return self::SUCCESS;
-        }
-
-        $kandidat = [];
-        foreach ($semuaTugas as $keyTugas => $t) {
-            if (!is_array($t)) {
-                continue;
-            }
-            // Hanya yang masih aktif dan punya waktu selesai yang valid.
-            if (($t['status'] ?? 'inaktif') !== 'aktif') {
-                continue;
-            }
-            if (empty($t['waktu_selesai'])) {
-                continue;
-            }
-
-            try {
-                $selesai = Carbon::parse($t['waktu_selesai'], 'Asia/Makassar');
-            } catch (\Throwable $e) {
-                $this->warn('Melewati penugasan ' . $keyTugas . ': waktu_selesai tidak valid.');
-                continue;
-            }
-
-            if ($now->gt($selesai)) {
-                $kandidat[$keyTugas] = $t;
-            }
         }
 
         $jumlah = count($kandidat);
@@ -95,14 +70,14 @@ class NonaktifkanPenugasanCommand extends Command
         $berhasil = 0;
         $gagal = 0;
 
-        foreach ($kandidat as $keyTugas => $t) {
-            $idLokasi = $t['id_lokasi'] ?? '-';
-            $selesai = Carbon::parse($t['waktu_selesai'], 'Asia/Makassar');
+        foreach ($kandidat as $keyTugas => $item) {
+            $tugas   = $item[PenugasanWaktu::KUNCI_TUGAS];
+            $idLokasi = $tugas['id_lokasi'] ?? '-';
             $baris = sprintf(
                 '  - [%s] lokasi=%s selesai=%s',
                 $keyTugas,
                 $idLokasi,
-                $selesai->toDateTimeString()
+                $item['selesai']->toDateTimeString()
             );
 
             if ($dryRun) {
@@ -111,8 +86,8 @@ class NonaktifkanPenugasanCommand extends Command
             }
 
             try {
-                $this->database->getReference('penugasan/' . $keyTugas . '/status')->set('inaktif');
-                $this->info($baris . '  -> inaktif');
+                $this->penugasanStatus->tulisStatus((string) $keyTugas, PenugasanWaktu::STATUS_NONAKTIF);
+                $this->info($baris . '  -> ' . PenugasanWaktu::STATUS_NONAKTIF);
                 $berhasil++;
             } catch (\Throwable $e) {
                 $this->error($baris . '  GAGAL: ' . $e->getMessage());

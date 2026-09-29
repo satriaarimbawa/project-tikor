@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Carbon\Carbon;
+use App\Services\PenugasanStatusService;
 use App\Support\ObjekKunci;
 
 /**
@@ -23,12 +24,17 @@ class AdminController extends Controller
     /** Koneksi Firebase Realtime Database. */
     protected $database;
 
+    /** Penulis otomatis field status penugasan. */
+    protected $penugasanStatus;
+
     /**
      * @param Database $database Injeksi dari container Laravel.
+     * @param PenugasanStatusService $penugasanStatus Injeksi dari container Laravel.
      */
-    public function __construct(Database $database)
+    public function __construct(Database $database, PenugasanStatusService $penugasanStatus)
     {
         $this->database = $database;
+        $this->penugasanStatus = $penugasanStatus;
     }
 
     /**
@@ -62,18 +68,14 @@ class AdminController extends Controller
         $hariIni = $waktuSekarang->toDateString();
 
         // --- AUTOMATIC CLEANUP: Deactivate expired assignments ---
+        // Logikanya ada di App\Services\PenugasanStatusService, sama dengan
+        // yang dipakai command penjadwal `penugasan:nonaktifkan`. Dulu blok
+        // ini ditulis ulang sendiri sehingga bisa berbeda aturan dengan
+        // command, dan sering gagal diam-diam karena `waktu_selesai` null
+        // tidak pernah dicek sebelum di-parse.
         try {
-            $semuaTugas = $this->database->getReference('penugasan')->getValue() ?? [];
-            foreach ($semuaTugas as $keyTugas => $t) {
-                if (($t['status'] ?? 'inaktif') === 'aktif') {
-                    $selesai = Carbon::parse($t['waktu_selesai'], 'Asia/Makassar');
-                    if ($waktuSekarang->gt($selesai)) {
-                        // Jika waktu sekarang sudah MELEWATI waktu selesai, ubah status ke inaktif
-                        $this->database->getReference("penugasan/{$keyTugas}/status")->set('inaktif');
-                    }
-                }
-            }
-        } catch (\Exception $e) {
+            $this->penugasanStatus->nonaktifkanKedaluwarsa($waktuSekarang);
+        } catch (\Throwable $e) {
             // Abaikan error cleanup agar dashboard tetap tampil jika Firebase bermasalah sebentar
         }
         // --- END CLEANUP ---
