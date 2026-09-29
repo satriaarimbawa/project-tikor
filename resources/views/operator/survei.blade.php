@@ -159,7 +159,6 @@
 
     <script>
         let firebaseConfig = @json(config('firebase.projects.app'));
-        firebaseConfig.apiKey = "AIzaSyA_raJzGxDNyvpn1OIFczKdB6I-mpdTYdI";
         if (!firebaseConfig.databaseURL) firebaseConfig.databaseURL = "{{ config('firebase.projects.app.database.url') }}";
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();

@@ -151,7 +151,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script>
         let firebaseConfig = @json(config('firebase.projects.app'));
-        firebaseConfig.apiKey = "AIzaSyA_raJzGxDNyvpn1OIFczKdB6I-mpdTYdI";
         if (!firebaseConfig.databaseURL) firebaseConfig.databaseURL = "{{ config('firebase.projects.app.database.url') }}";
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();

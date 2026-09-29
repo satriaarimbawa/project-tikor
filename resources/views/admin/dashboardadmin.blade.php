@@ -245,7 +245,6 @@
         // REALTIME FIREBASE SYNC FOR ADMIN DASHBOARD
         try {
             const firebaseConfig = {
-                apiKey: "AIzaSyA_raJzGxDNyvpn1OIFczKdB6I-mpdTYdI",
                 databaseURL: "{{ config('firebase.projects.app.database.url') }}",
                 projectId: "uji-petik-default-rtdb"
             };
