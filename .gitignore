@@ -27,10 +27,37 @@ Thumbs.db
 SECURITY_AUDIT.md
 *.audit.md
 
+# Firebase service account (JANGAN pernah di-commit)
+storage/app/firebase/
+/storage/app/*.json
+
 # Local Test Scripts & Artifacts
 test_*.php
 *.cjs
 test_screenshots/
 inspect_backup.php
 storage/backups/
+
+# Composer install di dalam subdirektori (test_extraction/ punya vendor sendiri).
+# Perhatikan: /vendor di atas HANYA mengabaikan vendor/ di root repo.
+vendor/
+
+# Folder hasil ekstraksi uji (artefak lama, bukan bagian aplikasi).
+# Mengandung vendor/ sendiri sehingga tidak boleh ikut ter-commit.
+test_extraction/
+
+# Duplikat framework/ dan logs/ yang muncul di root repo.
+# Struktur yang benar sudah ada di storage/framework dan storage/logs,
+# dan public/index.php memang hanya merujuk ke storage/framework.
+# Lihat: public/index.php - __DIR__.'/../storage/framework/maintenance.php'
+/framework/
+/logs/
+
+# Skrip catatan pribadi saat menelusuri data.
+/scratch_users.php
+
+# Skrip backup/pelarian manual di root. Dipakai sekali saat menelusuri data,
+# tidak pernah dipanggil aplikasi (Laravel hanya autoload app/, config/,
+# database/, routes/, bootstrap/). Tidak perlu ada di server.
+/database_backup.php
 

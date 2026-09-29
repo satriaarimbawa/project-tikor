@@ -5,21 +5,56 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Carbon\Carbon;
+use App\Support\ObjekKunci;
 
+/**
+ * Dashboard utama admin.
+ *
+ * Menghitung pendapatan dan rekap survei SELURUH lokasi dari
+ * `survei_harian`, lalu menyajikannya sebagai kartu angka, grafik, dan tabel.
+ *
+ * Aturan pencocokan objek: tarif dicocokkan lewat `ObjekKunci`, bukan lewat
+ * `objek_tarif.nama`. Kalau ikut memakai `nama`, me-rename objek di master
+ * akan membuat seluruh data historis objek itu lenyap dari dashboard.
+ * Rinciannya ada di `App\Support\ObjekKunci`.
+ */
 class AdminController extends Controller
 {
+    /** Koneksi Firebase Realtime Database. */
     protected $database;
 
+    /**
+     * @param Database $database Injeksi dari container Laravel.
+     */
     public function __construct(Database $database)
     {
         $this->database = $database;
     }
 
+    /**
+     * Form login admin.
+     *
+     * @return \Illuminate\View\View
+     */
     public function loginadmin()
     {
         return view('login.logadmin');
     }
 
+    /**
+     * Isi dashboard admin.
+     *
+     * Tahapan:
+     *   1. Bersihkan sesi penugasan lama yang sudah kedaluwarsa.
+     *   2. Bangun peta tarif dari master `objek_tarif`, di-key dengan
+     *      KUNCI DATA, plus peta balik sub-key -> parent-key untuk objek
+     *      yang melayani lebih dari satu kunci (mis. "minibus,pick-up").
+     *   3. Telusuri seluruh `survei_harian` dan akumulasikan pendapatan,
+     *      jumlah per tanggal, dan total per jenis kendaraan.
+     *   4. Susun data grafik dan notifikasi.
+     *
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
         Carbon::setLocale('id');
@@ -51,12 +86,17 @@ class AdminController extends Controller
         $subKeyMap  = []; // reverse map: sub-key → parent-key
                           // mis: "minibus" → "minibus,pick-up", "pick-up" → "minibus,pick-up"
 
-        foreach ($tarifRaw as $item) {
+        foreach ($tarifRaw as $itemId => $item) {
+            if (!is_array($item)) continue;
+
             $namaOriginal = $item['nama'] ?? 'Lainnya';
             $harga        = (int)($item['harga'] ?? 0);
 
-            // Parent key dari nama lengkap (mis: "Mini Bus, Pick-up" → "minibus,pick-up")
-            $parentKey = strtolower(str_replace(' ', '', $namaOriginal));
+            // Parent key TIDAK lagi turunan dari `nama`. `nama` cuma label
+            // tampilan yang bebas diganti admin; kunci datanya permanen
+            // (lihat App\Support\ObjekKunci). Inilah akar bug data historis
+            // lenyap saat admin me-rename objek.
+            $parentKey = ObjekKunci::untuk((string)$itemId, $item);
 
             if (!in_array($parentKey, $validKeys)) {
                 $tarifMap[$parentKey]   = $harga;
@@ -64,12 +104,11 @@ class AdminController extends Controller
                 $validKeys[]            = $parentKey;
             }
 
-            // Buat sub-key mapping untuk tiap bagian nama yang dipisah koma
-            // Mis: "Mini Bus, Pick-up" → sub-keys: "minibus" & "pick-up", keduanya → "minibus,pick-up"
-            $namaParts = array_map('trim', explode(',', $namaOriginal));
-            foreach ($namaParts as $namaPart) {
-                if ($namaPart === '') continue;
-                $subKey = strtolower(str_replace(' ', '', $namaPart));
+            // Sub-key mapping: tiap jenis kendaraan milik objek ini diarahkan
+            // ke parent-key-nya. Field non-kendaraan (`total_survei`,
+            // `user_id`) tidak pernah muncul di sini, sehingga otomatis
+            // tertolak di bawah pada cek `$subKeyMap`.
+            foreach (ObjekKunci::daftarKunci((string)$itemId, $item) as $subKey) {
                 $subKeyMap[$subKey] = $parentKey;
             }
         }
@@ -197,6 +236,13 @@ class AdminController extends Controller
         ]);
     }
 
+    /**
+     * Daftar notifikasi untuk lonceng di header.
+     *
+     * Dipanggil lewat AJAX, jadi mengembalikan JSON.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getNotifications()
     {
         $notifRaw = $this->database->getReference('notifikasi')->getValue() ?? [];
@@ -204,6 +250,14 @@ class AdminController extends Controller
         return response()->json($notifRaw);
     }
 
+    /**
+     * Tandai semua notifikasi sebagai sudah dibaca.
+     *
+     * Menulis field `status` per notifikasi dengan operasi `set`, jadi
+     * field lain pada notifikasi tersebut tidak ikut berubah.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function markNotificationsRead()
     {
         $notifRaw = $this->database->getReference('notifikasi')->getValue() ?? [];

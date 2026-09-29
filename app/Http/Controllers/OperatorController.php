@@ -7,12 +7,34 @@ use Kreait\Firebase\Contract\Database;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\ActivityLogService;
+use App\Support\ObjekKunci;
 
+/**
+ * Halaman dan aksi untuk petugas lapangan (operator).
+ *
+ * File ini memegang JALUR TULIS ke data survei, jadi aturan paling penting
+ * ada di sini:
+ *
+ *   Nama objek kendaraan yang masuk ke `survei_harian` SELALU dinormalisasi
+ *   lewat `ObjekKunci::dariNama()`. Jangan pernah menulis `strtolower()` atau
+ *   `str_replace()` sendiri di file ini. Kalau normalisasi di jalur tulis dan
+ *   di jalur baca laporan berbeda, satu jenis kendaraan bisa tersimpan
+ *   dengan dua kunci yang berbeda, dan datanya terbelah tanpa error.
+ *
+ * Rincian masalah dan strateginya ada di `App\Support\ObjekKunci`.
+ */
 class OperatorController extends Controller
 {
+    /** Koneksi Firebase Realtime Database. */
     protected $database;
+
+    /** Pencatat jejak aktivitas (audit log). */
     protected $logService;
 
+    /**
+     * @param Database          $database  Injeksi dari container Laravel.
+     * @param ActivityLogService $logService Injeksi dari container Laravel.
+     */
     public function __construct(Database $database, ActivityLogService $logService)
     {
         $this->database = $database;
@@ -173,6 +195,23 @@ class OperatorController extends Controller
         ]);
     }
 
+    /**
+     * Form hitung Survei: menampilkan input angka per jenis kendaraan.
+     *
+     * Angka yang tampil adalah agregasi hari ini untuk lokasi aktif, baik
+     * milik operator sendiri maupun milik rekan yang sedang bekerja di lokasi
+     * yang sama. Field `total_survei` adalah SKALAR total, bukan salah satu
+     * kategori kendaraan, jadi harus dikecualikan saat mengiterasi kunci
+     * (lihat `ObjekKunci::FIELD_NON_KENDARAAN`).
+     *
+     * Kunci counter dibangun dari NAMA objek yang tersimpan di
+     * `penugasan.objek_survei`, yaitu taksonomi LAMA yang sudah beku sejak
+     * penugasan dibuat. Nama itu lalu dinormalisasi dengan
+     * `ObjekKunci::dariNama()` supaya persis sama dengan kunci yang ditulis
+     * `simpanHitung()` dan yang dibaca laporan.
+     *
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
+     */
     public function survei()
     {
         $idLokasiAktif = session('id_lokasi_aktif');
@@ -237,7 +276,7 @@ class OperatorController extends Controller
         
         $dataSurvei = ['total_survei' => 0];
         foreach ($semuaObjekUnik as $obj) {
-            $dataSurvei[strtolower(str_replace(' ', '', $obj))] = 0;
+            $dataSurvei[ObjekKunci::dariNama((string)$obj)] = 0;
         }
 
         foreach ($dataHariIni as $hour => $dataJam) {
@@ -261,6 +300,23 @@ class OperatorController extends Controller
         ]);
     }
 
+    /**
+     * Menyimpan satu angka hitung dari form Survei.
+     *
+     * Menulis ke `survei_harian/{lokasi}/{tanggal}/{jam}/{penugasan}` dengan
+     * operasi INCREMENT pada kunci kendaraan, bukan menimpa.
+     *
+     * Pemeriksaan yang dilakukan sebelum menulis:
+     *   - sesi lokasi/user/penugasan harus ada;
+     *   - penugasan harus ada;
+     *   - otorisasi IDOR: penugasan milik sendiri, atau milik rekan yang
+     *     sedang diklaim operator ini di lokasi yang sama;
+     *   - operator belum lapor hari ini.
+     *
+     * @param Request $request Mengandung `id_penugasan` dan `jenis_kendaraan`
+     *        (nama objek mentah dari form, BUKAN kunci yang sudah ternormalisasi).
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function simpanHitung(Request $request)
     {
         $idLokasiAktif = session('id_lokasi_aktif');
@@ -275,7 +331,12 @@ class OperatorController extends Controller
         $date = $now->toDateString();
         $hour = $now->format('H'); // Folder JAM (00-23)
         $timeFull = $now->format('H:i:s');
-        $jenis = strtolower(str_replace(' ', '', $request->jenis_kendaraan));
+
+        // Normalisasi WAJIB lewat ObjekKunci::dariNama() supaya kunci yang
+        // ditulis ke survei_harian identik dengan kunci yang dibaca semua
+        // laporan. Kalau dua normalisasi ini berbeda, satu objek bisa
+        // menghasilkan dua kunci dan datanya terbelah.
+        $jenis = ObjekKunci::dariNama((string)$request->jenis_kendaraan);
 
         try {
             // Cek data penugasan
@@ -445,6 +506,18 @@ class OperatorController extends Controller
         return response()->json(['success' => false, 'message' => 'Tugas sudah diklaim atau rekan sudah aktif.']);
     }
 
+    /**
+     * Rekap hasil survei penugasan aktif hari ini, format PDF (A4 portrait).
+     *
+     * Menampilkan matriks jam (08:00-21:00) x jenis kendaraan. Tarif diambil
+     * dari master `objek_tarif` dengan mencocokkan KUNCI DATA, bukan nama,
+     * sehingga me-rename objek di master tidak membuat tarif jadi nol.
+     *
+     * Kolom `total` memakai tarif BERLAKUA, kolom `total_lama` memakai
+     * `tarif_lama`, supaya selisih kenaikan tarif terlihat.
+     *
+     * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\Response
+     */
     public function downloadPdf()
     {
         $userId = session('user_id');
@@ -487,10 +560,11 @@ class OperatorController extends Controller
         // 3. Ambil Tarif Objek
         $tarifRaw = $this->database->getReference('objek_tarif')->getValue() ?? [];
         $tarifMap = [];
-        foreach ($tarifRaw as $t) {
-            $key = strtolower(str_replace(' ', '', $t['nama']));
+        foreach ($tarifRaw as $tId => $t) {
+            if (!is_array($t)) continue;
+            $key = ObjekKunci::untuk((string)$tId, $t);
             $tarifMap[$key] = [
-                'nama' => $t['nama'],
+                'nama' => (string)($t['nama'] ?? 'Lainnya'),
                 'harga' => (int)($t['harga'] ?? 0),
                 'tarif_lama' => (int)($t['tarif_lama'] ?? 0)
             ];
@@ -505,8 +579,8 @@ class OperatorController extends Controller
         $summaryData = [];
 
         foreach ($objekSurvei as $obj) {
-            $key = strtolower(str_replace(' ', '', $obj));
-            
+            $key = ObjekKunci::dariNama((string)$obj);
+
             $matchedTarif = 0;
             $matchedTarifLama = 0;
             foreach ($tarifMap as $masterKey => $masterData) {
@@ -539,7 +613,7 @@ class OperatorController extends Controller
             $statsJam = $dataHarian[$hourKey][$idPenugasan] ?? [];
             
             foreach ($objekSurvei as $obj) {
-                $key = strtolower(str_replace(' ', '', $obj));
+                $key = ObjekKunci::dariNama((string)$obj);
                 $count = (int)($statsJam[$key] ?? 0);
                 
                 $hourlyData[$labelJam][$key] = $count;

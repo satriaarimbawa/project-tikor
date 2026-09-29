@@ -7,16 +7,44 @@ use App\Http\Controllers\Controller;
 use App\Models\ObjekTarif;
 use App\Services\FirebaseStorageService;
 use Illuminate\Support\Str;
+use App\Support\ObjekKunci;
 
+/**
+ * CRUD master objek tarif kendaraan.
+ *
+ * Dua hal penting di file ini:
+ *
+ *   1. `nama` adalah LABEL yang bebas diganti admin.
+ *   2. `kunci` adalah IDENTITAS DATA yang permanen, dibekukan saat objek
+ *      dibuat lewat `ObjekKunci::dariNama()` dan TIDAK PERNAH dihitung ulang
+ *      saat objek di-rename.
+ *
+ * Pemisahan inilah yang memperbaiki bug "sebagian data survei tidak muncul":
+ * seluruh laporan mencocokkan tarif lewat `kunci`, bukan lewat `nama`.
+ * Rinciannya ada di `App\Support\ObjekKunci`.
+ */
 class ObjekTarifController extends Controller
 {
+    /** Layanan upload ikon ke Firebase Storage. */
     protected $storageService;
 
+    /**
+     * @param FirebaseStorageService $storageService Injeksi dari container Laravel.
+     */
     public function __construct(FirebaseStorageService $storageService)
     {
         $this->storageService = $storageService;
     }
 
+    /**
+     * Daftar objek tarif dengan pagination manual.
+     *
+     * Ikon diambil dari Firebase Storage; objek tanpa ikon memakai logo
+     * bawaan aplikasi.
+     *
+     * @param Request $request Mengandung `perPage` (default 5) dan `page` (default 1).
+     * @return \Illuminate\View\View
+     */
     public function index(Request $request)
     {
         $firebaseData = ObjekTarif::all() ?? [];
@@ -55,6 +83,17 @@ class ObjekTarifController extends Controller
         ]);
     }
 
+    /**
+     * Simpan objek tarif baru.
+     *
+     * Field `kunci` digenerate otomatis di sini dari nama saat pembuatan.
+     * Admin tidak pernah mengetiknya, dan tidak ada langkah manual tambahan
+     * untuk objek baru.
+     *
+     * @param Request $request Mengandung `nama`, `harga`, `tarif_lama`,
+     *        `status`, opsional `keterangan` dan `icon`.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -85,6 +124,14 @@ class ObjekTarifController extends Controller
             'keterangan' => $request->keterangan ?? '',
             'icon_path' => $iconPath,
             'created_at' => now()->toDateTimeString(),
+
+            // `kunci` = identitas data yang PERMANEN, dibekukan saat objek
+            // dibuat. Wajib di-generate otomatis di sini: admin tidak pernah
+            // mengetiknya, dan tidak perlu tindakan manual untuk objek baru.
+            //
+            // Mulai objek ini, nama objek boleh diganti-ubah admin tanpa
+            // memutus riwayat data survei.
+            'kunci' => ObjekKunci::dariNama((string)$request->nama),
         ];
 
         // Cek duplikasi nama
@@ -103,6 +150,22 @@ class ObjekTarifController extends Controller
         return redirect()->back()->with('success', 'Data berhasil disimpan ke Firebase!');
     }
 
+    /**
+     * Perbarui objek tarif yang sudah ada.
+     *
+     * `kunci` TIDAK dihitung ulang, apesar `nama` boleh berubah. Inilah
+     * penjaga agar me-rename objek tidak memutus riwayat surveinya.
+     * `ObjekTarif::update()` memakai operasi Firebase merge, jadi `kunci`
+     * lama sudah tertahan; di sini ditulis eksplisit sebagai pengaman
+     * tambahan.
+     *
+     * `tarif_lama` otomatis mengikuti harga lama bila harga berubah.
+     *
+     * @param Request $request Mengandung `nama`, `harga`, `status`,
+     *        opsional `keterangan` dan `icon`.
+     * @param string  $id      ID node objek tarif di `objek_tarif`.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -142,6 +205,17 @@ class ObjekTarifController extends Controller
             'updated_at' => now()->toDateTimeString(),
         ];
 
+        // `kunci` SENGAJA TIDAK dihitung ulang di sini. Ini identitas data
+        // historis objek tersebut; kalau ikut berubah saat admin me-rename,
+        // seluruh riwayat survei untuk objek ini akan lenyap dari laporan
+        // persis seperti bug lama. ObjekTarif::update() memakai Firebase
+        // merge sehingga `kunci` lama sudah otomatis tertahan; baris berikut
+        // hanya menjadikannya eksplisit, aman walau Model::update() nanti
+        // berubah dari merge menjadi set().
+        if (!empty($currentData['kunci'])) {
+            $data['kunci'] = $currentData['kunci'];
+        }
+
         // Cek duplikasi nama (kecuali data yang sedang diedit)
         $existingData = ObjekTarif::all() ?? [];
         $newNama = strtolower($request->nama);
@@ -159,6 +233,17 @@ class ObjekTarifController extends Controller
         return redirect()->back()->with('success', 'Data berhasil diperbarui!');
     }
 
+    /**
+     * Hapus objek tarif beserta ikonnya.
+     *
+     * Riwayat `survei_harian` yang sudah tertulis TIDAK ikut terhapus, jadi
+     * penghapusan objek akan membuat datanya tidak lagi punya kolom tarif
+     * di laporan. Laporan menandai ini di blok peringatan, bukan
+     * menghapusnya.
+     *
+     * @param string $id ID node objek tarif di `objek_tarif`.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy($id)
     {
         ObjekTarif::delete($id);
