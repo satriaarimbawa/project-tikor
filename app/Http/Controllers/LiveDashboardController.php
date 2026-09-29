@@ -42,11 +42,17 @@ class LiveDashboardController extends Controller
         // 2. Filter Lokasi yang punya Penugasan HARI INI
         $activeLocationIds = [];
         foreach ($allPenugasan as $t) {
-            if (!empty($t['waktu_mulai'])) {
-                $mulai = Carbon::parse($t['waktu_mulai'], 'Asia/Makassar')->toDateString();
-                if ($mulai === $today) {
-                    $activeLocationIds[] = $t['id_lokasi'] ?? '';
-                }
+            if (empty($t['waktu_mulai']) || empty($t['waktu_selesai'])) {
+                continue;
+            }
+            $mulai = Carbon::parse($t['waktu_mulai'], 'Asia/Makassar');
+            $selesai = Carbon::parse($t['waktu_selesai'], 'Asia/Makassar');
+
+            // Lokasi dianggap tampil hanya bila penugasan sedang berjalan.
+            // Field 'status' sengaja tidak dipakai karena hanya diperbarui
+            // saat dashboard dibuka, sehingga bisa basi (stale).
+            if ($mulai->toDateString() === $today && $now->between($mulai, $selesai)) {
+                $activeLocationIds[] = $t['id_lokasi'] ?? '';
             }
         }
         $activeLocationIds = array_unique(array_filter($activeLocationIds));

@@ -170,10 +170,45 @@
         const objekNames = @json($objekNames);
         const objekPrices = @json($objekPrices);
         let lokasiMaster = @json($lokasiMaster) || {};
+        let lokasiRealtime = {};
         const lokasiNamesMap = @json($lokasiNamesMap) || {};
         let allPenugasan = {};
         const validKeys = Object.keys(objekNames);
         let activeLocIds = new Set();
+
+        function parseWaktuFirebase(v) {
+            if (!v) return null;
+            // Format dari server: "Y-m-d H:i:s" (tanpa zona waktu).
+            var d = new Date(String(v).replace(' ', 'T'));
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        // Waktu penugasan disimpan sebagai "Y-m-d H:i:s" dalam zona Makassar (UTC+8).
+        // Angka tersebut dibaca sebagai waktu lokal browser agar bisa dibandingkan
+        // dengan "sekarang" yang juga sudah dinyatakan dalam zona Makassar.
+        var OFFSET_MAKASSAR_MENIT = 8 * 60;
+
+        function nowMakassarMs() {
+            var d = new Date();
+            return d.getTime() - d.getTimezoneOffset() * 60000 + OFFSET_MAKASSAR_MENIT * 60000;
+        }
+
+        function isPenugasanBerjalan(t) {
+            var mulai = parseWaktuFirebase(t.waktu_mulai);
+            var selesai = parseWaktuFirebase(t.waktu_selesai);
+            if (!mulai || !selesai) return false;
+            var nowMs = nowMakassarMs();
+            return nowMs >= mulai.getTime() && nowMs <= selesai.getTime();
+        }
+
+        // Nama lokasi: coba data realtime, lalu data server, lalu peta nama.
+        function namaLokasi(idL) {
+            var rt = lokasiRealtime && lokasiRealtime[idL];
+            if (rt && rt.nama_lokasi) return rt.nama_lokasi;
+            var mst = lokasiMaster && lokasiMaster[idL];
+            if (mst && mst.nama_lokasi) return mst.nama_lokasi;
+            return lokasiNamesMap[idL] || ('Pos ' + idL);
+        }
         
         // Penanggalan robust: Dukung tanggal server dan lokal
         const serverToday = "{{ \Carbon\Carbon::now('Asia/Makassar')->toDateString() }}";
@@ -290,10 +325,13 @@
             }
             
             // Listener Master Lokasi (Real-time!)
+            // Data ini HANYA dipakai sebagai sumber lookup nama lokasi.
+            // Jangan menimpa lokasiMaster, karena lokasiMaster dari server
+            // sudah difilter hanya untuk lokasi yang sedang diuji.
             db.ref('lokasi').on('value', (snap) => {
                 const data = snap.val();
                 if (data) {
-                    lokasiMaster = data;
+                    lokasiRealtime = data;
                 }
             });
 
@@ -316,7 +354,7 @@
                     for (let idTugas in allPenugasan) {
                         const t = allPenugasan[idTugas];
                         if (t.id_user == uid && (t.status === 'aktif' || t.status === 'active')) {
-                            currentLocationName = lokasiNamesMap[t.id_lokasi] || (lokasiMaster[t.id_lokasi]?.nama_lokasi) || 'Pos Uji';
+                            currentLocationName = namaLokasi(t.id_lokasi);
                             if (t.laporan_harian && (t.laporan_harian[today] || t.laporan_harian[getClientToday()])) {
                                 hasReported = true;
                             }
@@ -423,7 +461,12 @@
                 if (data) {
                     for (let id in data) {
                         const t = data[id];
-                        if (t.id_lokasi) activeLocIds.add(t.id_lokasi.toString());
+                        if (!t || !t.id_lokasi || !t.waktu_mulai || !t.waktu_selesai) continue;
+                        // Sama seperti filter server: hanya penugasan yang
+                        // sedang berjalan (mulai < sekarang < selesai).
+                        if (isPenugasanBerjalan(t)) {
+                            activeLocIds.add(t.id_lokasi.toString());
+                        }
                     }
                 }
                 if (prevData) updateUI(prevData, lastNewLokasi);
@@ -499,11 +542,10 @@
 
             let peakInfo = [];
             const datesToCheck = Array.from(new Set([today, getClientToday()]));
-            const allLocKeys = Object.keys(lokasiMaster || {});
+            const allLocKeys = Array.from(activeLocIds);
 
             allLocKeys.forEach(idL => {
-                const locData = lokasiMaster[idL] || {};
-                const locName = locData.nama_lokasi || ('Pos ' + idL);
+                const locName = namaLokasi(idL);
                 
                 let maxCount = 0;
                 let peakHour = null;
@@ -574,18 +616,15 @@
             
             let totalGlobalIncome = 0;
             
-            const allKnownLocIds = new Set([
-                ...Object.keys(lokasiMaster || {}),
-                ...Object.keys(newLokasiTotal || {}),
-                ...Array.from(activeLocIds)
-            ]);
+            // Hanya lokasi yang penugasannya SEDANG BERJALAN yang ditampilkan.
+            // Lokasi yang jam ujinya sudah lewat otomatis hilang dari daftar.
+            const allKnownLocIds = new Set(Array.from(activeLocIds));
 
             const sorted = Array.from(allKnownLocIds).sort((a,b) => (newLokasiTotal[b] || 0) - (newLokasiTotal[a] || 0));
 
             sorted.forEach(id => {
                 const count = newLokasiTotal[id] || 0;
-                const locData = (lokasiMaster && lokasiMaster[id]) ? lokasiMaster[id] : { nama_lokasi: lokasiNamesMap[id] || ('Pos ' + id) };
-                const locNameForTable = locData.nama_lokasi || ('Pos ' + id);
+                const locNameForTable = namaLokasi(id);
 
                 // Hitung Pendapatan per Lokasi
                 let locIncome = 0;
