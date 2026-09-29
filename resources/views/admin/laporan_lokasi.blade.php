@@ -30,6 +30,32 @@
         </div>
         @endif
 
+        {{-- PERINGATAN DATA TAK TERPETAKAN
+             Volume kendaraan yang ada di data survei tapi tidak dimiliki objek
+             tarif mana pun. Dulu jenis ini hilang dari laporan tanpa jejak
+             begitu saja. Sekarang ditampilkan eksplisit supaya tidak ada
+             angka yang hilang diam-diam. --}}
+        @if(!empty($takTerpetakan))
+        <div class="bg-amber-100 border border-amber-400 text-amber-800 px-4 py-3 rounded relative mb-4 text-sm">
+            <div class="flex items-center gap-2 font-bold mb-1">
+                <iconify-icon icon="lucide:triangle-alert"></iconify-icon>
+                Perhatian: {{ array_sum($takTerpetakan) }} unit kendaraan tidak masuk tabel manapun
+            </div>
+            <div class="text-xs leading-relaxed">
+                Jenis berikut ada di data lapangan tetapi tidak memiliki objek tarif
+                (kemungkinan objeknya sudah dihapus atau diganti). Unit ini sengaja
+                TIDAK ikut ditotalkan di bawah, karena tarifnya tidak diketahui dan
+                mengarang angka pendapatan akan menyesatkan. Tambahkan kembali
+                objek tarifnya di master bila jenis ini masih dipakai.
+                <ul class="list-disc list-inside mt-1 font-mono">
+                    @foreach($takTerpetakan as $kunciYatim => $unitYatim)
+                    <li>{{ $kunciYatim }} &rarr; {{ number_format($unitYatim, 0, ',', '.') }} unit</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+        @endif
+
         <form id="filterForm" action="{{ route('laporan.lokasi.filter') }}" method="POST" class="flex justify-between items-center mb-8">
             @csrf
             <button type="button" onclick="downloadFilteredPdf()" class="flex items-center gap-2 bg-[#4A6FA5] hover:bg-blue-800 text-white px-5 py-2 rounded-lg font-semibold shadow-md transition text-sm">
