@@ -25,6 +25,11 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (\Throwable $e) {
+            // Bentuk kode laporan dari exception asli (getFile/getLine masih
+            // asli di sini). Halaman error dan notifikasi Telegram memakai
+            // kode yang sama, sehingga kode di layar bisa dicari.
+            \App\Support\KodeLaporan::dari($e);
+
             try {
                 app(\App\Services\TelegramNotifierService::class)->report($e);
             } catch (\Throwable $ignored) {}

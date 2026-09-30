@@ -146,6 +146,7 @@ class TelegramNotifierService
         $errorClass = (new \ReflectionClass($e))->getShortName();
         $file = basename($e->getFile()) . ':' . $e->getLine();
         $cleanMessage = htmlspecialchars(mb_substr($e->getMessage(), 0, 500));
+        $kodeLaporan = \App\Support\KodeLaporan::terakhir() ?? '-';
 
         // Generate quick troubleshooting hint
         $hint = $this->generateTroubleshootingHint($e);
@@ -157,6 +158,7 @@ class TelegramNotifierService
         $html .= "📍 <b>Lokasi:</b> <code>{$file}</code>\n";
         $html .= "🏷️ <b>Jenis:</b> <code>{$errorClass}</code>\n\n";
         $html .= "💥 <b>Pesan Error:</b>\n<pre>{$cleanMessage}</pre>\n\n";
+        $html .= "🔖 <b>Kode Laporan (tampilkan ke user):</b> <code>{$kodeLaporan}</code>\n\n";
         if ($hint) {
             $html .= "💡 <b>Petunjuk Cepat:</b>\n{$hint}\n";
         }
