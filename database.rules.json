@@ -2,6 +2,9 @@
   "rules": {
     ".read": true,
     ".write": false,
+    "settings": {
+      ".read": false
+    },
     "users": {
       ".indexOn": ["username", "email", "role_user"]
     },
