@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Services\ActivityLogService;
 use App\Support\PenugasanWaktu;
+use App\Models\FirebaseUser;
 
 class LoginController extends Controller
 {
@@ -168,7 +169,11 @@ class LoginController extends Controller
         }
         // --- SELESAI CEK SINGLE DEVICE ---
 
-        if (!Hash::check($password, $user_data['password'])) {
+        // Hash password tidak ada di node `users` (dibaca browser), tapi di
+        // node `users_secret` yang hanya bisa dibaca server.
+        $passwordHash = FirebaseUser::passwordHash($uid);
+
+        if (!$passwordHash || !Hash::check($password, $passwordHash)) {
             RateLimiter::hit($throttleKey, 60);
             return redirect()->back()->with('error', 'Username atau password salah!');
         }

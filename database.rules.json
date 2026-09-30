@@ -1,30 +1,68 @@
 {
   "rules": {
-    ".read": true,
+    ".read": false,
     ".write": false,
-    "settings": {
-      ".read": false
-    },
+
     "users": {
+      ".read": true,
+      ".write": false,
       ".indexOn": ["username", "email", "role_user"]
     },
+
+    "users_secret": {
+      ".read": false,
+      ".write": false
+    },
+
     "penugasan": {
+      ".read": true,
+      ".write": false,
       ".indexOn": ["id_user", "id_lokasi", "tanggal", "status"]
     },
+
     "lokasi": {
+      ".read": true,
+      ".write": false,
       ".indexOn": ["nama_lokasi"]
     },
+
     "lokasi_tikor": {
+      ".read": false,
+      ".write": false,
       ".indexOn": ["nama_lokasi"]
     },
+
     "objek_tarif": {
+      ".read": false,
+      ".write": false,
       ".indexOn": ["nama", "status"]
     },
+
     "laporan_harian": {
+      ".read": false,
+      ".write": false,
       ".indexOn": ["id_user", "tanggal", "id_lokasi"]
     },
+
+    "survei_harian": {
+      ".read": true,
+      ".write": false
+    },
+
     "activity_logs": {
+      ".read": true,
+      ".write": false,
       ".indexOn": ["timestamp", "role", "action"]
+    },
+
+    "settings": {
+      ".read": false,
+      ".write": false
+    },
+
+    "password_resets": {
+      ".read": false,
+      ".write": false
     }
   }
 }

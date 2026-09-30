@@ -48,8 +48,12 @@ class UserManagementTest extends TestCase
     public function ia_dapat_memperbarui_data_user()
     {
         $uid = 'uid_to_update';
+        $usersRef = Mockery::mock(Reference::class);
         $this->database->shouldReceive('getReference')->with("users/{$uid}")->andReturn($this->reference);
         $this->reference->shouldReceive('update')->once();
+        // Controller juga membaca users untuk cek username/email duplikat.
+        $this->database->shouldReceive('getReference')->with('users')->andReturn($usersRef);
+        $usersRef->shouldReceive('getValue')->andReturn([]);
 
         $response = $this->post("/user/update/{$uid}", [
             'username' => 'updated_name',
@@ -65,8 +69,12 @@ class UserManagementTest extends TestCase
     public function ia_dapat_menghapus_user()
     {
         $uid = 'uid_to_delete';
+        $secretRef = Mockery::mock(Reference::class);
         $this->database->shouldReceive('getReference')->with("users/{$uid}")->andReturn($this->reference);
         $this->reference->shouldReceive('remove')->once();
+        // Hash password ikut dihapus dari node rahasia.
+        $this->database->shouldReceive('getReference')->with("users_secret/{$uid}")->andReturn($secretRef);
+        $secretRef->shouldReceive('remove')->once();
 
         $response = $this->delete("/user/hapus/{$uid}");
 

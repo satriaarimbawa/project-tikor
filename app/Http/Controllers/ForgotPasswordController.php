@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
+use App\Models\FirebaseUser;
 
 class ForgotPasswordController extends Controller
 {
@@ -128,7 +129,11 @@ class ForgotPasswordController extends Controller
         $uid = array_key_first($users);
         $user_data = $users[$uid];
 
-        $this->database->getReference("users/{$uid}/password")->set(Hash::make($request->password));
+        // Tulis ke node `users_secret`, bukan `users`. Node `users` dibaca
+        // langsung oleh browser sehingga tidak boleh memuat hash password.
+        $this->database->getReference(FirebaseUser::secretPath($uid))->update([
+            'password' => Hash::make($request->password),
+        ]);
 
         $emailKey = base64_encode($email);
         $this->database->getReference("password_resets/{$emailKey}")->remove();
