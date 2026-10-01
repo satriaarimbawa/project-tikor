@@ -45,14 +45,48 @@ class ObjekKunciTest extends TestCase
         $this->assertSame('motor', ObjekKunci::untuk('tarif_motor', $row));
     }
 
+    /**
+     * PETA_LEGACY harus memuat KEDUA taksonomi, karena dua mode penugasan
+     * (nama singkat dan nama resmi) hidup berdampingan di data.
+     * Kalau hanya satu, unit dari mode lain jadi yatim dan hilang diam-diam.
+     */
     #[Test]
     public function tanpa_field_kunci_memakai_peta_legacy(): void
     {
         $master = $this->masterProduksi();
-        $this->assertSame('pick-up', ObjekKunci::untuk('tarif_bus',   $master['tarif_bus']));
-        $this->assertSame('minibus', ObjekKunci::untuk('tarif_mobil', $master['tarif_mobil']));
-        $this->assertSame('motor',   ObjekKunci::untuk('tarif_motor', $master['tarif_motor']));
-        $this->assertSame('truk',    ObjekKunci::untuk('tarif_truk',  $master['tarif_truk']));
+        $this->assertSame('bus,pick-up',           ObjekKunci::untuk('tarif_bus',   $master['tarif_bus']));
+        $this->assertSame('mobilpenumpang,minibus', ObjekKunci::untuk('tarif_mobil', $master['tarif_mobil']));
+        $this->assertSame('sepedamotor,motor',     ObjekKunci::untuk('tarif_motor', $master['tarif_motor']));
+        $this->assertSame('truk',                  ObjekKunci::untuk('tarif_truk',  $master['tarif_truk']));
+    }
+
+    /**
+     * Regresi inti lapis kedua: semua kunci yang benar-benar ada di data
+     * produksi harus dimiliki master. Kalau satu lupa, unitnya hilang dari
+     * semua halaman.
+     *
+     * Kunci yang terbukti ada di `survei_harian` per pemeriksaan
+     * 2026-10-01: sepedamotor, mobilpenumpang, truk, bus.
+     * Kunci dari mode penugasan singkat: motor, minibus, pick-up, truk.
+     */
+    #[Test]
+    public function semua_kunci_yang_ada_di_data_dimiliki_master(): void
+    {
+        $dimiliki = ObjekKunci::kunciDimiliki($this->masterProduksi());
+
+        foreach (['sepedamotor', 'mobilpenumpang', 'bus', 'truk',
+                  'motor', 'minibus', 'pick-up'] as $kunci) {
+            $this->assertArrayHasKey($kunci, $dimiliki, "Kunci '{$kunci}' ada di data tapi tidak dimiliki master");
+        }
+    }
+
+    #[Test]
+    public function kunci_utama_mengambil_sub_kunci_pertama(): void
+    {
+        $this->assertSame('sepedamotor', ObjekKunci::kunciUtama('sepedamotor,motor'));
+        $this->assertSame('bus',         ObjekKunci::kunciUtama('bus,pick-up'));
+        $this->assertSame('truk',        ObjekKunci::kunciUtama('truk'));
+        $this->assertSame('motor',       ObjekKunci::kunciUtama(' motor , minibus '));
     }
 
     /**
@@ -109,26 +143,34 @@ class ObjekKunciTest extends TestCase
     {
         $master = $this->masterProduksi();
 
+        // Semua kunci yang benar-benar ada di data produksi sekarang
+        // dimiliki master, jadi tidak ada yang dilaporkan yatim lagi.
         $this->assertSame([], ObjekKunci::takTerpetakan(
-            ['motor' => 100, 'minibus' => 20, 'pick-up' => 3, 'truk' => 1],
+            ['motor' => 100, 'minibus' => 20, 'pick-up' => 3, 'truk' => 1,
+             'sepedamotor' => 481, 'mobilpenumpang' => 60, 'bus' => 1],
             $master
         ));
 
-        $this->assertSame(['bus' => 7], ObjekKunci::takTerpetakan(
-            ['motor' => 100, 'bus' => 7],
+        // Kunci yang benar-benar tidak ada di master tetap terdeteksi.
+        $this->assertSame(['traktor' => 7], ObjekKunci::takTerpetakan(
+            ['motor' => 100, 'traktor' => 7],
             $master
         ));
     }
 
     #[Test]
-    public function peta_tarif_terisi_empat_kunci_dan_tidak_ada_kunci_kosong(): void
+    public function peta_tarif_terisi_empat_objek_dan_tidak_ada_kunci_kosong(): void
     {
         $peta = ObjekKunci::petaTarif($this->masterProduksi());
 
-        $this->assertSame(['pick-up', 'minibus', 'motor', 'truk'], array_keys($peta));
-        $this->assertSame(7000, $peta['pick-up']['harga']);
-        $this->assertSame(0, $peta['motor']['tarif_lama']);
-        $this->assertSame('Bus', $peta['pick-up']['nama']);
+        // Key peta adalah kunci objek SEBUAHNYA, jadi masih ada komanya.
+        $this->assertSame(
+            ['bus,pick-up', 'mobilpenumpang,minibus', 'sepedamotor,motor', 'truk'],
+            array_keys($peta)
+        );
+        $this->assertSame(7000, $peta['bus,pick-up']['harga']);
+        $this->assertSame(0, $peta['sepedamotor,motor']['tarif_lama']);
+        $this->assertSame('Bus', $peta['bus,pick-up']['nama']);
     }
 
     #[Test]
@@ -139,18 +181,21 @@ class ObjekKunciTest extends TestCase
             'node_rusak'  => 'bukan array',
         ]);
 
-        $this->assertSame(['motor'], array_keys($peta));
+        $this->assertSame(['sepedamotor,motor'], array_keys($peta));
     }
 
     /**
      * Skenario nyata: objek dihapus dari master, tapi data lapangan masih ada.
      * Volume itu tidak boleh hilang diam-diam.
+     *
+     * Data lapangan bisa memakai salah satu dari dua taksonomi, jadi dua
+     * keduanya harus masuk ke satu objek dan dijumlahkan, bukan dihitung dua kali.
      */
     #[Test]
     public function volume_yatim_terdeteksi_lalu_tidak_masuk_pendapatan(): void
     {
         $master = $this->masterProduksi();
-        $item   = ['motor' => 10, 'bus' => 4];
+        $item   = ['sepedamotor' => 10, 'motor' => 4, 'traktor' => 6];
 
         $peta       = ObjekKunci::petaTarif($master);
         $terhitung  = 0;
@@ -161,13 +206,14 @@ class ObjekKunciTest extends TestCase
             $pendapatan += $vol * $info['harga'];
         }
 
-        $yatim = ObjekKunci::takTerpetakan(
-            ['motor' => 10, 'bus' => 4],
-            $master
-        );
+        $yatim = ObjekKunci::takTerpetakan($item, $master);
 
-        $this->assertSame(10, $terhitung);
-        $this->assertSame(20000, $pendapatan);
-        $this->assertSame(['bus' => 4], $yatim);
+        // 10 (sepedamotor) + 4 (motor) = 14 unit, semuanya satu objek.
+        $this->assertSame(14, $terhitung);
+        $this->assertSame(28000, $pendapatan);
+
+        // `traktor` tidak punya master: tidak masuk pendapatan, tapi tetap
+        // terlihat lewat daftar "belum terpetakan".
+        $this->assertSame(['traktor' => 6], $yatim);
     }
 }

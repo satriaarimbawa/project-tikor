@@ -110,8 +110,11 @@
                     @php 
                         $c = $colors[$loop->index % count($colors)]; 
                         $iconFile = 'Bus.png'; // Default
+                        // Kunci objek bisa ber-koma ("sepedamotor,motor"). Cocokkan
+                        // hanya ke kunci utama supaya ikon tidak tertukar.
+                        $cariKunci = \App\Support\ObjekKunci::kunciUtama((string) $key);
                         foreach($icons as $iconKey => $file) {
-                            if(strpos($key, $iconKey) !== false) {
+                            if(strpos($cariKunci, $iconKey) !== false) {
                                 $iconFile = $file;
                                 break;
                             }

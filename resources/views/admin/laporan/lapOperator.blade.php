@@ -76,7 +76,9 @@
 
                         @foreach($dataRingkasan as $key => $total)
                         @php 
-                            $style = $iconMap[$key] ?? ['icon' => 'mdi:file-document-edit-outline', 'color' => '#6B7280', 'bg' => 'from-white via-gray-100 to-white'];
+                            // Kunci objek bisa ber-koma ("sepedamotor,motor"). Peta
+                            // ikon ditulis per jenis, jadi pakai kunci utama saja.
+                            $style = $iconMap[\App\Support\ObjekKunci::kunciUtama((string) $key)] ?? ['icon' => 'mdi:file-document-edit-outline', 'color' => '#6B7280', 'bg' => 'from-white via-gray-100 to-white'];
                         @endphp
                         <div class="flex items-center p-4 rounded-xl border border-gray-100 shadow-sm bg-gradient-to-r {{ $style['bg'] }}">
                             <div class="p-3 rounded-lg mr-4" style="background-color: {{ $style['color'] }}">

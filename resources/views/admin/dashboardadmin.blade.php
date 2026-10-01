@@ -124,7 +124,9 @@
             @foreach($stats as $key => $count)
                 @php 
                     $index = $loop->index % count($colors['bg']);
-                    $iconFile = $icons[$key] ?? 'Bus.png';
+                    // Kunci objek bisa ber-koma ("sepedamotor,motor"). Peta ikon
+                    // ditulis per jenis, jadi pakai kunci utama saja.
+                    $iconFile = $icons[\App\Support\ObjekKunci::kunciUtama((string) $key)] ?? 'Bus.png';
                 @endphp
                 <div class="relative overflow-hidden p-6 rounded-[25px] flex items-center gap-4 border border-gray-100 transition-transform hover:scale-105 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)]"
                      style="background: linear-gradient(90deg, {{ $colors['gradient'][$index] }} 50%, rgba(255, 255, 255, 0.32) 100%);">

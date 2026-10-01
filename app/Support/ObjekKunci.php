@@ -42,22 +42,50 @@ class ObjekKunci
 {
     /**
      * Kunci historis untuk 4 node `objek_tarif` yang dibuat sebelum field
-     * `kunci` diperkenalkan. Nilainya diambil dari `penugasan.objek_survei`
-     * yang masih menyimpan taksonomi lama.
+     * `kunci` diperkenalkan.
      *
      * Sifat: TETAP SEKALI SEUMUR HIDUP PROYEK, di-key berdasarkan node ID
      * Firebase yang stabil. Tidak bertambah lagi setiap ada objek baru.
      *
-     * NOTE: `tarif_bus` saat ini bernama "Bus", tetapi tidak ada satu pun
-     * kunci `bus` di 8.501 record survei; yang ada adalah `pick-up` (160
-     * unit). Pemetaan ini sudah dikonfirmasi pemilik sistem.
+     * NILAI DI BAWAH INI BISA BANYAK (PISAH KOMA), dan itu disengaja.
+     *
+     * Kenapa: sejak 2026-10-01 ada DUA taksonomi objek yang sama-sama
+     * dipakai di data `survei_harian`, karena ada dua mode penugasan
+     * yang hidup berdampingan:
+     *
+     *   - nama singkat  -> "Motor"        -> kunci `motor`
+     *     "Mini Bus"    -> kunci `minibus`
+     *     "Pick-up"     -> kunci `pick-up`
+     *
+     *   - nama resmi    -> "Sepeda Motor"  -> kunci `sepedamotor`
+     *     "Mobil Penumpang" -> kunci `mobilpenumpang`
+     *     "Bus"          -> kunci `bus`
+     *
+     * Kunci di data dibekukan dari nama objek pada saat penugasan dibuat,
+     * jadi dua mode itu menghasilkan kunci yang berbeda untuk kendaraan
+     * yang sama. Kalau hanya salah satu yang dipetakan, seluruh unit dari
+     * mode lain jadi yatim: tercatat di data tapi tidak muncul di halaman
+     * mana pun.
+     *
+     * Kunci pertama (yang paling cocok dengan `nama` objek) dipakai untuk
+     * ikon dan label. Kunci berikutnya hanya alias supaya data lama ikut
+     * terhitung tanpa perlu menimpa apa pun.
+     *
+     * PENGECEKAN 2026-10-01 (rentang 7 hari): kunci yang benar-benar ada
+     * di data adalah `sepedamotor` 481, `mobilpenumpang` 60, `truk` 17,
+     * `bus` 1. Keempat node master punya field `kunci` KOSONG, jadi tanpa
+     * blok ini semuanya jatuh ke fallback `dariNama(nama)` dan tidak ada
+     * satu pun yang cocok.
      *
      * Blok ini boleh dihapus setelah keempat node punya field `kunci`.
+     * Kalau diisi lewat Firebase Console, NILAI HARUS SAMA dengan daftar
+     * di atas (termasuk pemisah koma), contoh: `sepedamotor,motor`.
+     * Kalau diisi `motor` saja, semua data `sepedamotor` kembali hilang.
      */
     private const PETA_LEGACY = [
-        'tarif_motor' => 'motor',
-        'tarif_mobil' => 'minibus',
-        'tarif_bus'   => 'pick-up',
+        'tarif_motor' => 'sepedamotor,motor',
+        'tarif_mobil' => 'mobilpenumpang,minibus',
+        'tarif_bus'   => 'bus,pick-up',
         'tarif_truk'  => 'truk',
     ];
 
@@ -112,6 +140,24 @@ class ObjekKunci
     }
 
     /**
+     * Kunci utama satu objek tarif, yaitu sub-kunci pertama.
+     *
+     * Dipakai di tampilan yang meng-index peta ikon/label dengan kunci
+     * objek. Kunci objek boleh berupa daftar dipisah koma, sedangkan peta
+     * ikon ditulis per jenis kendaraan. Tanpa helper ini, `"sepedamotor,motor"`
+     * tidak akan ketemu di peta dan ikon salah tampil.
+     *
+     * SELALU pakai fungsi ini kalau mau melihat kunci sebagai satu nama.
+     * Kalau memang butuh semua jenis, pakai `daftarKunci()`.
+     */
+    public static function kunciUtama(string $kunci): string
+    {
+        $parts = explode(',', $kunci);
+
+        return trim($parts[0]);
+    }
+
+    /**
      * Volume kendaraan milik satu objek tarif, diambil dari satu record
      * survei (`survei_harian/.../{id_penugasan}`).
      *
@@ -134,6 +180,18 @@ class ObjekKunci
 
     /**
      * Peta semua objek tarif, di-key dengan kunci datanya.
+     *
+     * PENTING: key peta ini adalah kunci objek SEBUAHNYA, termasuk pemisah
+     * koma kalau satu objek punya beberapa jenis. Jadi key-nya bisa
+     * "sepedamotor,motor", bukan "sepedamotor".
+     *
+     * Karena itu pemanggil WAJIB mengiterasi peta ini dan menghitung volume
+     * lewat `volume($item, $key)`, yang otomatis menjumlahkan semua
+     * sub-kunci. Jangan mendaftarkan tiap sub-kunci sebagai key terpisah:
+     * satu objek akan terhitung dua kali dan totalnya ngawur.
+     *
+     * Untuk lookup per jenis (mis. cari ikon), pakai `kunciUtama()` atau
+     * `daftarKunci()`.
      *
      * @param  array $objekTarif nilai mentah dari `objek_tarif`
      * @return array<string,array{harga:int, nama:string, tarif_lama:int, id:string}>
