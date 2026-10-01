@@ -578,6 +578,13 @@ class OperatorController extends Controller
             return back()->with('error', 'Tidak ada penugasan aktif saat ini.');
         }
 
+        // Arah disimpan admin di Form Penugasan. Penugasan lama belum punya
+        // field ini, jadi kosongkan/tanda strip dulu, jangan isi garis titik.
+        $arah = trim((string)($tugasAktif['arah'] ?? ''));
+        if ($arah === '' || $arah === '-') {
+            $arah = '-';
+        }
+
         // 2. Ambil Data Lokasi & User
         $dataLokasi = $this->database->getReference("lokasi/{$idLokasiAktif}")->getValue();
         $user = $this->database->getReference("users/{$userId}")->getValue();
@@ -659,7 +666,7 @@ class OperatorController extends Controller
             'objekSurvei' => $objekSurvei,
             'totalSeluruh' => collect($summaryData)->sum('total'),
             'totalSeluruhLama' => collect($summaryData)->sum('total_lama'),
-            'arah' => $tugasAktif['arah'] ?? '....................'
+            'arah' => $arah
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download("Laporan_Uji_Petik_{$today}.pdf");
