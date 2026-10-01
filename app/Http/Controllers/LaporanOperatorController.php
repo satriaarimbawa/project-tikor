@@ -111,6 +111,50 @@ class LaporanOperatorController extends Controller
                 ->getReference("survei_harian/{$lokasiId}/{$selectedDate}")
                 ->getValue() ?? [];
 
+            // Kunci kendaraan yang ADA di data tapi TIDAK dimiliki objek tarif
+            // mana pun.
+            //
+            // Tanpa langkah ini, loop di bawah hanya mengiterasi `$mapTarif`,
+            // sehingga field seperti `motor` yang master-nya hilang akan
+            // dilewati begitu saja: tidak masuk rekap per jam, tidak masuk
+            // ringkasan, dan tidak ada jejak bahwa datanya sebenarnya ada.
+            //
+            // Pemindaian memakai filter `user_id` yang sama dengan loop
+            // utama, jadi angka peringatan tidak ikut menghitung orang
+            // lain saat laporan difilter per petugas.
+            $volumePerKunci = [];
+            foreach ($dataHarian as $perJam) {
+                if (!is_array($perJam)) continue;
+
+                foreach ($perJam as $item) {
+                    $item = (array) $item;
+                    if ($userId && ($item['user_id'] ?? '') != $userId) continue;
+
+                    foreach (ObjekKunci::kunciSurvei($item) as $fk => $ignored) {
+                        $vol = (int) ($item[$fk] ?? 0);
+                        if ($vol <= 0) continue;
+                        $volumePerKunci[$fk] = ($volumePerKunci[$fk] ?? 0) + $vol;
+                    }
+                }
+            }
+
+            // Kunci tak-terpetakan tetap ikut dihitung dan ikut tampil, hanya
+            // diberi label "belum terpetakan". Harganya 0 karena tarifnya
+            // tidak diketahui, jadi tidak ada penerimaan yang dikarang. Yang
+            // hilang cuma angka kendaraan, bukan kesesuaian keuangan.
+            $takTerpetakan = ObjekKunci::takTerpetakan($volumePerKunci, $tarifRaw);
+            foreach ($takTerpetakan as $uKey => $uVol) {
+                $uKey = (string) $uKey;
+                if (isset($mapTarif[$uKey])) continue;
+
+                $mapTarif[$uKey] = [
+                    'harga' => 0,
+                    'tarif_lama' => 0,
+                ];
+                $objekNames[$uKey] = ObjekKunci::labelBelumTerpetakan($uKey);
+                $dataRingkasan[$uKey] = 0;
+            }
+
             for ($h = 0; $h <= 23; $h++) {
                 $hourKey = str_pad((string) $h, 2, '0', STR_PAD_LEFT);
                 $labelJam = $hourKey . ':00';
@@ -183,6 +227,11 @@ class LaporanOperatorController extends Controller
             $volumeChartValues[] = $dataRingkasan[$key] ?? 0;
         }
 
+        // Default kosong supaya blade tidak perlu guarding saat lokasi/filter
+        // kosong, dan supaya variabel selalu ada di kedua jalur (lokasi
+        // dipilih atau tidak).
+        $takTerpetakan = $takTerpetakan ?? [];
+
         return view('admin.laporan.lapOperator', [
             'lokasiMaster' => $lokasiMaster,
             'userMaster' => $userMaster,
@@ -195,6 +244,7 @@ class LaporanOperatorController extends Controller
             'keuangan' => $totalKeuangan,
             'rekapitulasi' => $rekapitulasi,
             'grafikWaktu' => $grafikWaktu,
+            'takTerpetakan' => $takTerpetakan,
             'grafikVolume' => [
                 'labels' => $volumeChartLabels,
                 'data' => $volumeChartValues,
@@ -254,6 +304,39 @@ class LaporanOperatorController extends Controller
         $dataHarian = $this->database
             ->getReference("survei_harian/{$lokasiId}/{$selectedDate}")
             ->getValue() ?? [];
+
+        // Sama seperti versi HTML: kunci yang ada di data tapi tidak punya
+        // objek tarif ikut dihitung dan diberi label, bukan dilewati.
+        // Dipisah dari loop utama supaya tidak ada risko logikanya berbeda
+        // antara versi HTML dan versi PDF.
+        $volumePerKunci = [];
+        foreach ($dataHarian as $perJam) {
+            if (!is_array($perJam)) continue;
+
+            foreach ($perJam as $item) {
+                $item = (array) $item;
+                if ($userId && ($item['user_id'] ?? '') != $userId) continue;
+
+                foreach (ObjekKunci::kunciSurvei($item) as $fk => $ignored) {
+                    $vol = (int) ($item[$fk] ?? 0);
+                    if ($vol <= 0) continue;
+                    $volumePerKunci[$fk] = ($volumePerKunci[$fk] ?? 0) + $vol;
+                }
+            }
+        }
+
+        $takTerpetakan = ObjekKunci::takTerpetakan($volumePerKunci, $tarifRaw);
+        foreach ($takTerpetakan as $uKey => $uVol) {
+            $uKey = (string) $uKey;
+            if (isset($mapTarif[$uKey])) continue;
+
+            $mapTarif[$uKey] = [
+                'harga' => 0,
+                'tarif_lama' => 0,
+            ];
+            $objekNames[$uKey] = ObjekKunci::labelBelumTerpetakan($uKey);
+            $dataRingkasan[$uKey] = 0;
+        }
 
         for ($h = 0; $h <= 23; $h++) {
             $hourKey = str_pad((string) $h, 2, '0', STR_PAD_LEFT);
@@ -318,6 +401,7 @@ class LaporanOperatorController extends Controller
             'totalKedatangan' => array_sum($dataRingkasan),
             'keuangan' => $totalKeuangan,
             'rekapitulasi' => $rekapitulasi,
+            'takTerpetakan' => $takTerpetakan,
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Laporan_Operator_' . Carbon::now()->format('Ymd_His') . '.pdf');

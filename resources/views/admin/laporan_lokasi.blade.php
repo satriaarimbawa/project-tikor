@@ -56,6 +56,32 @@
             </div>
         </form>
 
+        {{-- Kunci kendaraan yang ada di data survei tapi tidak punya objek di
+             master tarif. Nilainya sudah dihitung controller, tapi blok ini
+             lama sekali tidak pernah dirender, sehingga volume seperti ini
+             hilang tanpa jejak. --}}
+        @if(count($takTerpetakan) > 0)
+        <div class="bg-amber-50 border border-amber-400 text-amber-900 px-4 py-3 rounded-lg mb-6">
+            <div class="flex items-start gap-3">
+                <iconify-icon icon="lucide:triangle-alert" class="text-amber-600 text-lg shrink-0 mt-0.5"></iconify-icon>
+                <div>
+                    <p class="font-bold text-sm">Sebagian data kendaraan tidak masuk hitungan</p>
+                    <p class="text-xs mt-1 leading-relaxed">
+                        {{ count($takTerpetakan) }} jenis kendaraan punya data pada periode ini tapi tidak punya objek di menu Master Tarif,
+                        sehingga tidak bisa dihitung ke tarif dan pendapatan. Data aslinya tetap ada, hanya tidak ditampilkan sebagai objek.
+                    </p>
+                    <ul class="mt-2 flex flex-wrap gap-2">
+                        @foreach($takTerpetakan as $k => $vol)
+                        <li class="text-[11px] font-semibold bg-white border border-amber-300 rounded px-2 py-1">
+                            {{ ucfirst(str_replace(['_', '-'], ' ', (string) $k)) }}: {{ $vol }}
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
             <h2 class="text-lg font-bold mb-6 text-slate-800">Ringkasan Harian</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">

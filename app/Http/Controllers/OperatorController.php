@@ -268,20 +268,55 @@ class OperatorController extends Controller
         // Gabungkan semua objek unik untuk inisialisasi counter
         $semuaObjekUnik = array_unique(array_merge($objekSaya, ...array_column($objekRekan, 'objek')));
         
+        // Kunci counter pada layar ini dibangun dari `penugasan.objek_survei`
+        // lewat `dariNama()`, sedangkan kunci yang benar-benar ada di data
+        // berasal dari nama objek PADA SAAT penugasan dibuat, lalu
+        // dinormalkan lagi di `simpanHitung`.
+        //
+        // Keduanya bisa berbeda. Contoh: nama objek "Sepeda Motor" menghasilkan
+        // `dariNama()` = "sepedamotor", sementara data historis memakai
+        // kunci "motor". Akibatnya counter di layar ini bernilai 0 padahal
+        // datanya benar-benar ada, dan total tidak cocok dengan rinciannya.
+        //
+        // Perbaikan: kunci yang ada di data ikut dimasukkan, lalu ditandai
+        // kalau tidak punya pasangan di penugasan. Counternya tetap ikut
+        // dihitung supaya total tetap jujur.
+        $kunciDariPenugasan = [];
         $dataSurvei = ['total_survei' => 0];
         foreach ($semuaObjekUnik as $obj) {
-            $dataSurvei[ObjekKunci::dariNama((string)$obj)] = 0;
+            $kunciDariPenugasan[ObjekKunci::dariNama((string)$obj)] = true;
+        }
+        foreach ($kunciDariPenugasan as $kunci => $ignored) {
+            $dataSurvei[$kunci] = 0;
         }
 
+        $volumePerKunci = [];
         foreach ($dataHariIni as $hour => $dataJam) {
+            if (!is_array($dataJam)) continue;
+
             foreach ($dataJam as $idTugasKey => $stats) {
-                foreach ($dataSurvei as $key => $val) {
-                    if ($key === 'total_survei') continue;
-                    $count = $stats[$key] ?? 0;
-                    $dataSurvei[$key] += $count;
-                    $dataSurvei['total_survei'] += $count;
+                if (!is_array($stats)) continue;
+
+                foreach (ObjekKunci::kunciSurvei($stats) as $dataKey => $ignoredKey) {
+                    $count = (int) ($stats[$dataKey] ?? 0);
+                    if ($count <= 0) continue;
+
+                    $dataSurvei[$dataKey] = $dataSurvei[$dataKey] ?? 0;
+                    $volumePerKunci[$dataKey] = ($volumePerKunci[$dataKey] ?? 0) + $count;
                 }
             }
+        }
+
+        foreach ($volumePerKunci as $dataKey => $total) {
+            $dataSurvei[$dataKey] += $total;
+            $dataSurvei['total_survei'] += $total;
+        }
+
+        // Kunci yang punya data, tapi tidak punya objek di penugasan aktif.
+        $takTerpetakan = [];
+        foreach ($volumePerKunci as $dataKey => $total) {
+            if (isset($kunciDariPenugasan[$dataKey])) continue;
+            $takTerpetakan[(string) $dataKey] = (int) $total;
         }
 
         return view('operator.survei', [
@@ -290,7 +325,8 @@ class OperatorController extends Controller
             'objekSaya' => $objekSaya,
             'objekRekan' => $objekRekan,
             'idPenugasan' => $idPenugasanAktif,
-            'sudahLapor' => $sudahLapor
+            'sudahLapor' => $sudahLapor,
+            'takTerpetakan' => $takTerpetakan
         ]);
     }
 

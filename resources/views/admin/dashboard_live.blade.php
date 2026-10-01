@@ -89,11 +89,20 @@
                     </div>
                 </div>
             </div>
+            @if(count($unmappedKeys) > 0)
+            <div class="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2">
+                <iconify-icon icon="lucide:triangle-alert" class="text-amber-400 text-sm shrink-0 mt-0.5"></iconify-icon>
+                <p class="text-[10px] text-amber-200 leading-relaxed">
+                    {{ count($unmappedKeys) }} jenis kendaraan punya data di hari ini tapi tidak punya objek di menu Master Tarif. Angkanya tetap dihitung dan ditandai kuning. Perbaiki master tarifnya supaya hilang label ini.
+                </p>
+            </div>
+            @endif
             <div class="grid grid-cols-2 gap-3">
                 @foreach($objekNames as $key => $name)
-                <div class="glass-card p-3 rounded-2xl border-l-4 border-blue-500 flex flex-col justify-between">
-                    <p class="text-white text-xs font-bold uppercase truncate">{{ $name }}</p>
-                    <p id="count-{{ $key }}" class="text-2xl font-extrabold stat-value text-blue-400 mt-1">{{ $initialGlobal[$key] ?? 0 }}</p>
+                @php($isUnmapped = isset($unmappedKeys[$key]))
+                <div class="glass-card p-3 rounded-2xl border-l-4 {{ $isUnmapped ? 'border-amber-500' : 'border-blue-500' }} flex flex-col justify-between">
+                    <p class="text-white text-xs font-bold uppercase truncate" title="{{ $name }}">{{ $name }}</p>
+                    <p id="count-{{ $key }}" class="text-2xl font-extrabold stat-value {{ $isUnmapped ? 'text-amber-400' : 'text-blue-400' }} mt-1">{{ $initialGlobal[$key] ?? 0 }}</p>
                 </div>
                 @endforeach
             </div>

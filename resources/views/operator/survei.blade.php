@@ -36,6 +36,24 @@
                 </p>
                 <hr class="my-3 border-slate-200">
 
+                {{-- Kunci yang punya data hari ini tapi tidak ada di daftar
+                     objek penugasan aktif. Angkanya sudah ikut terhitung di
+                     total, tapi tidak punya tombol tambah sendiri, jadi
+                     ditandai supaya operator tidak bingung. --}}
+                @if(count($takTerpetakan) > 0)
+                <div class="bg-amber-50 border border-amber-300 rounded-xl px-3 py-2 mb-3 text-left">
+                    <p class="text-[11px] font-bold text-amber-900">Ada data di luar objek penugasanmu</p>
+                    <ul class="flex flex-wrap gap-1 mt-1">
+                        @foreach($takTerpetakan as $k => $vol)
+                        <li class="text-[10px] font-semibold bg-white border border-amber-300 rounded px-2 py-0.5">
+                            {{ ucfirst(str_replace(['_', '-'], ' ', (string) $k)) }}: {{ $vol }}
+                        </li>
+                        @endforeach
+                    </ul>
+                    <p class="text-[10px] text-amber-800 mt-1">Angkanya sudah termasuk total di atas. Hubungi admin supaya objeknya dibenahi.</p>
+                </div>
+                @endif
+
                 <div class="grid grid-cols-2 gap-4" id="summaryGrid">
                     @php
                         $miniConfig = [

@@ -31,6 +31,34 @@
             <img src="{{ asset('assets/Logo_Klungkung.png') }}" class="w-12 h-12 object-contain" alt="Logo">
         </div>
 
+        {{-- Kunci kendaraan yang ada di data tapi tidak punya objek tarif.
+             Unitnya sudah ikut terhitung di ringkasan dan rekapitulasi,
+             dengan tarif 0 karena belum diketahui, jadi tidak menambah
+             penerimaan. Blok ini hanya memberi tahu master mana yang perlu
+             diperbaiki. --}}
+        @if(count($takTerpetakan) > 0)
+        <div class="bg-amber-50 border border-amber-400 text-amber-900 px-4 py-3 rounded-lg mb-6">
+            <div class="flex items-start gap-3">
+                <iconify-icon icon="lucide:triangle-alert" class="text-amber-600 text-lg shrink-0 mt-0.5"></iconify-icon>
+                <div>
+                    <p class="font-bold text-sm">Sebagian data kendaraan tidak punya objek tarif</p>
+                    <p class="text-xs mt-1 leading-relaxed">
+                        {{ count($takTerpetakan) }} jenis kendaraan punya data pada tanggal dan lokasi ini tapi tidak punya objek di menu Master Tarif.
+                        Unitnya sudah dihitung di ringkasan dan rekapitulasi, tetapi tarifnya 0 karena belum diketahui, sehingga tidak menambah penerimaan.
+                        Perbaiki master tarifnya supaya peringatan ini hilang.
+                    </p>
+                    <ul class="mt-2 flex flex-wrap gap-2">
+                        @foreach($takTerpetakan as $k => $vol)
+                        <li class="text-[11px] font-semibold bg-white border border-amber-300 rounded px-2 py-1">
+                            {{ ucfirst(str_replace(['_', '-'], ' ', (string) $k)) }}: {{ $vol }}
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <form action="{{ url()->current() }}" method="GET" class="grid grid-cols-12 gap-6 mb-6">
             <div class="col-span-12 xl:col-span-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">

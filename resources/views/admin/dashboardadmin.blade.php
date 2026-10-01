@@ -67,6 +67,34 @@
             </div>
         </div>
 
+        {{-- Peringatan kunci kendaraan yang punya data tapi tidak punya objek
+             di Master Tarif. Angkanya sudah ikut terhitung sebagai unit dan
+             sudah masuk kartu statistik dengan label "belum terpetakan", tapi
+             tarifnya 0 karena tidak diketahui. Jadi nominalnya tidak ikut
+             naik dan tidak mengarang pendapatan. --}}
+        @if(count($takTerpetakan) > 0)
+        <div class="bg-amber-50 border border-amber-400 text-amber-900 px-4 py-3 rounded-lg mb-6">
+            <div class="flex items-start gap-3">
+                <iconify-icon icon="lucide:triangle-alert" class="text-amber-600 text-lg shrink-0 mt-0.5"></iconify-icon>
+                <div>
+                    <p class="font-bold text-sm">Sebagian data kendaraan tidak punya objek tarif</p>
+                    <p class="text-xs mt-1 leading-relaxed">
+                        {{ count($takTerpetakan) }} jenis kendaraan punya data di dashboard ini tapi tidak punya objek di menu Master Tarif.
+                        Unitnya sudah dihitung dan ditandai di kartu statistik, tetapi tarifnya 0 karena belum diketahui, jadi tidak menambah pendapatan.
+                        Perbaiki master tarifnya supaya peringatan ini hilang.
+                    </p>
+                    <ul class="mt-2 flex flex-wrap gap-2">
+                        @foreach($takTerpetakan as $k => $vol)
+                        <li class="text-[11px] font-semibold bg-white border border-amber-300 rounded px-2 py-1">
+                            {{ ucfirst(str_replace(['_', '-'], ' ', (string) $k)) }}: {{ $vol }}
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+        @endif
+
         @php
             $colors = [
                 'bg' => ['#4A78D7', '#E9A426', '#953EE1', '#E95BA4', '#10B981', '#3B82F6', '#F59E0B', '#EF4444'],

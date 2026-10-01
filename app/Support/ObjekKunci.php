@@ -217,4 +217,24 @@ class ObjekKunci
 
         return $kunci;
     }
+
+    /**
+     * Label tampilan untuk kunci kendaraan yang punya data tapi tidak punya
+     * objek tarif.
+     *
+     * Sengaja ditandai, supaya operator dan admin langsung paham bahwa
+     * angka itu bukan kendaraan tambahan yang nyata, melainkan data yang
+     * master-nya belum sinkron. Tanpa penanda ini, kartu terlihat sama
+     * dengan objek yang master-nya beres.
+     *
+     * Disimpan di sini, bukan di controller, karena dipakai beberapa
+     * halaman laporan sekaligus dan labelnya harus sama persis di semua
+     * halaman.
+     */
+    public static function labelBelumTerpetakan(string $kunci): string
+    {
+        $human = ucfirst(str_replace(['_', '-'], ' ', $kunci));
+
+        return $human . ' (belum terpetakan)';
+    }
 }

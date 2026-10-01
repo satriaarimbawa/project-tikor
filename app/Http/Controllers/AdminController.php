@@ -117,6 +117,55 @@ class AdminController extends Controller
 
         // 2. Ambil Semua Data Survei
         $surveiHarianRaw = $this->database->getReference('survei_harian')->getValue() ?? [];
+
+        // 2b. Deteksi kunci kendaraan yang ADA di data tapi TIDAK dimiliki
+        // objek tarif mana pun.
+        //
+        // Tanpa langkah ini, field seperti `motor` yang tidak punya master
+        // akan tersaring diam-diam oleh cek `$subKeyMap` di bawah, sehingga
+        // angkanya hilang dari kartu, grafik, dan tabel pendapatan tanpa
+        // jejak. Data turunannya sudah ada di memori, jadi pemindaian ini
+        // tidak menambah pembacaan Firebase.
+        //
+        // Kuncinya sengaja diambil dari `ObjekKunci::kunciSurvei` supaya
+        // field non-kendaraan (`total_survei`, `user_id`, `updated_at`)
+        // tidak ikut terhitung sebagai kendaraan.
+        $volumePerKunci = [];
+        foreach ($surveiHarianRaw as $dataTanggal) {
+            if (!is_array($dataTanggal)) continue;
+
+            foreach ($dataTanggal as $dataJam) {
+                if (!is_array($dataJam)) continue;
+
+                foreach ($dataJam as $item) {
+                    if (!is_array($item)) continue;
+
+                    foreach (ObjekKunci::kunciSurvei($item) as $fk => $ignored) {
+                        $vol = (int) ($item[$fk] ?? 0);
+                        if ($vol <= 0) continue;
+                        $volumePerKunci[$fk] = ($volumePerKunci[$fk] ?? 0) + $vol;
+                    }
+                }
+            }
+        }
+
+        // Kunci tak-terpetakan tetap ikut dihitung dan ikut ditampilkan,
+        // hanya diberi label "belum terpetakan" supaya jelas itu masalah
+        // master, bukan kendaraan tambahan yang nyata.
+        //
+        // Harganya 0 karena tarifnya memang tidak diketahui, sehingga tidak
+        // ada pendapatan yang dikarang. Yang hilang cuma angka kendaraan,
+        // bukan kesesuan keuangan. Peta `subKeyMap` diarahkan ke dirinya
+        // sendiri supaya baris loop di bawah tetap bisa mengaccumulasinya
+        // tanpa perlu cabang khusus.
+        $takTerpetakan = ObjekKunci::takTerpetakan($volumePerKunci, $tarifRaw);
+        foreach ($takTerpetakan as $uKey => $uVol) {
+            $uKey = (string) $uKey;
+            $tarifMap[$uKey]   = 0;
+            $objekNames[$uKey] = ObjekKunci::labelBelumTerpetakan($uKey);
+            $subKeyMap[$uKey]  = $uKey;
+            $validKeys[]       = $uKey;
+        }
         
         $totalPendapatan = 0;
         $detailPendapatan = [];
@@ -234,7 +283,8 @@ class AdminController extends Controller
             'detailPendapatan' => array_values($detailPendapatan),
             'labelsMingguan' => $labelsMingguan,
             'chartData' => $chartData,
-            'unreadCount' => $unreadCount
+            'unreadCount' => $unreadCount,
+            'takTerpetakan' => $takTerpetakan
         ]);
     }
 

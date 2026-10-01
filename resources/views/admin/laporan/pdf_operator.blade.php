@@ -93,6 +93,21 @@
         </table>
     </div>
 
+    {{-- Kunci kendaraan yang ada di data tapi tidak punya objek tarif.
+         Ditampilkan sebagai catatan kaki supaya angka unit yang tidak
+         punya tarif ini tidak disalahartikan sebagai kendaraan yang tidak
+         tercatat. --}}
+    @if(count($takTerpetakan) > 0)
+    <div style="border: 1px solid #d97706; background-color: #fffbeb; padding: 8px; margin-top: 10px; font-size: 10px;">
+        <strong>Catatan:</strong> {{ count($takTerpetakan) }} jenis kendaraan punya data pada tanggal ini tapi tidak punya objek di Master Tarif.
+        Unitnya sudah dihitung di laporan ini dengan tarif 0, sehingga tidak menambah penerimaan.
+        Rincian:
+        @foreach($takTerpetakan as $k => $vol)
+            {{ ucfirst(str_replace(['_', '-'], ' ', (string) $k)) }} ({{ $vol }} unit)@if(! $loop->last), @endif
+        @endforeach
+    </div>
+    @endif
+
     <table class="main-table">
         <thead>
             <tr>
