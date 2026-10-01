@@ -108,36 +108,41 @@
                             </select>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lokasi</label>
-                                <select name="id_lokasi" id="select-lokasi" required
-                                    class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <option value="">-- Pilih Lokasi --</option>
-                                    @if(!empty($lokasitikor) && is_array($lokasitikor))
-                                    @foreach($lokasitikor as $id_lokasi => $lokasi)
-                                    <option value="{{ $id_lokasi }}"
-                                        {{ (old('id_lokasi', $penugasan['id_lokasi'] ?? '') == $id_lokasi) ? 'selected' : '' }}>
-                                        {{ $lokasi['nama_lokasi'] ?? $lokasi['alamat'] ?? 'Lokasi Tanpa Nama' }}
-                                    </option>
-                                    @endforeach
-                                    @endif
-                                </select>
-                            </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lokasi</label>
+                            <select name="id_lokasi" id="select-lokasi" required
+                                class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">-- Pilih Lokasi --</option>
+                                @if(!empty($lokasitikor) && is_array($lokasitikor))
+                                @foreach($lokasitikor as $id_lokasi => $lokasi)
+                                <option value="{{ $id_lokasi }}"
+                                    {{ (old('id_lokasi', $penugasan['id_lokasi'] ?? '') == $id_lokasi) ? 'selected' : '' }}>
+                                    {{ $lokasi['nama_lokasi'] ?? $lokasi['alamat'] ?? 'Lokasi Tanpa Nama' }}
+                                </option>
+                                @endforeach
+                                @endif
+                            </select>
+                        </div>
 
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Arah</label>
-                                <select name="arah" id="select-arah"
-                                    class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <option value="">-- Pilih Arah --</option>
-                                    @foreach($arahPreset ?? [] as $satuArah)
-                                        <option value="{{ $satuArah }}"
-                                            {{ (string)old('arah', $penugasan['arah'] ?? '') === (string)$satuArah ? 'selected' : '' }}>
-                                            {{ $satuArah }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Arah</label>
+                            @php
+                                // Daftar arah dikirim dari PenugasanController::ARAH_PRESET.
+                                // Fallback di bawah hanya jaga-jaga kalau view dirender tanpa data.
+                                $daftarArah = !empty($arahPreset) ? $arahPreset : ['Timur', 'Barat', 'Utara', 'Selatan'];
+                                $arahSekarang = old('arah', $penugasan['arah'] ?? '');
+                            @endphp
+                            <select name="arah" id="select-arah"
+                                class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">-- Pilih Arah --</option>
+                                @foreach($daftarArah as $satuArah)
+                                    <option value="{{ $satuArah }}"
+                                        {{ (string)$arahSekarang === (string)$satuArah ? 'selected' : '' }}>
+                                        {{ $satuArah }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="block mt-1 text-xs text-gray-400">Arah lalu lintas yang disurvei. Boleh dikosongkan.</small>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
