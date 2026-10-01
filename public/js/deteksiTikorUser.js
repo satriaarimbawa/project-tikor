@@ -27,7 +27,8 @@ function startGeofencing(checkUrl, csrfToken, loginUrl, interval = 60000) {
             (position) => {
                 const data = {
                     latitude: position.coords.latitude,
-                    longitude: position.coords.longitude
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy
                 };
 
                 fetch(checkUrl, {
