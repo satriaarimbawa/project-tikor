@@ -272,6 +272,15 @@
         const validKeys = Object.keys(objekNames);
         const todayStr = "{{ \Carbon\Carbon::now('Asia/Makassar')->toDateString() }}";
 
+        // Tanggal lokal browser, untuk kasus browser beda zona waktu.
+        function getClientToday() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         // REALTIME FIREBASE SYNC FOR ADMIN DASHBOARD
         try {
             const firebaseConfig = {
@@ -294,7 +303,11 @@
                 validKeys.forEach(k => totals[k] = 0);
                 let totalRevenue = 0;
 
-                const dates = [todayStr, new Date().toLocaleDateString('en-CA')];
+                // WAJIB dedupe. Kalau tanggal server dan tanggal browser sama
+                // (kasus paling umum: keduanya zona WITA), array biasa
+                // menyebabkan data tanggal yang sama dijumlahkan dua kali --
+                // contoh nyata 689 di Live Dashboard jadi 1378 di sini.
+                const dates = Array.from(new Set([todayStr, getClientToday()]));
 
                 for (let idL in dataRaw) {
                     dates.forEach(tgl => {
