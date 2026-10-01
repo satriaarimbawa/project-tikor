@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Services\ActivityLogService;
 use App\Support\PenugasanWaktu;
+use App\Support\GeofenceLive;
 use App\Models\FirebaseUser;
 
 class LoginController extends Controller
@@ -342,6 +343,7 @@ class LoginController extends Controller
     {
         $latUser = (float) $request->input('latitude');
         $longUser = (float) $request->input('longitude');
+        $akurasiUser = $request->input('accuracy');
         $idLokasiAktif = session()->get('id_lokasi_aktif');
         $uid = session()->get('user_id');
 
@@ -351,7 +353,23 @@ class LoginController extends Controller
         // Update last_seen untuk monitoring status aktif di Live Dashboard
         $this->database->getReference("users/{$uid}/last_seen")->set(Carbon::now()->timestamp);
 
-        if (!$idLokasiAktif) return response()->json(['status' => 'ok']);
+        // Catat posisi untuk alat debugging lokal (tools/peta).
+        // Node geofence_live belum pernah ada sebelumnya dan tidak
+        // memengaruhi keputusan geofencing di bawah ini.
+        $catatPosisi = function (array $posisi) use ($uid, $latUser, $longUser, $akurasiUser) {
+            $posisi['lat']     = $latUser;
+            $posisi['lng']     = $longUser;
+            $posisi['akurasi'] = is_numeric($akurasiUser) ? (float) $akurasiUser : null;
+            $posisi['username'] = session()->get('username');
+
+            GeofenceLive::catat($this->database, (string) $uid, $posisi);
+        };
+
+        if (!$idLokasiAktif) {
+            $catatPosisi(['status' => GeofenceLive::STATUS_TANPA_LOKASI]);
+
+            return response()->json(['status' => 'ok']);
+        }
 
         $dataTikor = $this->database->getReference('lokasi/' . $idLokasiAktif)->getValue();
 
@@ -360,6 +378,12 @@ class LoginController extends Controller
             // Bypass geofencing jika operator sedang dalam mode istirahat
             $userRef = $this->database->getReference("users/{$uid}")->getValue();
             if ($userRef['status_istirahat'] ?? false) {
+                $catatPosisi([
+                    'status'         => GeofenceLive::STATUS_ISTIRAHAT,
+                    'id_lokasi'      => $idLokasiAktif,
+                    'nama_lokasi'    => session()->get('nama_lokasi_aktif'),
+                ]);
+
                 return response()->json(['status' => 'ok', 'message' => 'Mode Istirahat Aktif']);
             }
 
@@ -379,6 +403,22 @@ class LoginController extends Controller
 
             // Hitung Jarak (Haversine Formula)
             $jarak = $this->hitungJarak($latUser, $longUser, $latTarget, $lonTarget);
+
+            // Catat posisi SEBELUM keputusan geofencing, supaya alat
+            // debugging lokal tetap tahu operator ini sedang di luar
+            // radius walaupun sesi di bawah ini langsung di-flush.
+            $sumberRadius = isset($operatorRadiusMap[$uid])
+                ? 'operator'
+                : (isset($dataTikor['radius']) ? 'lokasi' : 'global');
+
+            $catatPosisi([
+                'status'         => GeofenceLive::statusDari($jarak, $radius),
+                'jarak'          => $jarak,
+                'radius'         => $radius,
+                'sumber_radius'  => $sumberRadius,
+                'id_lokasi'      => $idLokasiAktif,
+                'nama_lokasi'    => $dataTikor['nama_lokasi'] ?? session()->get('nama_lokasi_aktif'),
+            ]);
 
             if ($jarak > $radius) {
                 $username = session()->get('username');
@@ -466,6 +506,15 @@ class LoginController extends Controller
             }
             return response()->json(['status' => 'ok', 'distance' => round($jarak) . 'm']);
         }
+
+        // Lokasi tugas tidak ada di nodes lokasi/, jadi jarak tidak
+        // bisa dihitung. Tetap dicatat supaya peta lokal tidak
+        // menampilkan operator ini sebagai "hilang".
+        $catatPosisi([
+            'status'         => GeofenceLive::STATUS_TANPA_LOKASI,
+            'id_lokasi'      => $idLokasiAktif,
+            'nama_lokasi'    => session()->get('nama_lokasi_aktif'),
+        ]);
 
         return response()->json(['status' => 'ok']);
     }
