@@ -6,24 +6,9 @@ use Illuminate\Http\Request;
 use Kreait\Firebase\Contract\Database;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class PenugasanController extends Controller
 {
-    /**
-     * Preset arah lalu lintas untuk uji petik.
-     *
-     * Ini satu-satunya sumber daftar arah di aplikasi ini. Kalau nanti nama
-     * arah yang dipakai lapangan berubah, cukup ubah baris ini - form,
-     * validasi, dan PDF semuanya ikut menyesuaikan.
-     *
-     * Simpan sebagai string biasa (bukan enum) supaya aman untuk data lama.
-     */
-    public const ARAH_PRESET = ['Timur', 'Barat', 'Utara', 'Selatan'];
-
-    /** Nilai yang dipakai saat admin belum mengisi arah. */
-    public const ARAH_KOSONG = '-';
-
     protected $database;
 
     public function __construct(Database $database)
@@ -124,7 +109,6 @@ class PenugasanController extends Controller
             'lokasitikor' => $lokasiMaster, 
             'users' => $users,
             'objekTarif' => $objekTarif,
-            'arahPreset' => self::ARAH_PRESET,
         ]);
     }
 
@@ -137,7 +121,6 @@ class PenugasanController extends Controller
             'waktu_selesai' => 'required',
             'objek_terpilih' => 'required',
             'surat_spt' => 'required|file|mimes:pdf,jpg,png|max:2048',
-            'arah' => ['nullable', 'string', Rule::in(self::ARAH_PRESET)],
         ], [
             'id_user.required' => 'Silakan pilih operator.',
             'id_lokasi.required' => 'Silakan pilih lokasi.',
@@ -147,7 +130,6 @@ class PenugasanController extends Controller
             'surat_spt.required' => 'File SPT wajib diunggah.',
             'surat_spt.mimes' => 'Format file SPT harus PDF, JPG, atau PNG.',
             'surat_spt.max' => 'Ukuran file SPT maksimal adalah 2MB.',
-            'arah.in' => 'Arah yang dipilih tidak dikenal. Silakan pilih dari daftar yang tersedia.',
         ]);
 
         try {
@@ -172,7 +154,6 @@ class PenugasanController extends Controller
                 'objek_survei'  => $request->objek_terpilih,
                 'file_spt'      => $namaFile,
                 'keterangan'    => $request->keterangan ?? '-',
-                'arah'          => $request->arah ?: self::ARAH_KOSONG,
                 'status'        => 'aktif',
                 'created_at'    => Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s'),
             ];
@@ -201,7 +182,6 @@ class PenugasanController extends Controller
             'users' => $users,
             'penugasan' => $penugasan,
             'objekTarif' => $objekTarif,
-            'arahPreset' => self::ARAH_PRESET,
             'id' => $id
         ]);
     }
@@ -215,7 +195,6 @@ class PenugasanController extends Controller
             'waktu_selesai' => 'required',
             'objek_terpilih' => 'required',
             'surat_spt' => 'nullable|mimes:pdf,jpg,png|max:2048',
-            'arah' => ['nullable', 'string', Rule::in(self::ARAH_PRESET)],
         ], [
             'id_user.required' => 'Silakan pilih operator.',
             'id_lokasi.required' => 'Silakan pilih lokasi.',
@@ -224,7 +203,6 @@ class PenugasanController extends Controller
             'objek_terpilih.required' => 'Silakan pilih minimal satu objek survei.',
             'surat_spt.mimes' => 'Format file SPT harus PDF, JPG, atau PNG.',
             'surat_spt.max' => 'Ukuran file SPT maksimal adalah 2MB.',
-            'arah.in' => 'Arah yang dipilih tidak dikenal. Silakan pilih dari daftar yang tersedia.',
         ]);
 
         try {
@@ -238,9 +216,6 @@ class PenugasanController extends Controller
                 'waktu_selesai' => Carbon::parse($request->waktu_selesai)->format('Y-m-d H:i:s'),
                 'objek_survei'  => $request->objek_terpilih,
                 'keterangan'    => $request->keterangan ?? '-',
-                // Kalau admin tidak memilih arah saat edit penugasan lama,
-                // jangan ditimpa jadi '-' - pakai nilai yang sudah tersimpan.
-                'arah'          => $request->arah ?: ($dataPenugasan['arah'] ?? self::ARAH_KOSONG),
                 'updated_at'    => Carbon::now('Asia/Makassar')->format('Y-m-d H:i:s'),
             ];
 
