@@ -15,6 +15,7 @@ use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Controllers\PetaOperatorController;
 
 // Webhook Bot Telegram
 Route::post('/api/telegram/webhook', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
@@ -124,6 +125,16 @@ Route::middleware(['admin'])->group(function () {
         Route::get('/settings/health-check', [SettingController::class, 'runHealthCheck'])->name('settings.health.check');
         Route::post('/settings/operational', [SettingController::class, 'updateOperational'])->name('settings.operational.update');
         Route::get('/settings/backup-download', [SettingController::class, 'downloadBackup'])->name('settings.backup.download');
+    });
+
+    // Peta Posisi Operator (Eksklusif IT Support)
+    //
+    // Koordinat GPS operator sengaja lewat route JSON server, bukan
+    // listener Firebase di browser, supaya tidak perlu aturan rules .read
+    // yang membuka koordinat ke publik. Controller ini read-only.
+    Route::middleware(['it_support'])->group(function () {
+        Route::get('/peta-operator', [PetaOperatorController::class, 'index'])->name('peta.operator');
+        Route::get('/api/peta-operator/posisi', [PetaOperatorController::class, 'posisi'])->name('peta.operator.posisi');
     });
 });
 

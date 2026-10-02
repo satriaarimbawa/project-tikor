@@ -117,6 +117,17 @@
             @endphp
 
             @if($isItSupport)
+            <a href="/peta-operator" class="relative flex items-center px-6 py-4 {{ request()->is('peta-operator*') ? 'text-white' : 'text-cyan-300' }} group overflow-hidden transition-all hover:text-white bg-gradient-to-r from-cyan-900/30 to-transparent">
+                @if(request()->is('peta-operator*'))
+                    <div class="absolute inset-0 bg-[#253D6B]/50 border-r-4 border-cyan-400"></div>
+                @endif
+                <div class="relative z-10 flex items-center w-full">
+                    <div class="w-6 flex justify-center mr-4">
+                        <iconify-icon icon="lucide:map-pinned" class="text-xl {{ request()->is('peta-operator*') ? 'text-white' : 'text-cyan-400' }} group-hover:scale-125 transition-transform"></iconify-icon>
+                    </div>
+                    <span class="text-sm font-bold text-cyan-200 group-hover:text-white">Peta Operator</span>
+                </div>
+            </a>
             <a href="/settings" class="relative flex items-center px-6 py-4 {{ request()->is('settings*') ? 'text-white' : 'text-cyan-300' }} group overflow-hidden transition-all hover:text-white bg-gradient-to-r from-cyan-900/30 to-transparent">
                 @if(request()->is('settings*'))
                     <div class="absolute inset-0 bg-[#253D6B]/50 border-r-4 border-cyan-400"></div>

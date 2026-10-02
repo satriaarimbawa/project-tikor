@@ -61,3 +61,13 @@ test_extraction/
 # database/, routes/, bootstrap/). Tidak perlu ada di server.
 /database_backup.php
 
+# Salinan data produksi untuk tools/peta (location, assignment, operator name).
+# Mengandung data operasional nyata, jadi tidak boleh ikut ter-commit.
+# Kalau ini bocor, siapa pun yang punya repo bisa tahu lokasi tugas dan
+# siapa yang bertugas.
+/tools/peta/peta-data.js
+
+# Cache API debug langsung (tools/peta/live.php), isinya posisi operator
+# dari produksi. Tidak boleh ikut ter-commit.
+/tools/peta/.live-cache.json
+
