@@ -45,6 +45,40 @@
         .pin-istirahat { background: #f59e0b; }
         .pin-basi { background: #64748b; }
 
+        /*
+         * Pin berdenyut begitu denyut baru sampai.
+         *
+         * Hanya box-shadow yang dianimasikan, bukan transform, karena
+         * transform dipakai untuk memiringkan bentuk pin. Kalau transform
+         * ikut dianimasikan, bentuknya akan berkedip memutar.
+         *
+         * --halo diisi dari petaOperator.js memakai warna status yang sama,
+         * jadi pin merah berdenyut merah dan pin abu-abu berdenyut abu-abu.
+         */
+        @keyframes denyut-pin {
+            0% {
+                box-shadow: 0 0 0 0 var(--halo, rgba(56, 189, 248, 0.55)), 0 2px 6px rgba(15, 23, 42, 0.45);
+            }
+
+            70% {
+                box-shadow: 0 0 0 16px rgba(255, 255, 255, 0), 0 2px 6px rgba(15, 23, 42, 0.45);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0), 0 2px 6px rgba(15, 23, 42, 0.45);
+            }
+        }
+
+        .pin-denyut {
+            animation: denyut-pin 2.4s ease-out infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .pin-denyut {
+                animation: none;
+            }
+        }
+
         /* Titik pos uji */
         .titik {
             width: 12px;
@@ -169,6 +203,7 @@
             Warna hijau berarti jarak operator ke pos tugasnya masih di dalam radius yang berlaku.
             Merah berarti di luar radius. Kuning berarti operator sedang istirahat.
             Abu-abu berarti denyut terakhirnya sudah lebih lama dari {{ round($umurBasi / 60) }} menit, jadi posisinya tidak boleh dianggap sebagai posisi sekarang.
+            Pin yang berdenyut artinya operator baru saja mengirim posisi baru, jadi posisinya paling baru.
             Operator tanpa koordinat sama sekali biasanya karena denyutnya ditolak server.
         </p>
 

@@ -28,6 +28,11 @@
 
     var indeksUji = {};
 
+    // Umur denyut terakhir yang sudah pernah dilihat per operator, dipakai
+    // untuk mendeteksi denyut baru tanpa perlu menambah field baru di API.
+    var umurTerlihat = {};
+    var denyutMuncul = {};
+
     // -----------------------------------------------------------------
     // Util
     // -----------------------------------------------------------------
@@ -139,6 +144,63 @@
         return op.lat !== null && op.lat !== undefined && op.lng !== null && op.lng !== undefined;
     }
 
+    /**
+     * Ubah warna hex dari warnaStatus() jadi rgba supaya bisa dipakai
+     * untuk warna halo berdenyut.
+     */
+    function rgbaDari(hex, alpha) {
+        var h = String(hex || '').replace('#', '');
+
+        if (h.length === 3) {
+            h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+        }
+
+        var n = parseInt(h, 16);
+
+        if (h.length !== 6 || isNaN(n)) {
+            return 'rgba(56,189,248,' + alpha + ')';
+        }
+
+        return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + alpha + ')';
+    }
+
+    /**
+     * Tandai operator yang denyutnya baru saja sampai.
+     *
+     * Yang dikirim server cuma umur denyut, yaitu selisih detik sejak
+     * operator menyimpan koordinat. Umur itu selalu bertambah, kecuali
+     * ada koordinat baru yang baru saja disimpan. Jadi umur yang tiba
+     * tiba lebih kecil daripada poll sebelumnya adalah tanda denyut baru,
+     * dan hanya penanda itu yang membuat pin berdenyut.
+     *
+     * Poll pertama hanya mengisi catatan, tidak menandai apa pun. Kalau
+     * tidak dijaga begini, semua pin akan berdenyut begitu halaman dibuka.
+     */
+    function tandaiDenyutBaru() {
+        var baru = {};
+
+        stateOperator.forEach(function (op) {
+            if (op.umur === null || op.umur === undefined) {
+                return;
+            }
+
+            var umur = Number(op.umur);
+            if (!isFinite(umur)) {
+                return;
+            }
+
+            var sebelum = umurTerlihat[op.uid];
+
+            if (sebelum !== undefined && umur < sebelum) {
+                baru[op.uid] = true;
+            }
+
+            umurTerlihat[op.uid] = umur;
+        });
+
+        return baru;
+    }
+
     // -----------------------------------------------------------------
     // Peta
     // -----------------------------------------------------------------
@@ -194,9 +256,16 @@
             var warna = warnaStatus(op);
             var nama = esc(op.username || op.uid);
 
+            // Pin berdenyut hanya setelah denyut baru benar-benar sampai,
+            // yaitu setelah operator memakai script-nya untuk mengecek
+            // lokasi lalu menyimpan koordinat baru. Warna statusnya sendiri
+            // tidak diubah, jadi warna dan denyut tidak saling menimpa.
+            var denyutBaru = denyutMuncul[op.uid] === true;
+            var kelas = 'pin ' + kelasStatus(op) + (denyutBaru ? ' pin-denyut' : '');
+
             var ikon = L.divIcon({
                 className: '',
-                html: '<div class="pin ' + kelasStatus(op) + '"></div>',
+                html: '<div class="' + kelas + '" style="--halo:' + rgbaDari(warna, 0.55) + '"></div>',
                 iconSize: [18, 18],
                 iconAnchor: [9, 18],
                 popupAnchor: [0, -16]
@@ -413,6 +482,10 @@
     function terapkan(data) {
         stateOperator = Array.isArray(data.operator) ? data.operator : [];
         stateLokasi = Array.isArray(data.lokasi) ? data.lokasi : [];
+
+        // Dihitung sebelum marker digambar supaya kelas pin-denyut ikut
+        // terpasang pada render yang sama.
+        denyutMuncul = tandaiDenyutBaru();
 
         gambarPosUji();
         gambarOperator();

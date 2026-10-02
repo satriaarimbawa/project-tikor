@@ -392,4 +392,33 @@ class PetaOperatorTest extends TestCase
         $this->assertCount(0, $response->json('operator'));
         $this->assertCount(0, $response->json('lokasi'));
     }
+
+    // ---------------------------------------------------------------
+    // Penjaga: penanda denyut baru harus tetap terkirim ke browser
+    // ---------------------------------------------------------------
+
+    public function test_halaman_peta_mengirim_penanda_denyut_baru_ke_browser()
+    {
+        // Berdenyutnya pin ditentukan di sisi browser, dari kelas CSS
+        // pin-denyut yang dipasang petaOperator.js ketika umur denyut
+        // tiba-tiba lebih kecil. Kalau CSS ini hilang, halaman tetap
+        // buka dan tes lain tetap lulus, tapi operator tidak pernah
+        // terlihat mengirim posisi. Karena itu dijaga di sini.
+        $this->isiFirebase();
+
+        $response = $this->sesiItSupport()->get('/peta-operator');
+
+        $response->assertStatus(200);
+        $response->assertSee('pin-denyut', false);
+        $response->assertSee('denyut-pin', false);
+        $response->assertSee('petaOperator.js', false);
+    }
+
+    public function test_petunjuk_tertulis_menjelaskan_arti_pin_berdenyut()
+    {
+        $this->isiFirebase();
+
+        $this->sesiItSupport()->get('/peta-operator')
+            ->assertSee('Pin yang berdenyut');
+    }
 }
