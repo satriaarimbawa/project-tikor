@@ -152,10 +152,10 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(petaman);
+        }).addTo(petakan);
 
-        grupPosUji = L.layerGroup().addTo(petaman);
-        grupOperator = L.layerGroup().addTo(petaman);
+        grupPosUji = L.layerGroup().addTo(petakan);
+        grupOperator = L.layerGroup().addTo(petakan);
     }
 
     function gambarPosUji() {
