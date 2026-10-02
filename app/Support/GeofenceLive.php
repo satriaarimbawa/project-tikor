@@ -3,7 +3,7 @@
 namespace App\Support;
 
 use Carbon\Carbon;
-use Kreait\Firebase\Database;
+use Kreait\Firebase\Contract\Database;
 
 /**
  * Catatan posisi real-time operator, khusus untuk alat debugging lokal.
